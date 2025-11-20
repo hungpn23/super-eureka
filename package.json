@@ -1,0 +1,44 @@
+{
+  "name": "nuxt-ui-template-saas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.73",
+    "@iconify-json/simple-icons": "^1.2.59",
+    "@nuxt/content": "^3.8.2",
+    "@nuxt/image": "^1.11.0",
+    "@nuxt/ui": "^4.2.0",
+    "@sidebase/nuxt-auth": "1.1.0",
+    "@standard-schema/spec": "^1.0.0",
+    "@vueuse/nuxt": "^13.9.0",
+    "better-sqlite3": "^12.4.1",
+    "date-fns": "^4.1.0",
+    "destr": "^2.0.5",
+    "next-auth": "~4.21.1",
+    "nuxt": "^4.2.1",
+    "nuxt-og-image": "^5.1.12",
+    "ufo": "^1.6.1",
+    "valibot": "^1.1.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.10.0",
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.4"
+  },
+  "resolutions": {
+    "unimport": "4.1.1"
+  },
+  "packageManager": "pnpm@10.19.0"
+}
