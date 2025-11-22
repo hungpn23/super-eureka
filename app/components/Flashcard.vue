@@ -20,6 +20,13 @@ const emit = defineEmits<{
 
 const { token } = useAuth();
 
+// --- Text-to-Speech Setup ---
+const textToSpeech = ref(''); // Biến trung gian lưu text cần đọc
+const { speak, isPlaying, stop } = useSpeechSynthesis(textToSpeech, {
+  lang: 'en-US', // Mặc định tiếng Anh (có thể đổi dynamic)
+  rate: 0.9, // Đọc chậm hơn 1 chút cho dễ nghe
+});
+
 const isFlipped = ref(false);
 const knownCount = ref(0);
 const skippedCount = ref(0);
@@ -134,6 +141,22 @@ function handleAnswer(isCorrect: boolean) {
   flashcard.value = learnState.queue.shift();
 }
 
+// Hàm helper để đọc bất kỳ đoạn text nào
+function playAudio(text?: string) {
+  if (!text) return;
+
+  // 1. Dừng nếu đang đọc dở cái cũ
+  stop();
+
+  // 2. Cập nhật text mới
+  textToSpeech.value = text;
+
+  // 3. Phát (cần nextTick hoặc chờ 1 xíu để ref cập nhật, nhưng thường VueUse handle reactive tốt)
+  // Tuy nhiên, speak() của VueUse sẽ tự động trigger nếu watch thay đổi (nếu config),
+  // nhưng an toàn nhất là gọi trực tiếp:
+  speak();
+}
+
 function toggleFlip() {
   if (!flashcard.value) return;
   isFlipped.value = !isFlipped.value;
@@ -185,11 +208,15 @@ defineShortcuts({
               variant="subtle"
               color="error"
             />
+
             <span class="text-error text-sm">Skipped</span>
           </div>
 
+          <div>{{ `${knownCount} / ${learnState.totalCards}` }}</div>
+
           <div class="flex place-items-center gap-2">
             <span class="text-success text-sm">Known</span>
+
             <UBadge
               :label="knownCount"
               class="rounded-full px-2"
@@ -201,16 +228,50 @@ defineShortcuts({
 
         <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
 
-        <UCard
-          :ui="{
-            body: 'grow flex place-items-center text-left text-2xl font-semibold px-6 sm:px-12 sm:text-3xl',
-          }"
-          variant="soft"
-          class="bg-elevated flex min-h-[50dvh] w-full cursor-pointer flex-col place-items-center divide-none text-center shadow-md select-none"
+        <div
+          class="bg-elevated ring-default flex min-h-[50dvh] cursor-pointer flex-col place-content-between place-items-center rounded-lg p-2 shadow-md ring select-none sm:p-4 sm:pt-2"
           @click="throttledToggleFlip"
         >
-          {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
-        </UCard>
+          <div
+            class="flex w-full place-content-between place-items-center place-self-start"
+          >
+            <span
+              class="flex place-items-center gap-1 font-medium sm:text-base"
+            >
+              <UButton
+                class="hover:text-primary cursor-pointer rounded-full p-2 text-current"
+                icon="i-lucide-volume-2"
+                variant="soft"
+                color="neutral"
+                @click.stop="
+                  playAudio(
+                    !isFlipped ? flashcard?.term : flashcard?.definition,
+                  )
+                "
+              />
+              {{ !isFlipped ? 'Term' : 'Definition' }}
+            </span>
+
+            <UBadge
+              :label="flashcard.status"
+              :color="
+                {
+                  known: 'success' as const,
+                  learning: 'warning' as const,
+                  new: 'info' as const,
+                }[flashcard.status]
+              "
+              class="capitalize"
+              variant="subtle"
+            />
+          </div>
+
+          <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
+            {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
+          </div>
+
+          <div></div>
+        </div>
 
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div class="col-span-1 hidden sm:block">

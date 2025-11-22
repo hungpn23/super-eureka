@@ -28,6 +28,12 @@ const deckSlug = computed(() => {
   return Array.isArray(slug) ? slug[0] : slug;
 });
 
+const username = computed(() => {
+  const n = route.params.username;
+
+  return Array.isArray(n) ? n[0] : n;
+});
+
 const DeckSettingOptions = computed<DropdownMenuItem[][]>(() => [
   [
     {
@@ -316,7 +322,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
 
             <!-- Flashcard Study -->
             <Flashcard
-              :username="user?.username"
+              :username="username"
               :deck="{ id: deckId, slug: deckSlug }"
               :cards="cards"
               @answers-saved="onAnswersSaved"
@@ -325,7 +331,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
             >
               <template #actions-left>
                 <UButton
-                  :to="`/${user?.username}`"
+                  :to="`/${username}`"
                   variant="link"
                   color="neutral"
                   class="w-fit p-0"
@@ -339,7 +345,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
                       </p>
 
                       <p class="text-highlighted text-base font-medium">
-                        {{ user?.username }}
+                        {{ username }}
                       </p>
                     </div>
                   </div>

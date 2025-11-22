@@ -5,10 +5,17 @@ const route = useRoute();
 const cards = ref<Card[]>([]);
 
 const deckId = computed(() => route.query.deckId as string);
+
 const deckSlug = computed(() => {
   const slug = route.params.slug;
 
   return Array.isArray(slug) ? slug[0] : slug;
+});
+
+const username = computed(() => {
+  const n = route.params.username;
+
+  return Array.isArray(n) ? n[0] : n;
 });
 
 const {
@@ -44,12 +51,12 @@ async function onIgnoreDate() {
 <template>
   <UContainer>
     <Flashcard
-      :username="user?.username"
+      :username="username"
       :deck="{ id: deckId, slug: deckSlug }"
       :cards="cards"
       :pending="pending"
       routing
-      @refresh-data="refreshData"
+      @restart="refreshData"
       @ignore-date="onIgnoreDate"
     >
       <template #header>
