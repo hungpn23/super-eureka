@@ -38,21 +38,19 @@ async function onIgnoreDate() {
 
 <template>
   <UContainer>
-    <ClientOnly>
-      <Flashcard
-        :username="user?.username"
-        :deck="{ id: deckId, slug: deck?.slug }"
-        :cards="cards"
-        :pending="pending"
-        @refresh-data="refreshData"
-        @ignore-date="onIgnoreDate"
-      >
-        <template #header>
-          <h1 class="mb-2 place-self-center text-lg font-semibold sm:text-xl">
-            {{ deck?.name }}
-          </h1>
-        </template>
-      </Flashcard>
-    </ClientOnly>
+    <Flashcard
+      :username="user?.username"
+      :deck="{ id: deckId, slug: deck?.slug }"
+      :cards="cards"
+      :pending="pending"
+      @refresh-data="refreshData"
+      @ignore-date="onIgnoreDate"
+    >
+      <template #header>
+        <h1 class="mb-2 place-self-center text-lg font-semibold sm:text-xl">
+          {{ deck?.name }}
+        </h1>
+      </template>
+    </Flashcard>
   </UContainer>
 </template>
