@@ -76,8 +76,6 @@ const StudyOptions = computed(() => [
   },
 ]);
 
-// --- Fetching Data ---
-
 const {
   data: deck,
   error,
@@ -93,7 +91,6 @@ const {
   },
 );
 
-// --- Watchers ---
 watch(
   status,
   (newStatus) => {
@@ -119,80 +116,6 @@ watch(
     immediate: true,
   },
 );
-
-// --- Form Functions ---
-function startEditing() {
-  isEditing.value = true;
-}
-
-function cancelEditing() {
-  resetFormState(deck.value);
-  isEditing.value = false;
-  form.value?.clear();
-  formErrorMsg.value = '';
-
-  toast.add({
-    title: 'Editing canceled successfully.',
-    color: 'success',
-    duration: 2000,
-  });
-}
-
-function resetFormState(newRes?: DeckWithCards) {
-  if (newRes) {
-    deckState.name = newRes.name;
-    deckState.description = newRes.description || '';
-    deckState.cards = structuredClone(newRes.cards);
-  }
-}
-
-function addCardFirst() {
-  deckState.cards?.unshift({
-    id: `temp ${crypto.randomUUID()}` as UUID,
-    term: '',
-    definition: '',
-    streak: 0,
-    reviewDate: undefined,
-    status: CardStatus.NEW,
-  });
-
-  toast.add({
-    title: 'Added first successfully.',
-    color: 'success',
-    duration: 2000,
-  });
-}
-
-function addCardLast() {
-  deckState.cards?.push({
-    id: `temp ${crypto.randomUUID()}` as UUID,
-    term: '',
-    definition: '',
-    streak: 0,
-    reviewDate: undefined,
-    status: CardStatus.NEW,
-  });
-
-  toast.add({
-    title: 'Added last successfully.',
-    color: 'success',
-    duration: 2000,
-  });
-}
-
-function deleteCard(cardId?: UUID) {
-  deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
-}
-
-function getCards(ignoreDate: boolean) {
-  if (!deck.value) return [];
-
-  return ignoreDate
-    ? deck.value.cards
-    : deck.value.cards.filter(
-        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
-      );
-}
 
 async function onDeckDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
@@ -281,6 +204,79 @@ function onAnswersSaved(answers: CardAnswer[]) {
     }
   }
 }
+
+function startEditing() {
+  isEditing.value = true;
+}
+
+function cancelEditing() {
+  resetFormState(deck.value);
+  isEditing.value = false;
+  form.value?.clear();
+  formErrorMsg.value = '';
+
+  toast.add({
+    title: 'Editing canceled successfully.',
+    color: 'success',
+    duration: 2000,
+  });
+}
+
+function resetFormState(newRes?: DeckWithCards) {
+  if (newRes) {
+    deckState.name = newRes.name;
+    deckState.description = newRes.description || '';
+    deckState.cards = structuredClone(newRes.cards);
+  }
+}
+
+function addCardFirst() {
+  deckState.cards?.unshift({
+    id: `temp ${crypto.randomUUID()}` as UUID,
+    term: '',
+    definition: '',
+    streak: 0,
+    reviewDate: undefined,
+    status: CardStatus.NEW,
+  });
+
+  toast.add({
+    title: 'Added first successfully.',
+    color: 'success',
+    duration: 2000,
+  });
+}
+
+function addCardLast() {
+  deckState.cards?.push({
+    id: `temp ${crypto.randomUUID()}` as UUID,
+    term: '',
+    definition: '',
+    streak: 0,
+    reviewDate: undefined,
+    status: CardStatus.NEW,
+  });
+
+  toast.add({
+    title: 'Added last successfully.',
+    color: 'success',
+    duration: 2000,
+  });
+}
+
+function deleteCard(cardId?: UUID) {
+  deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
+}
+
+function getCards(ignoreDate: boolean) {
+  if (!deck.value) return [];
+
+  return ignoreDate
+    ? deck.value.cards
+    : deck.value.cards.filter(
+        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
+      );
+}
 </script>
 
 <template>
@@ -311,10 +307,11 @@ function onAnswersSaved(answers: CardAnswer[]) {
                 v-for="{ label, icon, to } in StudyOptions"
                 :key="label"
                 :to="to"
-                class="flex place-content-center place-items-center py-3 hover:scale-102 hover:shadow"
+                class="hover:ring-primary hover:text-primary hover:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
                 variant="subtle"
+                color="neutral"
               >
-                <UIcon :name="icon" class="size-5" />
+                <UIcon v-if="icon" :name="icon" class="size-5" />
 
                 <h3 class="truncate text-lg font-medium">{{ label }}</h3>
               </UButton>
@@ -322,9 +319,9 @@ function onAnswersSaved(answers: CardAnswer[]) {
 
             <!-- Flashcard Study -->
             <Flashcard
-              :username="username"
+              :username
+              :cards
               :deck="{ id: deckId, slug: deckSlug }"
-              :cards="cards"
               @answers-saved="onAnswersSaved"
               @restarted="refreshData"
               @ignore-date="onIgnoreDate"

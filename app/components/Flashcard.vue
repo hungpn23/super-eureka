@@ -1,5 +1,6 @@
 <script setup lang="ts">
 type Props = {
+  title: string;
   username: string;
   deck: {
     id?: string;
@@ -7,7 +8,6 @@ type Props = {
   };
   cards: Card[];
   pending: boolean;
-  routing: boolean;
 };
 
 const props = defineProps<Partial<Props>>();
@@ -163,194 +163,173 @@ defineShortcuts({
 
 <template>
   <ClientOnly>
-    <div class="flex w-full flex-col gap-4">
-      <div v-if="routing" class="flex place-content-between place-items-center">
-        <UButton
-          :to="`/${username}/${props.deck?.slug}?deckId=${props.deck?.id}`"
-          class="mt-2 cursor-pointer px-0 text-base"
-          variant="link"
-          icon="i-lucide-move-left"
-          label="Go back"
-        />
+    <div v-if="pending" class="flex justify-center p-10">
+      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
+    </div>
 
-        <UButton
-          :to="`/${username}/${props.deck?.slug}/learn?deckId=${props.deck?.id}`"
-          class="mt-2 cursor-pointer px-0 text-base"
-          variant="link"
-          trailing-icon="i-lucide-move-right"
-          label="Go to Learn"
-        />
+    <div v-else-if="flashcard" class="flex w-full flex-col gap-2">
+      <slot name="routes"></slot>
+
+      <h1
+        v-if="title"
+        class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
+      >
+        {{ title }}
+      </h1>
+
+      <div class="flex place-content-between">
+        <div class="flex place-items-center gap-2">
+          <UBadge
+            :label="skippedCount"
+            class="rounded-full px-2"
+            variant="subtle"
+            color="error"
+          />
+
+          <span class="text-error text-sm">Skipped</span>
+        </div>
+
+        <div>{{ `${knownCount} / ${learnState.totalCards}` }}</div>
+
+        <div class="flex place-items-center gap-2">
+          <span class="text-success text-sm">Known</span>
+
+          <UBadge
+            :label="knownCount"
+            class="rounded-full px-2"
+            variant="subtle"
+            color="success"
+          />
+        </div>
       </div>
 
-      <div v-if="pending" class="flex justify-center p-10">
-        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
+      <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
+
+      <div
+        class="bg-elevated ring-default flex min-h-[50dvh] cursor-pointer flex-col place-content-between place-items-center rounded-lg p-2 shadow-md ring select-none sm:p-4 sm:pt-2"
+        @click="throttledToggleFlip"
+      >
+        <div class="flex w-full place-content-between place-items-center">
+          <span class="flex place-items-center gap-1 font-medium sm:text-base">
+            <UButton
+              class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+              icon="i-lucide-volume-2"
+              variant="soft"
+              color="neutral"
+              @click.stop="
+                playAudio(!isFlipped ? flashcard?.term : flashcard?.definition)
+              "
+            />
+            {{ !isFlipped ? 'Term' : 'Definition' }}
+          </span>
+
+          <UBadge
+            :label="flashcard.status"
+            :color="
+              {
+                known: 'success' as const,
+                learning: 'warning' as const,
+                new: 'info' as const,
+              }[flashcard.status]
+            "
+            class="capitalize"
+            variant="subtle"
+          />
+        </div>
+
+        <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
+          {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
+        </div>
+
+        <div></div>
       </div>
 
-      <div v-else-if="flashcard" class="flex w-full flex-col gap-2">
-        <slot name="header"></slot>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div class="col-span-1 hidden sm:block">
+          <slot name="actions-left"></slot>
+        </div>
 
-        <div class="flex place-content-between">
-          <div class="flex place-items-center gap-2">
-            <UBadge
-              :label="skippedCount"
-              class="rounded-full px-2"
+        <div
+          class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
+        >
+          <UTooltip :delay-duration="0" :kbds="['arrowleft']" text="Skip">
+            <UButton
+              label="Skip"
+              icon="i-heroicons-x-mark"
+              size="lg"
               variant="subtle"
               color="error"
+              class="cursor-pointer transition-transform hover:shadow active:scale-90"
+              @click="throttledHandleAnswer(false)"
             />
+          </UTooltip>
 
-            <span class="text-error text-sm">Skipped</span>
-          </div>
-
-          <div>{{ `${knownCount} / ${learnState.totalCards}` }}</div>
-
-          <div class="flex place-items-center gap-2">
-            <span class="text-success text-sm">Known</span>
-
-            <UBadge
-              :label="knownCount"
-              class="rounded-full px-2"
+          <UTooltip :delay-duration="0" :kbds="['arrowright']" text="Next">
+            <UButton
+              label="Next"
+              icon="i-heroicons-check"
+              size="lg"
               variant="subtle"
               color="success"
+              class="cursor-pointer transition-transform hover:shadow active:scale-90"
+              @click="throttledHandleAnswer(true)"
             />
-          </div>
+          </UTooltip>
         </div>
 
-        <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
-
-        <div
-          class="bg-elevated ring-default flex min-h-[50dvh] cursor-pointer flex-col place-content-between place-items-center rounded-lg p-2 shadow-md ring select-none sm:p-4 sm:pt-2"
-          @click="throttledToggleFlip"
-        >
-          <div
-            class="flex w-full place-content-between place-items-center place-self-start"
-          >
-            <span
-              class="flex place-items-center gap-1 font-medium sm:text-base"
-            >
-              <UButton
-                class="hover:text-primary cursor-pointer rounded-full p-2 text-current"
-                icon="i-lucide-volume-2"
-                variant="soft"
-                color="neutral"
-                @click.stop="
-                  playAudio(
-                    !isFlipped ? flashcard?.term : flashcard?.definition,
-                  )
-                "
-              />
-              {{ !isFlipped ? 'Term' : 'Definition' }}
-            </span>
-
-            <UBadge
-              :label="flashcard.status"
-              :color="
-                {
-                  known: 'success' as const,
-                  learning: 'warning' as const,
-                  new: 'info' as const,
-                }[flashcard.status]
-              "
-              class="capitalize"
-              variant="subtle"
-            />
-          </div>
-
-          <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
-            {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
-          </div>
-
-          <div></div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div class="col-span-1 hidden sm:block">
-            <slot name="actions-left"></slot>
-          </div>
-
-          <div
-            class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
-          >
-            <UTooltip :delay-duration="0" :kbds="['arrowleft']" text="Skip">
-              <UButton
-                label="Skip"
-                icon="i-heroicons-x-mark"
-                size="lg"
-                variant="subtle"
-                color="error"
-                class="cursor-pointer transition-transform hover:shadow active:scale-90"
-                @click="throttledHandleAnswer(false)"
-              />
-            </UTooltip>
-
-            <UTooltip :delay-duration="0" :kbds="['arrowright']" text="Next">
-              <UButton
-                label="Next"
-                icon="i-heroicons-check"
-                size="lg"
-                variant="subtle"
-                color="success"
-                class="cursor-pointer transition-transform hover:shadow active:scale-90"
-                @click="throttledHandleAnswer(true)"
-              />
-            </UTooltip>
-          </div>
-
-          <div
-            class="col-span-1 flex place-content-end place-items-center gap-2"
-          >
-            <slot name="actions-right"></slot>
-          </div>
-        </div>
-
-        <div
-          class="hidden w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4 lg:flex"
-        >
-          <span
-            class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"
-          >
-            <UIcon class="size-5" name="i-lucide-keyboard" />
-            <span>Shortcuts</span>
-          </span>
-          Press <Kbd label="Space" /> to flip,
-          <Kbd :icon="{ name: 'i-lucide-move-right' }" /> to move next,
-          <Kbd :icon="{ name: 'i-lucide-move-left' }" /> to skip.
+        <div class="col-span-1 flex place-content-end place-items-center gap-2">
+          <slot name="actions-right"></slot>
         </div>
       </div>
 
-      <UEmpty
-        v-else
-        :actions="[
-          {
-            to: '/home',
-            icon: 'i-lucide-house',
-            label: 'Home',
-            color: 'success',
-            variant: 'subtle',
-            class: 'cursor-pointer hover:scale-102 hover:shadow',
-          },
-          {
-            icon: 'i-lucide-refresh-cw',
-            label: 'Restart',
-            color: 'error',
-            variant: 'outline',
-            class: 'cursor-pointer hover:scale-102 hover:shadow',
-            onClick: restart,
-          },
-          {
-            icon: 'i-lucide-fast-forward',
-            label: 'Ignore & continue',
-            color: 'neutral',
-            variant: 'subtle',
-            class: 'cursor-pointer hover:scale-102 hover:shadow',
-            onClick: () => emit('ignore-date'),
-          },
-        ]"
-        variant="naked"
-        icon="i-lucide-party-popper"
-        title="You're all caught up — nothing to review now."
-        description="Optimize your retention by strictly adhering to the next review date."
-        size="xl"
-      />
+      <div
+        class="hidden w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4 lg:flex"
+      >
+        <span
+          class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"
+        >
+          <UIcon class="size-5" name="i-lucide-keyboard" />
+          <span>Shortcuts</span>
+        </span>
+        Press <Kbd label="Space" /> to flip,
+        <Kbd :icon="{ name: 'i-lucide-move-right' }" /> to move next,
+        <Kbd :icon="{ name: 'i-lucide-move-left' }" /> to skip.
+      </div>
     </div>
+
+    <UEmpty
+      v-else
+      :actions="[
+        {
+          to: '/home',
+          icon: 'i-lucide-house',
+          label: 'Home',
+          color: 'success',
+          variant: 'subtle',
+          class: 'cursor-pointer hover:scale-102 hover:shadow',
+        },
+        {
+          icon: 'i-lucide-refresh-cw',
+          label: 'Restart',
+          color: 'error',
+          variant: 'outline',
+          class: 'cursor-pointer hover:scale-102 hover:shadow',
+          onClick: restart,
+        },
+        {
+          icon: 'i-lucide-fast-forward',
+          label: 'Ignore & continue',
+          color: 'neutral',
+          variant: 'subtle',
+          class: 'cursor-pointer hover:scale-102 hover:shadow',
+          onClick: () => emit('ignore-date'),
+        },
+      ]"
+      variant="naked"
+      icon="i-lucide-party-popper"
+      title="You're all caught up — nothing to review now."
+      description="Optimize your retention by strictly adhering to the next review date."
+      size="xl"
+    />
   </ClientOnly>
 </template>

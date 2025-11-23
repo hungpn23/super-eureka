@@ -1,19 +1,19 @@
 <script lang="ts" setup>
-import { DeckOrderBy, QueryOrder } from "~/utils/enums";
-import { formatTimeAgo } from "@vueuse/core";
+import { DeckOrderBy, QueryOrder } from '~/utils/enums';
+import { formatTimeAgo } from '@vueuse/core';
 
 const defaults: DeckPaginationQuery = {
-  page: "1",
-  limit: "10",
-  filter: "Recently",
-  search: "",
+  page: '1',
+  limit: '10',
+  filter: 'Recently',
+  search: '',
 };
 
 const route = useRoute();
 const toast = useToast();
 const { token, data: user } = useAuth();
 
-const urlParams = useUrlSearchParams<DeckPaginationQuery>("history", {
+const urlParams = useUrlSearchParams<DeckPaginationQuery>('history', {
   initialValue: route.query as DeckPaginationQuery,
 });
 
@@ -53,23 +53,23 @@ const query = computed(() => {
   let order: QueryOrder = QueryOrder.DESC_NULLS_LAST;
 
   switch (filter.value) {
-    case "Recently":
+    case 'Recently':
       orderBy = DeckOrderBy.OPENED_AT;
       order = QueryOrder.DESC_NULLS_LAST;
       break;
-    case "Newest":
+    case 'Newest':
       orderBy = DeckOrderBy.CREATED_AT;
       order = QueryOrder.DESC_NULLS_LAST;
       break;
-    case "Oldest":
+    case 'Oldest':
       orderBy = DeckOrderBy.CREATED_AT;
       order = QueryOrder.ASC_NULLS_LAST;
       break;
-    case "Name A-Z":
+    case 'Name A-Z':
       orderBy = DeckOrderBy.NAME;
       order = QueryOrder.ASC_NULLS_LAST;
       break;
-    case "Name Z-A":
+    case 'Name Z-A':
       orderBy = DeckOrderBy.NAME;
       order = QueryOrder.DESC_NULLS_LAST;
       break;
@@ -85,11 +85,11 @@ const query = computed(() => {
 });
 
 const { data: res, error } = await useLazyFetch<Paginated<Deck>, ErrorResponse>(
-  "/api/decks",
+  '/api/decks',
   {
     query,
     headers: {
-      Authorization: token.value || "",
+      Authorization: token.value || '',
     },
     server: false,
   },
@@ -98,38 +98,38 @@ const { data: res, error } = await useLazyFetch<Paginated<Deck>, ErrorResponse>(
 const totalRecords = computed(() => res.value?.metadata.totalRecords || 0);
 
 const selectItems = ref([
-  "Recently",
-  "Newest",
-  "Oldest",
-  "Name A-Z",
-  "Name Z-A",
+  'Recently',
+  'Newest',
+  'Oldest',
+  'Name A-Z',
+  'Name Z-A',
 ]);
 
 const statsCards = [
   {
     title: "Today's Streak",
-    value: "12",
-    icon: "i-lucide-flame",
-    color: "warning" as const,
+    value: '12',
+    icon: 'i-lucide-flame',
+    color: 'warning' as const,
   },
   {
-    title: "Total Words Learned",
-    value: "342",
-    icon: "i-lucide-target",
-    color: "info" as const,
+    title: 'Total Words Learned',
+    value: '342',
+    icon: 'i-lucide-target',
+    color: 'info' as const,
   },
   {
-    title: "Accuracy Rate",
-    value: "87%",
-    icon: "i-lucide-book-marked",
-    color: "success" as const,
+    title: 'Accuracy Rate',
+    value: '87%',
+    icon: 'i-lucide-book-marked',
+    color: 'success' as const,
   },
 ];
 
 if (error.value) {
   toast.add({
-    title: "Error fetching decks",
-    description: JSON.stringify(error.value?.data || "Unknown error"),
+    title: 'Error fetching decks',
+    description: JSON.stringify(error.value?.data || 'Unknown error'),
   });
 }
 </script>

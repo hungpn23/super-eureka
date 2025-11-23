@@ -110,7 +110,6 @@ onMounted(() => {
   createState.cards.push({ term: '', definition: '' });
   createState.cards.push({ term: '', definition: '' });
   createState.cards.push({ term: '', definition: '' });
-  createState.cards.push({ term: '', definition: '' });
 });
 
 async function onCreate(event: FormSubmitEvent<Schema>) {
@@ -205,6 +204,14 @@ async function onError(event: FormErrorEvent) {
 <template>
   <UPage>
     <UContainer>
+      <UButton
+        to="/home"
+        class="mt-2 cursor-pointer px-0 text-base"
+        variant="link"
+        icon="i-lucide-move-left"
+        label="Back to home"
+      />
+
       <UPageHeader
         :ui="{
           wrapper: 'sm:flex-row sm:items-center sm:place-content-between',
@@ -253,7 +260,7 @@ async function onError(event: FormErrorEvent) {
             <UButton
               :label="createState.visibility"
               :icon="getVisibilityIcon(createState.visibility)"
-              class="cursor-pointer"
+              class="cursor-pointer text-base sm:text-lg"
               color="neutral"
               variant="subtle"
               size="lg"
@@ -292,7 +299,7 @@ async function onError(event: FormErrorEvent) {
           <UFormField label="Name" name="name" required>
             <UInput
               v-model="createState.name"
-              :ui="{ base: 'sm:text-lg' }"
+              :ui="{ base: 'text-lg sm:text-xl' }"
               class="w-full"
               variant="subtle"
               placeholder="Enter a name, like “Biology - Chapter 22: Evolution”"
@@ -305,7 +312,7 @@ async function onError(event: FormErrorEvent) {
               :rows="1"
               :maxrows="5"
               :ui="{
-                base: 'sm:text-lg',
+                base: 'text-lg sm:text-xl',
               }"
               class="w-full"
               placeholder="Describe your deck (optional)"
@@ -314,7 +321,7 @@ async function onError(event: FormErrorEvent) {
             />
           </UFormField>
 
-          <div class="flex place-items-center gap-4">
+          <div class="flex place-content-between place-items-center gap-4">
             <h2 class="text-xl font-bold text-pretty sm:text-2xl">
               Cards ({{ createState.cards.length }})
             </h2>
@@ -334,8 +341,9 @@ async function onError(event: FormErrorEvent) {
               <UButton
                 class="cursor-pointer"
                 label="Import cards"
-                icon="i-lucide-copy-plus"
-                variant="subtle"
+                icon="i-lucide-download"
+                variant="soft"
+                color="secondary"
               />
 
               <template #body>
@@ -513,14 +521,18 @@ async function onError(event: FormErrorEvent) {
             </UModal>
           </div>
 
-          <UButton
-            class="cursor-pointer place-self-center px-4 text-lg"
-            label="Insert"
-            icon="i-lucide-plus"
-            variant="subtle"
-            size="xl"
+          <UCard
+            class="hover:border-primary/75 hover:text-primary border-accented flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed text-neutral-500 transition-all select-none active:scale-95"
             @click="createState.cards.unshift({ term: '', definition: '' })"
-          />
+          >
+            <div class="flex place-content-center place-items-center gap-2">
+              <UIcon name="i-lucide-plus" class="size-9" />
+
+              <span class="text-lg font-semibold sm:text-xl">
+                Add new card
+              </span>
+            </div>
+          </UCard>
 
           <TransitionGroup name="list">
             <UCard
@@ -577,14 +589,18 @@ async function onError(event: FormErrorEvent) {
             </UCard>
           </TransitionGroup>
 
-          <UButton
-            class="cursor-pointer place-self-center px-4 text-lg"
-            label="Insert"
-            icon="i-lucide-plus"
-            variant="subtle"
-            size="xl"
+          <UCard
+            class="hover:border-primary/75 hover:text-primary border-accented flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed text-neutral-500 transition-all select-none active:scale-95"
             @click="createState.cards.push({ term: '', definition: '' })"
-          />
+          >
+            <div class="flex place-content-center place-items-center gap-2">
+              <UIcon name="i-lucide-plus" class="size-9" />
+
+              <span class="text-lg font-semibold sm:text-xl">
+                Add new card
+              </span>
+            </div>
+          </UCard>
         </UForm>
       </UPageBody>
     </UContainer>

@@ -1,267 +1,199 @@
 <script setup lang="ts">
-const deckState = reactive<Partial<DeckWithCards>>({});
-
-const isFlipped = ref(false);
-const shortcutPressed = ref(false);
-const correctCount = ref(0);
-const flashcard = ref<Card | undefined>(undefined);
-
-const learnState = reactive<FlashcardState>({
-  totalCards: 0,
-  queue: [],
-  answers: [],
-  retryQueue: [],
-});
-
-const progress = computed(() => {
-  if (!learnState.totalCards) return 0;
-
-  return (correctCount.value / learnState.totalCards) * 100;
-});
-
-const deckId = computed(() => {
-  const q = useRoute().query.deckId;
-
-  return Array.isArray(q) ? q[0] : q;
-});
-
-const toast = useToast();
-const router = useRouter();
 const { token, data: user } = useAuth();
+const route = useRoute();
+
+const progress = ref(33);
+const cards = ref<Card[]>([]);
+const deckId = computed(() => route.query.deckId as string);
+const deckSlug = computed(() => {
+  const slug = route.params.slug;
+
+  return Array.isArray(slug) ? slug[0] : slug;
+});
+const username = computed(() => {
+  const n = route.params.username;
+
+  return Array.isArray(n) ? n[0] : n;
+});
+
 const {
-  data: res,
-  error,
-  status: fetchStatus,
-  refresh: refreshDeckData,
-} = await useLazyFetch<DeckWithCards, ErrorResponse>(
-  `/api/decks/${deckId.value}`,
+  data: deck,
+  pending,
+  refresh: refreshData,
+} = await useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
+  headers: { Authorization: token.value || '' },
+  server: false,
+});
+
+watch(deck, () => (cards.value = getCards(false)), {
+  immediate: true,
+});
+
+function getCards(ignoreDate: boolean) {
+  if (!deck.value) return [];
+
+  return ignoreDate
+    ? deck.value.cards
+    : deck.value.cards.filter(
+        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
+      );
+}
+
+async function onIgnoreDate() {
+  await refreshData();
+
+  cards.value = getCards(true);
+}
+
+// Options for the current flashcard (mock data for now)
+const options = [
+  { id: 1, text: 'aliquip', key: '1' },
+  { id: 2, text: 'duis fugiat nisi', key: '2' },
   {
-    headers: {
-      Authorization: token.value || '',
-    },
-    server: false,
+    id: 3,
+    text: 'id velit dolor culpa est tempor duis veniam magna amet',
+    key: '3',
   },
-);
-
-// --- Watchers ---
-
-watch(res, (newRes) => {
-  if (newRes) {
-    shortcutPressed.value = false;
-    correctCount.value = 0;
-    learnState.answers = [];
-    learnState.retryQueue = [];
-    // learnState.flashcards = structuredClone(newRes.cards).filter(
-    //   (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
-    // );
-    learnState.queue = structuredClone(newRes.cards);
-    learnState.totalCards = learnState.queue.length;
-    flashcard.value = learnState.queue.shift();
-
-    console.log('🔥🔥🔥 flashcard.value', flashcard.value);
-
-    toast.add({
-      title: 'Flashcard data initialized successfully.',
-      color: 'success',
-      duration: 2000,
-    });
-  }
-});
-
-watch(flashcard, () => {
-  isFlipped.value = false;
-});
-
-watch(fetchStatus, (newStatus) => {
-  if (newStatus === 'error') {
-    toast.add({
-      title: 'Error fetching decks',
-      description: JSON.stringify(error.value?.data || 'Unknown error'),
-      color: 'error',
-      duration: 2000,
-    });
-  }
-});
-
-watchDebounced(learnState, saveAnswers, {
-  debounce: 1000,
-  maxWait: 3000,
-  deep: true,
-});
-
-function toggleFlip() {
-  if (!flashcard.value) return;
-  if (!shortcutPressed.value) shortcutPressed.value = true;
-
-  isFlipped.value = !isFlipped.value;
-}
-
-function handleAnswer(correct: boolean) {
-  if (!flashcard.value) return;
-
-  const updated = Object.assign(
-    {},
-    flashcard.value,
-    calcCardState({
-      ...flashcard.value,
-      correct,
-    }),
-  );
-
-  correct ? correctCount.value++ : learnState.retryQueue.push(updated);
-
-  // handle answers
-  const index = learnState.answers.findIndex((a) => a.id === updated.id);
-  if (index !== -1) {
-    learnState.answers[index] = updated;
-  } else {
-    learnState.answers.push(updated);
-  }
-
-  // handle flashcards
-  if (!learnState.queue.length) {
-    if (!learnState.retryQueue.length) {
-      flashcard.value = undefined;
-      return;
-    }
-
-    learnState.queue = learnState.retryQueue;
-    learnState.retryQueue = [];
-  }
-
-  // next flashcard
-  flashcard.value = learnState.queue.shift();
-}
-
-async function refreshDeckProgress() {
-  $fetch(`/api/decks/refresh/${deckId.value}`, {
-    method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
-  })
-    .then(async () => {
-      await refreshDeckData();
-
-      toast.add({
-        title: 'refreshDeckProgress successfully.',
-        color: 'success',
-        duration: 2000,
-      });
-    })
-    .catch((error: ErrorResponse) => {
-      toast.add({
-        title: 'Error refreshing deck!',
-        description: JSON.stringify(error.data || 'Unknown error'),
-        color: 'error',
-        duration: 2000,
-      });
-    });
-}
-
-async function saveAnswers() {
-  if (learnState.answers.length === 0) return;
-
-  $fetch(`/api/study/save-answer/${deckId.value}`, {
-    method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
-    body: { answers: learnState.answers },
-  })
-    .then(() => {
-      const map = new Map(learnState.answers.map((a) => [a.id, a]));
-
-      if (deckState.cards?.length) {
-        for (const c of deckState.cards) {
-          const answer = map.get(c.id);
-
-          if (answer) {
-            Object.assign(c, {
-              ...answer,
-              status: calcCardStatus(answer.reviewDate),
-            });
-          }
-        }
-      }
-
-      learnState.answers = [];
-
-      toast.add({
-        title: 'Auto saveAnswers successfully.',
-        color: 'success',
-        duration: 2000,
-      });
-    })
-    .catch((error: ErrorResponse) => {
-      console.error('Failed to save answers:', error.data);
-    });
-}
-
-// --- Shortcuts/Side Effects ---
-
-const throttledToggleFlip = useThrottleFn(toggleFlip, 200);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 200);
-
-defineShortcuts({
-  ' ': throttledToggleFlip,
-  arrowright: () => throttledHandleAnswer(true),
-  arrowleft: () => throttledHandleAnswer(false),
-});
+  {
+    id: 4,
+    text: 'cupidatat pariatur incididunt fugiat anim cupidatat pariatur incididunt fugiat anim quis elit dolor sit elit magna officia sit pariatur eu',
+    key: '4',
+  },
+];
 </script>
 
 <template>
-  <UContainer>
-    <div v-if="flashcard" class="mt-6 flex flex-col gap-2 sm:mt-12">
-      <UProgress v-model="progress" />
+  <ClientOnly>
+    <UContainer>
+      <div class="mb-8 flex w-full flex-col gap-2">
+        <div class="flex place-content-between place-items-center gap-2">
+          <UButton
+            :to="`/${username}/${deckSlug}/flashcards?deckId=${deckId}`"
+            class="mt-2 cursor-pointer px-0 text-base"
+            variant="link"
+            icon="i-lucide-move-left"
+            label="Back to Flashcards"
+          />
 
-      <UCard
-        :ui="{
-          body: 'grow flex place-items-center text-left text-2xl font-semibold px-6 sm:px-12 sm:text-3xl',
-        }"
-        variant="soft"
-        class="bg-elevated flex min-h-[60dvh] w-full flex-col place-items-center divide-none text-center"
-        @click="throttledToggleFlip"
-      >
-        {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
-      </UCard>
+          <UButton
+            :to="`/${username}/${deckSlug}/test?deckId=${deckId}`"
+            class="mt-2 cursor-pointer px-0 text-base"
+            variant="link"
+            trailing-icon="i-lucide-move-right"
+            label="Go to Test"
+          />
+        </div>
 
-      <div class="flex place-content-center place-items-center gap-3">
-        <UButton
-          label="Skip"
-          icon="i-heroicons-x-mark"
-          size="lg"
-          variant="subtle"
-          color="error"
-          class="cursor-pointer transition-transform duration-200 ease-in-out active:scale-90"
-          @click="throttledHandleAnswer(false)"
-        />
+        <h1 class="mb-2 place-self-center text-lg font-semibold sm:text-xl">
+          Some title and stuff of course
+        </h1>
 
-        <UButton
-          label="Next"
-          icon="i-heroicons-check"
-          size="lg"
-          variant="subtle"
-          class="cursor-pointer transition-transform active:scale-95"
-          @click="throttledHandleAnswer(true)"
-        />
-      </div>
+        <div class="flex place-content-between">
+          <div class="flex place-items-center gap-2">
+            <UBadge
+              label="42"
+              class="rounded-full px-2"
+              variant="subtle"
+              color="error"
+            />
 
-      <div
-        v-if="!shortcutPressed"
-        class="flex w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4"
-      >
-        <span
-          class="hidden place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold sm:inline-flex"
+            <span class="text-error text-sm">Incorrect</span>
+          </div>
+
+          <div>12 / 53</div>
+
+          <div class="flex place-items-center gap-2">
+            <span class="text-success text-sm">Correct</span>
+
+            <UBadge
+              label="12"
+              class="rounded-full px-2"
+              variant="subtle"
+              color="success"
+            />
+          </div>
+        </div>
+
+        <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
+
+        <div
+          class="md:ring-default flex min-h-[50dvh] flex-col place-content-between place-items-start gap-2 bg-inherit md:rounded-lg md:p-4 md:shadow-md md:ring"
         >
-          <UIcon class="size-5" name="i-lucide-keyboard" />
-          <span>Shortcuts</span>
-        </span>
+          <div class="flex w-full place-content-between place-items-center">
+            <span
+              class="flex place-items-center gap-1 font-medium sm:text-base"
+            >
+              <UButton
+                class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+                icon="i-lucide-volume-2"
+                variant="soft"
+                color="neutral"
+              />
+              Term
+            </span>
 
-        Press <Kbd label="Space" /> to flip,
-        <Kbd :icon="{ name: 'i-lucide-move-right' }" /> to move next,
-        <Kbd :icon="{ name: 'i-lucide-move-left' }" /> to skip.
+            <UButton
+              class="cursor-pointer"
+              icon="i-lucide-lightbulb"
+              variant="ghost"
+              color="neutral"
+            >
+              Get a hint
+            </UButton>
+          </div>
+
+          <div class="text-lg font-medium sm:text-xl">
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+            Ability to understand spoken words, sentences, and conversations.
+          </div>
+
+          <div class="mt-4 flex w-full flex-col gap-2 sm:gap-4">
+            <div class="flex place-items-center gap-2">
+              <span class="font-semibold">Choose your answer</span>
+              <UBadge
+                label="Let's try again"
+                color="warning"
+                class="capitalize"
+                variant="subtle"
+              />
+            </div>
+
+            <div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+              <UButton
+                v-for="(opt, index) in options"
+                :key="opt.id"
+                variant="outline"
+                color="neutral"
+                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-transform hover:scale-102 hover:shadow active:scale-95"
+              >
+                <UButton
+                  class="hidden h-8 w-8 place-content-center place-items-center rounded-full font-bold sm:flex"
+                  variant="subtle"
+                  color="neutral"
+                  >{{ index + 1 }}</UButton
+                >
+
+                <span class="text-start text-lg font-medium text-current">
+                  {{ opt.text }}
+                </span>
+              </UButton>
+            </div>
+
+            <UButton
+              class="cursor-pointer place-self-end font-medium"
+              variant="ghost"
+            >
+              Don't know?
+            </UButton>
+          </div>
+        </div>
       </div>
-    </div>
-  </UContainer>
+    </UContainer>
+  </ClientOnly>
 </template>
