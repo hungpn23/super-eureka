@@ -1,111 +1,9 @@
 <script lang="ts" setup>
 import { DeckOrderBy, QueryOrder } from '~/utils/enums';
 import { formatTimeAgo } from '@vueuse/core';
+import type { PageCardProps, SelectMenuItem } from '@nuxt/ui';
 
-const defaults: DeckPaginationQuery = {
-  page: '1',
-  limit: '10',
-  filter: 'Recently',
-  search: '',
-};
-
-const route = useRoute();
-const toast = useToast();
-const { token, data: user } = useAuth();
-
-const urlParams = useUrlSearchParams<DeckPaginationQuery>('history', {
-  initialValue: route.query as DeckPaginationQuery,
-});
-
-const page = computed({
-  get: () => Number(urlParams.page || defaults.page),
-  set: (val) => {
-    urlParams.page = val === Number(defaults.page) ? undefined : String(val);
-  },
-});
-
-const limit = computed({
-  get: () => Number(urlParams.limit || defaults.limit),
-  set: (val) => {
-    urlParams.limit = val === Number(defaults.limit) ? undefined : String(val);
-    urlParams.page = undefined;
-  },
-});
-
-const filter = computed({
-  get: () => urlParams.filter || defaults.filter,
-  set: (val) => {
-    urlParams.filter = val === defaults.filter ? undefined : val;
-    urlParams.page = undefined;
-  },
-});
-
-const search = ref(urlParams.search || defaults.search);
-const debouncedSearch = refDebounced(search, 200);
-
-watch(debouncedSearch, (newSearch) => {
-  urlParams.search = newSearch === defaults.search ? undefined : newSearch;
-  urlParams.page = undefined;
-});
-
-const query = computed(() => {
-  let orderBy: DeckOrderBy = DeckOrderBy.OPENED_AT;
-  let order: QueryOrder = QueryOrder.DESC_NULLS_LAST;
-
-  switch (filter.value) {
-    case 'Recently':
-      orderBy = DeckOrderBy.OPENED_AT;
-      order = QueryOrder.DESC_NULLS_LAST;
-      break;
-    case 'Newest':
-      orderBy = DeckOrderBy.CREATED_AT;
-      order = QueryOrder.DESC_NULLS_LAST;
-      break;
-    case 'Oldest':
-      orderBy = DeckOrderBy.CREATED_AT;
-      order = QueryOrder.ASC_NULLS_LAST;
-      break;
-    case 'Name A-Z':
-      orderBy = DeckOrderBy.NAME;
-      order = QueryOrder.ASC_NULLS_LAST;
-      break;
-    case 'Name Z-A':
-      orderBy = DeckOrderBy.NAME;
-      order = QueryOrder.DESC_NULLS_LAST;
-      break;
-  }
-
-  return {
-    page: page.value,
-    limit: limit.value,
-    search: debouncedSearch.value,
-    orderBy,
-    order,
-  };
-});
-
-const { data: res, error } = await useLazyFetch<Paginated<Deck>, ErrorResponse>(
-  '/api/decks',
-  {
-    query,
-    headers: {
-      Authorization: token.value || '',
-    },
-    server: false,
-  },
-);
-
-const totalRecords = computed(() => res.value?.metadata.totalRecords || 0);
-
-const selectItems = ref([
-  'Recently',
-  'Newest',
-  'Oldest',
-  'Name A-Z',
-  'Name Z-A',
-]);
-
-const statsCards = [
+const cardStatistics = [
   {
     title: "Today's Streak",
     value: '12',
@@ -124,14 +22,136 @@ const statsCards = [
     icon: 'i-lucide-book-marked',
     color: 'success' as const,
   },
-];
+] as const;
 
-if (error.value) {
-  toast.add({
-    title: 'Error fetching decks',
-    description: JSON.stringify(error.value?.data || 'Unknown error'),
-  });
-}
+const defaults: DeckUrlParams = {
+  page: '1',
+  limit: '10',
+  filter: 'recently',
+  search: '',
+} as const;
+
+const toast = useToast();
+const { token, data: user } = useAuth();
+const urlParams = useUrlSearchParams<Partial<DeckUrlParams>>('history');
+
+const filterItems = ref<SelectMenuItem[]>([
+  {
+    id: 'recently',
+    label: 'Recently',
+  },
+  {
+    id: 'newest',
+    label: 'Newest',
+  },
+  {
+    id: 'oldest',
+    label: 'Oldest',
+  },
+  {
+    id: 'name_az',
+    label: 'Name A-Z',
+  },
+  {
+    id: 'name_za',
+    label: 'Name Z-A',
+  },
+]);
+
+const page = computed({
+  get: () => Number(urlParams.page || defaults.page),
+  set: (val) => {
+    urlParams.page = val === +defaults.page ? undefined : String(val);
+  },
+});
+
+const limit = computed({
+  get: () => String(urlParams.limit || defaults.limit),
+  set: (val) => {
+    urlParams.limit = val === defaults.limit ? undefined : val;
+    urlParams.page = undefined;
+  },
+});
+
+const filter = computed({
+  get: () => urlParams.filter || defaults.filter,
+  set: (val) => {
+    urlParams.filter = val === defaults.filter ? undefined : val;
+    urlParams.page = undefined;
+  },
+});
+
+const search = ref(urlParams.search || defaults.search);
+const debouncedSearch = refDebounced(search, 300);
+
+watch(debouncedSearch, (newSearch) => {
+  urlParams.search = newSearch === defaults.search ? undefined : newSearch;
+  urlParams.page = undefined;
+});
+
+const query = computed(() => {
+  let orderBy: DeckOrderBy = DeckOrderBy.OPENED_AT;
+  let order: QueryOrder = QueryOrder.DESC_NULLS_LAST;
+
+  switch (filter.value) {
+    case 'recently':
+      orderBy = DeckOrderBy.OPENED_AT;
+      order = QueryOrder.DESC_NULLS_LAST;
+      break;
+    case 'newest':
+      orderBy = DeckOrderBy.CREATED_AT;
+      order = QueryOrder.DESC_NULLS_LAST;
+      break;
+    case 'oldest':
+      orderBy = DeckOrderBy.CREATED_AT;
+      order = QueryOrder.ASC_NULLS_LAST;
+      break;
+    case 'name_az':
+      orderBy = DeckOrderBy.NAME;
+      order = QueryOrder.ASC_NULLS_LAST;
+      break;
+    case 'name_za':
+      orderBy = DeckOrderBy.NAME;
+      order = QueryOrder.DESC_NULLS_LAST;
+      break;
+  }
+
+  return {
+    page: page.value,
+    limit: limit.value,
+    search: debouncedSearch.value,
+    orderBy,
+    order,
+  };
+});
+
+const totalRecords = computed(
+  () => paginated.value?.metadata.totalRecords || 0,
+);
+
+const { data: paginated, error } = await useLazyFetch<
+  Paginated<Deck>,
+  ErrorResponse
+>('/api/decks', {
+  query,
+  headers: {
+    Authorization: token.value || '',
+  },
+  server: false,
+});
+
+watch(
+  error,
+  (newErr) => {
+    if (newErr) {
+      toast.add({
+        title: 'Error fetching decks',
+        description: JSON.stringify(newErr?.data || 'Unknown error'),
+      });
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -143,7 +163,7 @@ if (error.value) {
       >
         <UPageGrid class="mt-4">
           <UPageCard
-            v-for="(c, index) in statsCards"
+            v-for="(c, index) in cardStatistics"
             :key="index"
             :class="`text-${c.color}`"
             variant="subtle"
@@ -168,7 +188,7 @@ if (error.value) {
         >
           <div class="flex items-center gap-4">
             <h2 class="text-highlighted text-xl text-pretty sm:text-2xl">
-              Your Decks ({{ res?.data.length || 0 }})
+              Your Decks ({{ paginated?.data.length || 0 }})
             </h2>
 
             <UButton
@@ -187,14 +207,14 @@ if (error.value) {
               placeholder="Search decks..."
             />
 
-            <USelect v-model="filter" :items="selectItems" />
+            <USelect v-model="filter" :items="filterItems" value-key="id" />
           </div>
         </div>
 
         <UPageList divide>
           <TransitionGroup name="list" appear>
             <UPageCard
-              v-for="deck in res?.data || []"
+              v-for="deck in paginated?.data || []"
               class="my-1.5 shadow-md"
               :key="deck.id"
               :description="
@@ -220,12 +240,12 @@ if (error.value) {
         <UPagination
           v-model:page="page"
           :total="totalRecords"
-          :items-per-page="limit"
+          :items-per-page="Number(limit)"
           :ui="{ root: 'flex place-content-center' }"
         />
 
         <UPageSection
-          v-if="Array.isArray(res?.data) && res.data.length === 0"
+          v-if="Array.isArray(paginated?.data) && paginated.data.length === 0"
           description="Click Create button to add your first deck!"
         />
       </UPageBody>

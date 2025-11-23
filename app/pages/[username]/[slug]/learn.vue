@@ -120,7 +120,6 @@ const options = [
           class="ring-default rounded-lg shadow ring"
         />
 
-        <!-- class="md:ring-default flex min-h-[50dvh] flex-col place-content-between place-items-start gap-2 bg-inherit md:rounded-lg md:p-4 md:shadow-md md:ring" -->
         <UCard
           :ui="{
             body: 'p-2 sm:p-4 w-full flex flex-col gap-2 sm:gap-4 place-content-between',

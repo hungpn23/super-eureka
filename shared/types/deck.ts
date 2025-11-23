@@ -36,3 +36,10 @@ export type DeckStats = {
 export type DeckWithCards = v.InferOutput<typeof DeckWithCardsSchema>;
 
 export type CreateDeckRes = Pick<Deck, 'id' | 'slug'>;
+
+export type DeckUrlParams = {
+  page: string;
+  limit: string;
+  search: string;
+  filter: string;
+};
