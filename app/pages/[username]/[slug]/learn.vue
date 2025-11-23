@@ -114,15 +114,21 @@ const options = [
           </div>
         </div>
 
-        <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
+        <UProgress
+          v-model="progress"
+          :ui="{ base: 'bg-inherit' }"
+          class="ring-default rounded-lg shadow ring"
+        />
 
-        <div
-          class="md:ring-default flex min-h-[50dvh] flex-col place-content-between place-items-start gap-2 bg-inherit md:rounded-lg md:p-4 md:shadow-md md:ring"
+        <!-- class="md:ring-default flex min-h-[50dvh] flex-col place-content-between place-items-start gap-2 bg-inherit md:rounded-lg md:p-4 md:shadow-md md:ring" -->
+        <UCard
+          :ui="{
+            body: 'p-2 sm:p-4 w-full flex flex-col gap-2 sm:gap-4 place-content-between',
+          }"
+          class="flex min-h-[50dvh] shadow-md"
         >
           <div class="flex w-full place-content-between place-items-center">
-            <span
-              class="flex place-items-center gap-1 font-medium sm:text-base"
-            >
+            <span class="flex place-items-center gap-1 font-semibold">
               <UButton
                 class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
                 icon="i-lucide-volume-2"
@@ -142,11 +148,7 @@ const options = [
             </UButton>
           </div>
 
-          <div class="text-lg font-medium sm:text-xl">
-            Ability to understand spoken words, sentences, and conversations.
-            Ability to understand spoken words, sentences, and conversations.
-            Ability to understand spoken words, sentences, and conversations.
-            Ability to understand spoken words, sentences, and conversations.
+          <div class="text-xl font-medium sm:text-2xl">
             Ability to understand spoken words, sentences, and conversations.
             Ability to understand spoken words, sentences, and conversations.
             Ability to understand spoken words, sentences, and conversations.
@@ -155,7 +157,8 @@ const options = [
 
           <div class="mt-4 flex w-full flex-col gap-2 sm:gap-4">
             <div class="flex place-items-center gap-2">
-              <span class="font-semibold">Choose your answer</span>
+              <span class="font-bold">Choose your answer</span>
+
               <UBadge
                 label="Let's try again"
                 color="warning"
@@ -170,16 +173,17 @@ const options = [
                 :key="opt.id"
                 variant="outline"
                 color="neutral"
-                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-transform hover:scale-102 hover:shadow active:scale-95"
+                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all hover:scale-102 hover:shadow active:scale-95"
               >
-                <UButton
-                  class="hidden h-8 w-8 place-content-center place-items-center rounded-full font-bold sm:flex"
-                  variant="subtle"
+                <UBadge
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full bg-inherit font-bold sm:flex"
+                  variant="outline"
                   color="neutral"
-                  >{{ index + 1 }}</UButton
                 >
+                  {{ index + 1 }}
+                </UBadge>
 
-                <span class="text-start text-lg font-medium text-current">
+                <span class="text-start text-lg font-medium">
                   {{ opt.text }}
                 </span>
               </UButton>
@@ -192,7 +196,7 @@ const options = [
               Don't know?
             </UButton>
           </div>
-        </div>
+        </UCard>
       </div>
     </UContainer>
   </ClientOnly>

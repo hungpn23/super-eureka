@@ -1,4 +1,5 @@
 import { CardStatus } from '~/utils/enums';
+import { QuestionType, QuestionDirection } from '~/utils/enums/question';
 import type { UUID } from './branded';
 import * as v from 'valibot';
 
@@ -25,3 +26,12 @@ export type Card = v.InferOutput<typeof CardSchema>;
 export type CardAnswer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
 export type CalcResult = Required<Pick<Card, 'streak' | 'reviewDate'>>;
+
+export type Question = {
+  id: string;
+  type: QuestionType;
+  direction: QuestionDirection;
+  question: string;
+  answer: string;
+  choices?: string[];
+};

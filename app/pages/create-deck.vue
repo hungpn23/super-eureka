@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import * as v from 'valibot';
 import type { FormErrorEvent, FormSubmitEvent } from '@nuxt/ui';
-import { CardSeparator, ContentSeparator, Visibility } from '~/utils/enums';
+import { Visibility } from '~/utils/enums';
+import { CardSeparator, ContentSeparator } from '~/utils/enums/separator';
 
 const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);

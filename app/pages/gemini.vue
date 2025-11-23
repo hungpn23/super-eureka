@@ -103,9 +103,9 @@ const onModalClose = () => {
           </div>
 
           <div class="flex items-center justify-between">
-            <label class="font-medium text-gray-900 dark:text-white"
-              >Answer with</label
-            >
+            <label class="font-medium text-gray-900 dark:text-white">
+              Answer with
+            </label>
             <UFormGroup name="answerWith">
               <USelectMenu
                 v-model="state.answerWith"
