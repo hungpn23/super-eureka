@@ -163,13 +163,13 @@ defineShortcuts({
 
 <template>
   <ClientOnly>
+    <slot name="routes"></slot>
+
     <div v-if="pending" class="flex justify-center p-10">
       <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
     </div>
 
     <div v-else-if="flashcard" class="flex w-full flex-col gap-2">
-      <slot name="routes"></slot>
-
       <h1
         v-if="title"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
@@ -203,14 +203,22 @@ defineShortcuts({
         </div>
       </div>
 
-      <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
+      <UProgress
+        v-model="progress"
+        :ui="{ base: 'bg-elevated/50' }"
+        class="ring-default rounded-lg shadow ring"
+      />
 
-      <div
-        class="bg-elevated ring-default flex min-h-[50dvh] cursor-pointer flex-col place-content-between place-items-center rounded-lg p-2 shadow-md ring select-none sm:p-4 sm:pt-2"
+      <UCard
+        :ui="{
+          body: 'p-2 sm:p-4 sm:pt-2 w-full flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
+        }"
+        class="flex min-h-[50dvh] shadow-md"
+        variant="subtle"
         @click="throttledToggleFlip"
       >
         <div class="flex w-full place-content-between place-items-center">
-          <span class="flex place-items-center gap-1 font-medium sm:text-base">
+          <span class="flex place-items-center gap-1 font-bold">
             <UButton
               class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
               icon="i-lucide-volume-2"
@@ -242,7 +250,7 @@ defineShortcuts({
         </div>
 
         <div></div>
-      </div>
+      </UCard>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div class="col-span-1 hidden sm:block">
@@ -259,7 +267,7 @@ defineShortcuts({
               size="lg"
               variant="subtle"
               color="error"
-              class="cursor-pointer transition-transform hover:shadow active:scale-90"
+              class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
               @click="throttledHandleAnswer(false)"
             />
           </UTooltip>
@@ -271,7 +279,7 @@ defineShortcuts({
               size="lg"
               variant="subtle"
               color="success"
-              class="cursor-pointer transition-transform hover:shadow active:scale-90"
+              class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
               @click="throttledHandleAnswer(true)"
             />
           </UTooltip>
@@ -289,6 +297,7 @@ defineShortcuts({
           class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"
         >
           <UIcon class="size-5" name="i-lucide-keyboard" />
+
           <span>Shortcuts</span>
         </span>
         Press <Kbd label="Space" /> to flip,

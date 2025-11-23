@@ -263,7 +263,6 @@ async function onError(event: FormErrorEvent) {
               class="cursor-pointer text-base sm:text-lg"
               color="neutral"
               variant="subtle"
-              size="lg"
             />
 
             <template #body>

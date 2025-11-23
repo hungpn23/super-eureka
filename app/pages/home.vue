@@ -195,7 +195,7 @@ if (error.value) {
           <TransitionGroup name="list" appear>
             <UPageCard
               v-for="deck in res?.data || []"
-              class="my-1"
+              class="my-1.5"
               :key="deck.id"
               :description="
                 deck.openedAt
