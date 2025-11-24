@@ -1,25 +1,8 @@
 <script setup lang="ts">
 import * as v from 'valibot';
-import type { SelectMenuItem } from '@nuxt/ui';
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
 
-const { token } = useAuth();
-const route = useRoute();
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual('sm');
-
-const isCorrect = ref<boolean | undefined>(undefined);
-const isReviewShowing = ref(false);
-const isAnswerSaving = ref(false);
-const isIgnoreDate = ref(false);
-const isSettingOpen = ref(false);
-const correctCount = ref(0);
-const incorrectCount = ref(0);
-const userAnswer = ref('');
-const userChoiceIndex = ref<number>(-1);
-const question = ref<Question | undefined>(undefined);
-
-const directionItems = ref<SelectMenuItem[]>([
+const directionItems = [
   {
     label: 'Term to Definition',
     value: 'term_to_def' satisfies QuestionDirection,
@@ -32,7 +15,24 @@ const directionItems = ref<SelectMenuItem[]>([
     label: 'Both',
     value: 'both' satisfies QuestionDirection,
   },
-]);
+];
+
+const { token } = useAuth();
+const route = useRoute();
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const smAndLarger = breakpoints.greaterOrEqual('sm');
+const debouncedHandleAnswer = useDebounceFn(handleAnswer, 1000);
+
+const isCorrect = ref<boolean | undefined>(undefined);
+const isReviewShowing = ref(false);
+const isAnswerSaving = ref(false);
+const isIgnoreDate = ref(false);
+const isSettingOpen = ref(false);
+const correctCount = ref(0);
+const incorrectCount = ref(0);
+const userAnswer = ref('');
+const userChoiceIndex = ref<number>(-1);
+const question = ref<Question | undefined>(undefined);
 
 const inputComponent = useTemplateRef('input');
 
@@ -46,8 +46,8 @@ const learn = reactive<QuestionState>({
 const setting = reactive<QuestionSetting>({
   showCorrectAnswer: true,
   direction: 'term_to_def',
-  multipleChoices: true,
-  written: false,
+  multipleChoices: false,
+  written: true,
 });
 
 const progress = computed(() => {
@@ -76,6 +76,16 @@ const questionTypes = computed(() => {
   if (setting.written) types.push('written');
 
   return types;
+});
+
+const userInputClass = computed(() => {
+  let className = '';
+
+  if (isReviewShowing.value) className += ' ring-2';
+  if (isCorrect.value) className += ' ring-success';
+  if (isCorrect.value === false) className += ' ring-error';
+
+  return className;
 });
 
 const {
@@ -117,50 +127,33 @@ watchDebounced(learn, saveAnswers, {
   deep: true,
 });
 
-function onChoiceSelected(choiceIndex: number) {
-  if (!question.value || isReviewShowing.value) return;
-  if (question.value.type !== 'multiple_choices') return;
+function submitAnswer(userAnswer: number | string) {
+  const q = question.value;
+  if (!q || isReviewShowing.value) return;
 
-  userChoiceIndex.value = choiceIndex;
+  if (q.type === 'multiple_choices' && typeof userAnswer === 'number') {
+    userChoiceIndex.value = userAnswer;
+    isCorrect.value = userAnswer === q.correctChoiceIndex;
+  } else if (q.type === 'written' && typeof userAnswer === 'string') {
+    const inputRef = inputComponent.value?.inputRef;
+    console.log('🚀 ~ submitAnswer ~ inputRef:', inputRef);
+    if (inputRef) inputRef.blur();
 
-  isCorrect.value = choiceIndex === question.value.correctChoiceIndex;
-
-  if (isCorrect.value) {
-    isReviewShowing.value = true;
-
-    setTimeout(() => {
-      handleAnswer(isCorrect.value, question.value);
-    }, 1000);
+    isCorrect.value =
+      userAnswer.trim().toLowerCase() === q.answer.trim().toLowerCase();
   } else {
-    if (setting.showCorrectAnswer) {
-      isReviewShowing.value = true;
-      return;
-    }
-
-    setTimeout(() => {
-      handleAnswer(isCorrect.value, question.value);
-    }, 1000);
+    return;
   }
-}
-
-function onWrittenSubmitted(input: string) {
-  if (!question.value || isReviewShowing.value) return;
-  if (question.value.type !== 'written') return;
-
-  isCorrect.value =
-    input.trim().toLowerCase() === question.value.answer.trim().toLowerCase();
 
   if (isCorrect.value) {
     isReviewShowing.value = true;
-
-    handleAnswer(isCorrect.value, question.value);
+    debouncedHandleAnswer(true, q);
   } else {
     if (setting.showCorrectAnswer) {
       isReviewShowing.value = true;
       return;
     }
-
-    handleAnswer(isCorrect.value, question.value);
+    debouncedHandleAnswer(false, q);
   }
 }
 
@@ -206,7 +199,9 @@ function nextQuestion() {
   userAnswer.value = '';
   userChoiceIndex.value = -1;
 
-  inputComponent.value?.inputRef?.focus();
+  const inputRef = inputComponent.value?.inputRef;
+  console.log('🚀 ~ nextQuestion ~ inputRef:', inputRef);
+  if (inputRef) inputRef.focus();
 
   question.value = learn.queue.shift();
 }
@@ -244,52 +239,24 @@ async function onIgnoreDate() {
   await refresh();
 }
 
+function handleChoiceShortcut(index: number) {
+  if (
+    isCorrect.value === false &&
+    isReviewShowing.value &&
+    question.value?.correctChoiceIndex === index
+  ) {
+    handleAnswer(isCorrect.value, question.value);
+  } else {
+    submitAnswer(index);
+  }
+}
+
 defineShortcuts({
   ' ': () => handleAnswer(isCorrect.value, question.value),
-  '1': () => {
-    if (
-      isCorrect.value === false &&
-      isReviewShowing.value &&
-      question.value?.correctChoiceIndex === 0
-    ) {
-      handleAnswer(isCorrect.value, question.value);
-    } else {
-      onChoiceSelected(0);
-    }
-  },
-  '2': () => {
-    if (
-      isCorrect.value === false &&
-      isReviewShowing.value &&
-      question.value?.correctChoiceIndex === 1
-    ) {
-      handleAnswer(isCorrect.value, question.value);
-    } else {
-      onChoiceSelected(1);
-    }
-  },
-  '3': () => {
-    if (
-      isCorrect.value === false &&
-      isReviewShowing.value &&
-      question.value?.correctChoiceIndex === 2
-    ) {
-      handleAnswer(isCorrect.value, question.value);
-    } else {
-      onChoiceSelected(2);
-    }
-  },
-  '4': () => {
-    if (
-      isCorrect.value === false &&
-      isReviewShowing.value &&
-      question.value?.correctChoiceIndex === 3
-    ) {
-      handleAnswer(isCorrect.value, question.value);
-    } else {
-      onChoiceSelected(3);
-    }
-  },
+  '1': () => handleChoiceShortcut(0),
+  '2': () => handleChoiceShortcut(1),
+  '3': () => handleChoiceShortcut(2),
+  '4': () => handleChoiceShortcut(3),
 });
 </script>
 
@@ -396,7 +363,7 @@ defineShortcuts({
             {{ question.question }}
           </div>
 
-          <div class="mt-4 flex w-full flex-col gap-2 sm:gap-4">
+          <div class="mt-4 flex w-full flex-col gap-2">
             <div>
               <span class="font-bold">
                 {{
@@ -419,7 +386,7 @@ defineShortcuts({
             </div>
 
             <div
-              v-if="question.choices"
+              v-if="question.type === 'multiple_choices'"
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
               <UButton
@@ -429,15 +396,16 @@ defineShortcuts({
                 color="neutral"
                 class="hover:text-primary hover:ring-primary/50 hover:bg-primary/10 flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all hover:scale-103 hover:shadow active:scale-95"
                 :class="{
-                  'ring-success ring-2':
-                    isReviewShowing && index === question?.correctChoiceIndex,
-                  'ring-error ring-2':
+                  'ring-2': isReviewShowing,
+                  'ring-success':
+                    isReviewShowing && index === question!.correctChoiceIndex,
+                  'ring-error':
                     isReviewShowing &&
                     isCorrect === false &&
                     index === userChoiceIndex,
                 }"
-                @click="() => onChoiceSelected(index)"
                 :disabled="isReviewShowing"
+                @click="submitAnswer(index)"
               >
                 <UBadge
                   class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit sm:flex"
@@ -452,19 +420,30 @@ defineShortcuts({
               </UButton>
             </div>
 
-            <UInput
-              v-else
-              v-model="userAnswer"
-              :ui="{ base: 'text-lg sm:text-xl' }"
-              class="w-full"
-              ref="input"
-              variant="outline"
-              placeholder="Type your answer here..."
-              autofocus
-              @keydown.enter="() => onWrittenSubmitted(userAnswer)"
-            />
+            <div v-else class="flex w-full flex-col gap-2">
+              <UInput
+                v-model="userAnswer"
+                :ui="{
+                  base: `text-lg sm:text-xl transition-all ${userInputClass}`,
+                }"
+                ref="input"
+                variant="outline"
+                color="neutral"
+                autofocus
+                @keydown.enter="submitAnswer(userAnswer)"
+              />
 
-            <div class="flex place-content-end place-items-center gap-4">
+              <UInput
+                v-if="isCorrect === false"
+                :ui="{
+                  base: `text-lg sm:text-xl transition-all border-2 border-success border-dashed disabled:opacity-100 disabled:cursor-not-allowed`,
+                }"
+                :default-value="question.answer"
+                disabled
+              />
+            </div>
+
+            <div class="flex place-content-end place-items-center gap-2">
               <UButton
                 class="cursor-pointer place-self-end font-medium"
                 variant="ghost"
@@ -477,7 +456,7 @@ defineShortcuts({
                 v-if="question.type === 'written'"
                 :disabled="!userAnswer"
                 class="cursor-pointer font-medium"
-                @click="() => onWrittenSubmitted(userAnswer)"
+                @click="submitAnswer(userAnswer)"
               >
                 Answer
               </UButton>
@@ -493,83 +472,165 @@ defineShortcuts({
           </template>
         </UCard>
 
-        <span
-          v-if="isReviewShowing && !isCorrect"
-          class="hidden place-self-center sm:inline"
-        >
-          Press <Kbd label="Space" /> to continue
-        </span>
-
-        <UModal
-          v-model:open="isSettingOpen"
-          :fullscreen="!smAndLarger"
-          :ui="{
-            content: 'divide-none',
-            body: 'flex-initial pt-0 sm:pt-0',
-            footer: 'place-content-end',
-          }"
-          :description="deck?.name || ''"
-        >
-          <UButton
-            :size="smAndLarger ? 'xl' : 'lg'"
-            class="cursor-pointer place-self-end"
-            icon="i-lucide-settings"
-            variant="ghost"
-            color="neutral"
-            @click="isSettingOpen = true"
-          />
-
-          <template #title>
-            <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
-          </template>
-
-          <template #body>
-            <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Show correct answer</div>
-
-                <USwitch v-model="setting.showCorrectAnswer" size="lg" />
-              </div>
-
-              <USeparator label="Question format" />
-
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Multiple choices</div>
-
-                <USwitch v-model="setting.multipleChoices" size="lg" />
-              </div>
-
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Written</div>
-
-                <USwitch v-model="setting.written" size="lg" />
-              </div>
-
-              <USeparator label="Answer format" />
-
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Answer with</div>
-
-                <USelect
-                  v-model="setting.direction"
-                  :items="directionItems"
-                  :ui="{ content: 'min-w-fit' }"
-                  size="lg"
-                />
-              </div>
-            </div>
-          </template>
-
-          <template #footer>
+        <div class="flex place-items-center place-self-end">
+          <UModal
+            v-model:open="isSettingOpen"
+            :fullscreen="!smAndLarger"
+            :ui="{
+              content: 'divide-none',
+              body: 'flex-initial pt-0 sm:pt-0',
+              footer: 'place-content-end',
+            }"
+            :description="deck?.name || ''"
+          >
             <UButton
-              class="cursor-pointer"
-              label="Apply"
+              :size="smAndLarger ? 'xl' : 'lg'"
+              class="cursor-pointer place-self-end"
+              icon="i-lucide-keyboard"
+              variant="ghost"
               color="neutral"
-              size="lg"
-              @click="async () => await refresh()"
+              @click="isSettingOpen = true"
             />
-          </template>
-        </UModal>
+
+            <template #title>
+              <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
+            </template>
+
+            <template #body>
+              <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Show correct answer</div>
+
+                  <USwitch v-model="setting.showCorrectAnswer" size="lg" />
+                </div>
+
+                <USeparator label="Question format" />
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Multiple choices</div>
+
+                  <USwitch v-model="setting.multipleChoices" size="lg" />
+                </div>
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Written</div>
+
+                  <USwitch v-model="setting.written" size="lg" />
+                </div>
+
+                <USeparator label="Answer format" />
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Answer with</div>
+
+                  <USelect
+                    v-model="setting.direction"
+                    :items="directionItems"
+                    :ui="{ content: 'min-w-fit' }"
+                    size="lg"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <template #footer>
+              <UButton
+                class="cursor-pointer"
+                label="Apply"
+                color="neutral"
+                size="lg"
+                @click="async () => await refresh()"
+              />
+            </template>
+          </UModal>
+
+          <UModal
+            v-model:open="isSettingOpen"
+            :fullscreen="!smAndLarger"
+            :ui="{
+              content: 'divide-none',
+              body: 'flex-initial pt-0 sm:pt-0',
+              footer: 'place-content-end',
+            }"
+            :description="deck?.name || ''"
+          >
+            <UButton
+              :size="smAndLarger ? 'xl' : 'lg'"
+              class="cursor-pointer place-self-end"
+              icon="i-lucide-settings"
+              variant="ghost"
+              color="neutral"
+              @click="isSettingOpen = true"
+            />
+
+            <template #title>
+              <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
+            </template>
+
+            <template #body>
+              <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Show correct answer</div>
+
+                  <USwitch v-model="setting.showCorrectAnswer" size="lg" />
+                </div>
+
+                <USeparator label="Question format" />
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Multiple choices</div>
+
+                  <USwitch v-model="setting.multipleChoices" size="lg" />
+                </div>
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Written</div>
+
+                  <USwitch v-model="setting.written" size="lg" />
+                </div>
+
+                <USeparator label="Answer format" />
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Answer with</div>
+
+                  <USelect
+                    v-model="setting.direction"
+                    :items="directionItems"
+                    :ui="{ content: 'min-w-fit' }"
+                    size="lg"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <template #footer>
+              <UButton
+                class="cursor-pointer"
+                label="Apply"
+                color="neutral"
+                size="lg"
+                @click="async () => await refresh()"
+              />
+            </template>
+          </UModal>
+        </div>
       </div>
 
       <UEmpty
