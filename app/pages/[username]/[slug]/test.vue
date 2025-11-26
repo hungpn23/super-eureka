@@ -9,9 +9,6 @@ const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 const cardRefs = useTemplateRef('cards');
 
-const currentInput = ref<HTMLInputElement | null>(null);
-const currentCardIndex = ref(0);
-
 const isSettingOpen = ref(false);
 const isReviewShowing = ref(false);
 const questions = ref<TestQuestion[]>([]);
@@ -20,6 +17,16 @@ const setting = reactive<TestSetting>({
   questionAmount: 0,
   types: ['multiple_choices', 'written'],
   direction: 'term_to_def',
+});
+
+const session = reactive({
+  index: 0,
+  input: null as HTMLInputElement | null,
+  get element() {
+    if (!cardRefs.value) return undefined;
+
+    return cardRefs.value[this.index]?.$el as Element | undefined;
+  },
 });
 
 const deckId = computed(() => route.query.deckId as string);
@@ -36,12 +43,6 @@ const username = computed(() => {
   return Array.isArray(n) ? n[0] : n;
 });
 
-const currentCardElement = computed(() => {
-  return cardRefs.value
-    ? cardRefs.value[currentCardIndex.value]?.$el
-    : undefined;
-}) as ComputedRef<Element | undefined>;
-
 const {
   data: deck,
   pending,
@@ -53,8 +54,9 @@ const {
 
 watch(deck, (newDeck) => {
   if (newDeck && newDeck.cards.length > 0) {
-    currentInput.value = null;
-    currentCardIndex.value = 0;
+    session.input = null;
+    session.index = 0;
+
     isReviewShowing.value = false;
 
     if (!setting.questionAmount) setting.questionAmount = newDeck.cards.length;
@@ -79,20 +81,20 @@ async function onSettingApply() {
 }
 
 function scrollAndFocus() {
-  if (currentCardElement.value) {
-    currentCardElement.value.scrollIntoView({
+  if (session.element) {
+    session.element.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
     });
 
-    if (currentInput.value) currentInput.value.blur();
+    if (session.input) session.input.blur();
 
-    const newInput = currentCardElement.value.querySelector('input');
+    const newInput = session.element.querySelector('input');
     if (newInput) {
-      currentInput.value = newInput;
+      session.input = newInput;
       setTimeout(() => newInput.focus(), 300);
     } else {
-      currentInput.value = null;
+      session.input = null;
     }
   }
 }
@@ -100,13 +102,10 @@ function scrollAndFocus() {
 function handleChangeQuestion(dir: 'left' | 'right') {
   if (!cardRefs.value || !cardRefs.value.length) return;
 
-  if (dir === 'left' && currentCardIndex.value > 0) {
-    currentCardIndex.value--;
-  } else if (
-    dir === 'right' &&
-    currentCardIndex.value < cardRefs.value.length - 1
-  ) {
-    currentCardIndex.value++;
+  if (dir === 'left' && session.index > 0) {
+    session.index--;
+  } else if (dir === 'right' && session.index < cardRefs.value.length - 1) {
+    session.index++;
   }
 
   scrollAndFocus();
