@@ -33,6 +33,7 @@ const setting = reactive<LearnSetting>({
   types: ['multiple_choices'],
   direction: 'term_to_def',
 });
+let snapshotSetting = '';
 
 const isIncorrect = computed(() => isCorrect.value === false);
 
@@ -224,6 +225,13 @@ async function onRestart() {
 
 async function onIgnoreDate() {
   isIgnoreDate.value = true;
+  await refresh();
+}
+
+async function onSettingClosed() {
+  if (JSON.stringify(setting) === snapshotSetting) return;
+
+  snapshotSetting = '';
   await refresh();
 }
 
@@ -491,6 +499,8 @@ defineShortcuts({
                 footer: 'place-content-end',
               }"
               description="Let's customize your learning session"
+              @after:enter="snapshotSetting = JSON.stringify(setting)"
+              @after:leave="onSettingClosed"
             >
               <UButton
                 class="cursor-pointer place-self-end"
@@ -555,7 +565,7 @@ defineShortcuts({
                   label="Apply changes"
                   color="neutral"
                   size="lg"
-                  @click="async () => await refresh()"
+                  @click="isSettingOpen = false"
                 />
               </template>
             </UModal>

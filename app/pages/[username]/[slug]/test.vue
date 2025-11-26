@@ -18,6 +18,7 @@ const setting = reactive<TestSetting>({
   types: ['multiple_choices', 'written'],
   direction: 'term_to_def',
 });
+let snapshotSetting = '';
 
 const session = reactive({
   index: 0,
@@ -59,7 +60,11 @@ watch(deck, (newDeck) => {
 
     isReviewShowing.value = false;
 
-    if (!setting.questionAmount) setting.questionAmount = newDeck.cards.length;
+    if (
+      !setting.questionAmount ||
+      setting.questionAmount > newDeck.cards.length
+    )
+      setting.questionAmount = newDeck.cards.length;
 
     questions.value = generateQuestions<TestQuestion>({
       cards: shuffle(newDeck.cards).slice(0, setting.questionAmount),
@@ -74,8 +79,10 @@ watch(deck, (newDeck) => {
   }
 });
 
-async function onSettingApply() {
-  isSettingOpen.value = false;
+async function onSettingClosed() {
+  if (JSON.stringify(setting) === snapshotSetting) return;
+
+  snapshotSetting = '';
   await refresh();
   scrollAndFocus();
 }
@@ -158,6 +165,8 @@ onMounted(() => {
               footer: 'place-content-end',
             }"
             description="Let's customize your test"
+            @after:enter="snapshotSetting = JSON.stringify(setting)"
+            @after:leave="onSettingClosed"
           >
             <UButton
               class="cursor-pointer place-self-end"
@@ -226,7 +235,7 @@ onMounted(() => {
                 label="Apply"
                 color="neutral"
                 size="lg"
-                @click="onSettingApply"
+                @click="isSettingOpen = false"
               />
             </template>
           </UModal>
@@ -338,7 +347,12 @@ onMounted(() => {
                 }"
                 variant="outline"
                 color="neutral"
-                @keydown.enter="console.log('submitted answer', q.userAnswer)"
+                @keydown.enter="handleChangeQuestion('right')"
+                @blur="
+                  () => {
+                    console.log('user answer: ', q.userAnswer);
+                  }
+                "
               />
 
               <UInput
