@@ -102,11 +102,10 @@ watch(deck, (newDeck) => {
 });
 
 watch(
-  setting,
-  (newSetting) => {
-    if (!newSetting.types.length) setting.types = ['multiple_choices'];
+  () => setting.types,
+  (newTypes) => {
+    if (!newTypes.length) setting.types = ['multiple_choices'];
   },
-  { deep: true },
 );
 
 watchDebounced(learn, saveAnswers, {

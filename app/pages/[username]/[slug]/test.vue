@@ -79,6 +79,12 @@ watch(deck, (newDeck) => {
 });
 
 watch(() => session.index, scrollAndFocus);
+watch(
+  () => setting.types,
+  () => {
+    if (!setting.types.length) setting.types = ['multiple_choices'];
+  },
+);
 
 function scrollAndFocus() {
   if (session.element) {

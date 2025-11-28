@@ -1,8 +1,8 @@
-# Better Quizlet
+# Project Context: Better Quizlet
 
 ## Overview
 
-**Better Quizlet** is a flashcard and study application built on **Nuxt 4**. It integrates a fluent frontend with a robust application backend for creating, managing, and studying flashcard decks.
+**Better Quizlet** is a SaaS-style flashcard and study application built on **Nuxt 4**. It leverages the **Nuxt SaaS Template** foundation, integrating a marketing frontend (Landing, Pricing, Docs) with a robust application backend for creating, managing, and studying flashcard decks.
 
 **Key Technologies:**
 
