@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { UAvatar } from "#components";
-import type { DropdownMenuItem, NavigationMenuItem } from "@nuxt/ui";
+import { UAvatar } from '#components';
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 
 const route = useRoute();
 const { status, data } = useAuthState();
@@ -9,54 +9,37 @@ const colorMode = useColorMode();
 
 const items = computed<NavigationMenuItem[]>(() => [
   {
-    label: "Home",
-    to: "/home",
-  },
-  {
-    label: "Docs",
-    to: "/docs",
-    active: route.path.startsWith("/docs"),
-  },
-  {
-    label: "Pricing",
-    to: "/pricing",
-  },
-  {
-    label: "Blog",
-    to: "/blog",
-  },
-  {
-    label: "Changelog",
-    to: "/changelog",
+    label: 'Home',
+    to: '/home',
   },
 ]);
 
 const avatarItems = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: "Profile",
-      icon: "i-lucide-user",
-      to: "/profile",
+      label: 'Profile',
+      icon: 'i-lucide-user',
+      to: '/profile',
     },
     {
-      label: colorMode.value === "dark" ? "Light Mode" : "Dark Mode",
-      icon: colorMode.value === "dark" ? "i-lucide-sun" : "i-lucide-moon",
+      label: colorMode.value === 'dark' ? 'Light Mode' : 'Dark Mode',
+      icon: colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon',
       onSelect: () => {
-        colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
+        colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
       },
-      class: "cursor-pointer",
+      class: 'cursor-pointer',
     },
     {
-      label: "Settings",
-      icon: "i-lucide-cog",
-      to: "/settings",
+      label: 'Settings',
+      icon: 'i-lucide-cog',
+      to: '/settings',
     },
   ],
   [
     {
-      label: "Logout",
-      icon: "i-lucide-log-out",
-      onSelect: async () => await signOut({ callbackUrl: "/" }),
+      label: 'Logout',
+      icon: 'i-lucide-log-out',
+      onSelect: async () => await signOut({ callbackUrl: '/' }),
     },
   ],
 ]);

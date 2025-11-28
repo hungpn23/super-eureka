@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { QueryOrder } from '~/utils/enums';
+import { QueryOrder } from '~/utils/enums.ts';
 import { formatTimeAgo } from '@vueuse/core';
 import type { PageCardProps, SelectMenuItem } from '@nuxt/ui';
 

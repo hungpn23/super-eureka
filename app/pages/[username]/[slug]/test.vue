@@ -99,9 +99,10 @@ function scrollAndFocus() {
     if (newInput) {
       session.input = newInput;
       setTimeout(() => newInput.focus(), 300);
-    } else {
-      session.input = null;
+      return;
     }
+
+    session.input = null;
   }
 }
 
@@ -126,36 +127,19 @@ async function onSettingClosed() {
   scrollAndFocus();
 }
 
-// --- [MỚI] Các hàm xử lý logic câu hỏi ---
-
-// 1. Xử lý khi chọn trắc nghiệm
-function onSelectChoice(q: TestQuestion, qIndex: number, cIndex: number) {
-  // Cập nhật index người dùng chọn
+function onChoiceSelected(q: TestQuestion, qIndex: number, cIndex: number) {
   q.userChoiceIndex = cIndex;
-
-  // Tính toán đúng/sai ngay lập tức (theo logic cũ của bạn)
   q.isCorrectChoice = cIndex === q.correctChoiceIndex;
-
-  // Cập nhật session và chuyển câu
   session.index = qIndex;
   handleChangeQuestion('right');
-
-  console.log(`Q${qIndex}: Correct? ${q.isCorrectChoice}`);
 }
 
-// 2. Xử lý khi nhập xong câu tự luận (Blur)
 function onWrittenAnswerBlur(q: TestQuestion) {
-  if (q.userAnswer) {
-    // Trim khoảng trắng thừa
-    q.userAnswer = q.userAnswer.trim();
+  if (!q.userAnswer) return;
 
-    // So sánh cơ bản (case-insensitive) để tính isCorrect
-    // Lưu ý: Logic so sánh thực tế có thể phức tạp hơn
-    q.isCorrectChoice = q.userAnswer.toLowerCase() === q.answer.toLowerCase();
-
-    console.log('User answer cleaned:', q.userAnswer);
-    console.log('Is correct?', q.isCorrectChoice);
-  }
+  q.userAnswer = q.userAnswer.trim();
+  q.isCorrectChoice =
+    q.userAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
 }
 
 function onSubmitTest() {
@@ -190,10 +174,14 @@ function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
 }
 
 defineShortcuts({
-  '1': () => console.log('triggered shortcut 0 !!!'),
-  '2': () => console.log('triggered shortcut 1 !!!'),
-  '3': () => console.log('triggered shortcut 2 !!!'),
-  '4': () => console.log('triggered shortcut 3 !!!'),
+  '1': () =>
+    onChoiceSelected(questions.value[session.index]!, session.index, 0),
+  '2': () =>
+    onChoiceSelected(questions.value[session.index]!, session.index, 1),
+  '3': () =>
+    onChoiceSelected(questions.value[session.index]!, session.index, 2),
+  '4': () =>
+    onChoiceSelected(questions.value[session.index]!, session.index, 3),
 
   arrowleft: {
     handler: () => handleChangeQuestion('left'),
@@ -377,7 +365,7 @@ onMounted(() => {
                 :key="cIndex"
                 :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(q, cIndex)}`"
                 :disabled="isSubmitted"
-                @click.stop="onSelectChoice(q, qIndex, cIndex)"
+                @click.stop="onChoiceSelected(q, qIndex, cIndex)"
               >
                 <UBadge
                   class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
@@ -411,7 +399,7 @@ onMounted(() => {
                 :ui="{
                   base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
                 }"
-                :default-value="q.answer"
+                :default-value="q.correctAnswer"
                 disabled
               />
             </div>

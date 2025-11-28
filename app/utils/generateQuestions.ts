@@ -1,4 +1,6 @@
-export default <T extends LearnQuestion | TestQuestion>(options: {
+export const generateQuestions = <
+  T extends LearnQuestion | TestQuestion,
+>(options: {
   cards: Card[];
   types: QuestionType[];
   dir: QuestionDirection;
@@ -37,7 +39,9 @@ export default <T extends LearnQuestion | TestQuestion>(options: {
     if (type === 'multiple_choices') {
       const result = [answer];
 
-      const wrongAnswers = shuffle(answerPool.filter((c) => c.id !== card.id));
+      const wrongAnswers = shuffleArray(
+        answerPool.filter((c) => c.id !== card.id),
+      );
 
       for (let i = 0; i < 3; i++) {
         const wrongAnswer = isTermToDef
@@ -47,7 +51,7 @@ export default <T extends LearnQuestion | TestQuestion>(options: {
         result.push(wrongAnswer);
       }
 
-      choices = shuffle(result);
+      choices = shuffleArray(result);
       correctChoiceIndex = choices.indexOf(answer);
     }
 
@@ -58,7 +62,7 @@ export default <T extends LearnQuestion | TestQuestion>(options: {
       type,
       direction,
       question,
-      answer,
+      correctAnswer: answer,
       choices,
       correctChoiceIndex,
     } as T);

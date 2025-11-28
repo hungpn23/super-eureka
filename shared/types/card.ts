@@ -36,7 +36,7 @@ export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   type: QuestionType;
   direction: QuestionDirection;
   question: string;
-  answer: string;
+  correctAnswer: string;
   choices?: string[];
   correctChoiceIndex?: number;
 };

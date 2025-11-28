@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import * as v from 'valibot';
 import type { FormErrorEvent, FormSubmitEvent, SelectMenuItem } from '@nuxt/ui';
-import { Visibility } from '~/utils/enums';
+import { Visibility } from '~/utils/enums.ts';
 
 const contentSeparatorItems = ref<SelectMenuItem[]>([
   {

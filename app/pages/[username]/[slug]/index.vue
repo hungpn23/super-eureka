@@ -200,7 +200,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
       if (answer) {
         Object.assign(c, {
           ...answer,
-          status: calcCardStatus(answer.reviewDate),
+          status: getCardStatus(answer.reviewDate),
         });
       }
     }

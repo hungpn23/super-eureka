@@ -1,4 +1,4 @@
-import { Visibility } from '~/utils/enums';
+import { Visibility } from '~/utils/enums.ts';
 import type { UUID } from './branded';
 import type { PaginationQuery } from './pagination';
 import { CardSchema, type Card } from './card';

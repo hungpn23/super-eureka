@@ -7,6 +7,9 @@ const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 
+const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
+const throttledHandleAnswer = useThrottleFn(handleAnswer, 500);
+
 const isCorrect = ref<boolean | undefined>(undefined);
 const isInReview = ref(false);
 const isAnswerSaving = ref(false);
@@ -125,7 +128,7 @@ function submitAnswer(userAnswer: number | string) {
     if (inputRef) inputRef.blur();
 
     isCorrect.value =
-      userAnswer.trim().toLowerCase() === q.answer.trim().toLowerCase();
+      userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
   } else {
     return;
   }
@@ -143,16 +146,14 @@ function submitAnswer(userAnswer: number | string) {
   }
 }
 
-const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
-
-function handleAnswer(correct?: boolean, q?: LearnQuestion) {
-  if (!q || correct === undefined) return;
+function handleAnswer(isCorrect?: boolean, q?: LearnQuestion) {
+  if (!q || isCorrect === undefined) return;
 
   isAnswerSaving.value = true;
 
-  const updated = Object.assign({}, q, calcCardState({ ...q, correct }));
+  const updated = Object.assign({}, updateCard(q, isCorrect));
 
-  if (correct) {
+  if (isCorrect) {
     correctCount.value++;
   } else {
     incorrectCount.value++;
@@ -180,8 +181,6 @@ function handleAnswer(correct?: boolean, q?: LearnQuestion) {
   resetQuestionState();
   question.value = learn.queue.shift();
 }
-
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 500);
 
 function resetQuestionState() {
   isCorrect.value = undefined;
@@ -459,7 +458,7 @@ defineShortcuts({
                 :ui="{
                   base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
                 }"
-                :default-value="question.answer"
+                :default-value="question.correctAnswer"
                 disabled
               />
             </div>

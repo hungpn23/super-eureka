@@ -1,4 +1,4 @@
-import type { QueryOrder } from '~/utils/enums';
+import type { QueryOrder } from '~/utils/enums.ts';
 import type { Query } from '.';
 
 export type PaginationQuery = Query & {
