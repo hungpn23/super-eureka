@@ -1,8 +1,8 @@
 <script setup lang="ts">
-const { token, data: user } = useAuth();
+const { token } = useAuth();
 const route = useRoute();
 
-const ignoreDate = ref(false);
+const isIgnoreDate = ref(false);
 const cards = ref<Card[]>([]);
 
 const deckId = computed(() => route.query.deckId as string);
@@ -29,16 +29,16 @@ const {
 });
 
 watch(deck, (newDeck) => {
-  cards.value = getCards(newDeck?.cards || [], ignoreDate.value);
+  cards.value = getCards(newDeck?.cards || [], isIgnoreDate.value);
 });
 
 async function onIgnoreDate() {
-  ignoreDate.value = true;
+  isIgnoreDate.value = true;
   await refresh();
 }
 
 async function onRestarted() {
-  ignoreDate.value = false;
+  isIgnoreDate.value = false;
   await refresh();
 }
 </script>
@@ -48,11 +48,9 @@ async function onRestarted() {
 
   <UContainer v-else>
     <Flashcard
-      :username
-      :cards
       :title="deck?.name"
       :deck="{ id: deckId, slug: deckSlug }"
-      routing
+      :cards
       @restarted="onRestarted"
       @ignore-date="onIgnoreDate"
     >

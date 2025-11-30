@@ -1,7 +1,6 @@
 <script setup lang="ts">
 type Props = {
-  title: string;
-  username: string;
+  title?: string;
   deck: {
     id?: string;
     slug?: string;
@@ -9,7 +8,7 @@ type Props = {
   cards: Card[];
 };
 
-const props = defineProps<Partial<Props>>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'answers-saved', answers: CardAnswer[]): void;
@@ -18,6 +17,9 @@ const emit = defineEmits<{
 }>();
 
 const isAnswersSaving = defineModel<boolean>('is-answers-saving');
+
+const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
+const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 
 const { token } = useAuth();
 
@@ -45,7 +47,7 @@ const progress = computed(() => {
   return (knownCount.value / learn.totalCards) * 100;
 });
 
-watch(
+watchImmediate(
   () => props.cards,
   (newCards) => {
     if (newCards && newCards.length > 0) {
@@ -60,7 +62,6 @@ watch(
       flashcard.value = learn.queue.shift();
     }
   },
-  { immediate: true },
 );
 
 watch(flashcard, () => {
@@ -147,9 +148,6 @@ function toggleFlip() {
   if (!flashcard.value) return;
   isFlipped.value = !isFlipped.value;
 }
-
-const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 
 defineShortcuts({
   ' ': throttledToggleFlip,

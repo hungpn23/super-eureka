@@ -5,13 +5,13 @@ import type {
   FormSubmitEvent,
 } from '@nuxt/ui';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { DeckWithCardsSchema } from '~~/shared/types/deck';
 
 const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const { token, data: user } = useAuth();
 
+const isIgnoreDate = ref(false);
 const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSaving = ref(false);
@@ -82,7 +82,7 @@ const {
   data: deck,
   error,
   status,
-  refresh: refreshData,
+  refresh,
 } = useLazyFetch<DeckWithCards, ErrorResponse>(`/api/decks/${deckId.value}`, {
   headers: {
     Authorization: token.value || '',
@@ -90,31 +90,54 @@ const {
   server: false,
 });
 
-watch(
-  status,
-  (newStatus) => {
-    if (newStatus === 'error') {
-      toast.add({
-        title: 'Error fetching decks',
-        description: JSON.stringify(error.value?.data || 'Unknown error'),
-        color: 'error',
-        duration: 2000,
-      });
-    }
-  },
-  { immediate: true },
-);
+watch(status, (newStatus) => {
+  if (newStatus === 'error') {
+    toast.add({
+      title: 'Error fetching decks',
+      description: JSON.stringify(error.value?.data || 'Unknown error'),
+      color: 'error',
+      duration: 2000,
+    });
+  }
+});
 
 watch(
   deck,
   (newDeck) => {
     resetFormState(newDeck);
-    cards.value = getCards(deck.value?.cards || [], false);
+    cards.value = getCards(deck.value?.cards || [], isIgnoreDate.value);
   },
   {
     immediate: true,
   },
 );
+
+async function onIgnoreDate() {
+  isIgnoreDate.value = true;
+  await refresh();
+}
+
+async function onRestarted() {
+  isIgnoreDate.value = false;
+  await refresh();
+}
+
+function onAnswersSaved(answers: CardAnswer[]) {
+  const map = new Map(answers.map((a) => [a.id, a]));
+
+  if (deckState.cards?.length) {
+    for (const c of deckState.cards) {
+      const answer = map.get(c.id);
+
+      if (answer) {
+        Object.assign(c, {
+          ...answer,
+          status: getCardStatus(answer.reviewDate),
+        });
+      }
+    }
+  }
+}
 
 async function onDeckDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
@@ -149,7 +172,7 @@ async function onSubmit(event: FormSubmitEvent<DeckWithCards>) {
   })
     .then(async () => {
       isEditing.value = false;
-      await refreshData();
+      await refresh();
 
       toast.add({
         title: 'Changes saved successfully.',
@@ -179,29 +202,6 @@ async function onError(event: FormErrorEvent) {
   formErrorMsg.value = formError
     ? formError.message
     : 'Please fill in all required fields.';
-}
-
-async function onIgnoreDate() {
-  await refreshData();
-
-  cards.value = getCards(deck.value?.cards || [], true);
-}
-
-function onAnswersSaved(answers: CardAnswer[]) {
-  const map = new Map(answers.map((a) => [a.id, a]));
-
-  if (deckState.cards?.length) {
-    for (const c of deckState.cards) {
-      const answer = map.get(c.id);
-
-      if (answer) {
-        Object.assign(c, {
-          ...answer,
-          status: getCardStatus(answer.reviewDate),
-        });
-      }
-    }
-  }
 }
 
 function startEditing() {
@@ -311,11 +311,10 @@ function deleteCard(cardId?: UUID) {
             <!-- Flashcard Study -->
             <Flashcard
               v-model:is-answers-saving="isAnswersSaving"
-              :username
-              :cards
               :deck="{ id: deckId, slug: deckSlug }"
+              :cards
               @answers-saved="onAnswersSaved"
-              @restarted="refreshData"
+              @restarted="onRestarted"
               @ignore-date="onIgnoreDate"
             >
               <template #actions-left>

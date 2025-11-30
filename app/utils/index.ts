@@ -61,9 +61,9 @@ export const getCardStatus = (reviewDate?: string | null): CardStatus => {
   }
 };
 
-export const getCards = (cards: Card[], ignoreDate: boolean): Card[] => {
-  return ignoreDate
-    ? cards
+export const getCards = (cards: Card[], isIgnoreDate: boolean): Card[] => {
+  return isIgnoreDate
+    ? structuredClone(cards)
     : cards.filter(
         (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
       );
