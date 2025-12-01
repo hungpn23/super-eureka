@@ -23,3 +23,50 @@ export const questionTypeItems = [
     value: 'written' satisfies QuestionType,
   },
 ];
+
+export const deckFilterItems = [
+  {
+    id: 'recently',
+    label: 'Recently',
+  },
+  {
+    id: 'newest',
+    label: 'Newest',
+  },
+  {
+    id: 'oldest',
+    label: 'Oldest',
+  },
+  {
+    id: 'name_az',
+    label: 'Name A-Z',
+  },
+  {
+    id: 'name_za',
+    label: 'Name Z-A',
+  },
+];
+
+export const userStatsItems = [
+  {
+    title: 'Streak',
+    icon: 'i-lucide-flame',
+    color: 'warning' as const,
+    value: '',
+    bonus: '',
+  },
+  {
+    title: 'Cards Learned',
+    icon: 'i-lucide-target',
+    color: 'info' as const,
+    value: '',
+    bonus: '',
+  },
+  {
+    title: 'Mastery Rate',
+    icon: 'i-lucide-book-marked',
+    color: 'success' as const,
+    value: '',
+    bonus: '',
+  },
+];

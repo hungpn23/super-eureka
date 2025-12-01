@@ -2,30 +2,7 @@
 import { formatTimeAgo } from '@vueuse/core';
 import type { SelectMenuItem } from '@nuxt/ui';
 import type { UserStats } from '~~/shared/types/deck';
-
-const userStatItems = computed(
-  () =>
-    [
-      {
-        title: 'Streak',
-        value: userStats.value?.currentStreak,
-        icon: 'i-lucide-flame',
-        color: 'warning' as const,
-      },
-      {
-        title: 'Total Cards Learned',
-        value: userStats.value?.totalCardsLearned,
-        icon: 'i-lucide-target',
-        color: 'info' as const,
-      },
-      {
-        title: 'Mastery Rate',
-        value: userStats.value?.masteryRate + '%',
-        icon: 'i-lucide-book-marked',
-        color: 'success' as const,
-      },
-    ] as const,
-);
+import { userStatsItems } from '~/utils/constants';
 
 const defaults: DeckUrlParams = {
   page: '1',
@@ -35,32 +12,10 @@ const defaults: DeckUrlParams = {
 } as const;
 
 const toast = useToast();
-const router = useRouter();
 const { token, data: user } = useAuth();
 const urlParams = useUrlSearchParams<Partial<DeckUrlParams>>('history');
 
-const filterItems = ref<SelectMenuItem[]>([
-  {
-    id: 'recently',
-    label: 'Recently',
-  },
-  {
-    id: 'newest',
-    label: 'Newest',
-  },
-  {
-    id: 'oldest',
-    label: 'Oldest',
-  },
-  {
-    id: 'name_az',
-    label: 'Name A-Z',
-  },
-  {
-    id: 'name_za',
-    label: 'Name Z-A',
-  },
-]);
+const filterItems = ref<SelectMenuItem[]>(deckFilterItems);
 
 const page = computed({
   get: () => Number(urlParams.page || defaults.page),
@@ -133,6 +88,28 @@ const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
 
+const computedUserStatItems = computed(() =>
+  userStatsItems.map((item, index) => {
+    if (!userStats.value) return item;
+
+    const { currentStreak, longestStreak, totalCardsLearned, masteryRate } =
+      userStats.value;
+
+    let value = '';
+    let bonus = '';
+    if (index === 0) {
+      value = currentStreak.toString();
+      bonus = longestStreak.toString();
+    } else if (index === 1) {
+      value = totalCardsLearned.toString();
+    } else if (index === 2) {
+      value = masteryRate.toString() + '%';
+    }
+
+    return { ...item, value, bonus };
+  }),
+);
+
 const {
   data: paginated,
   error,
@@ -171,58 +148,67 @@ function getDeckProgress(deck: DeckWithStats) {
     <UContainer>
       <UPageHeader
         :ui="{
-          title:
-            'text-2xl sm:text-3xl text-pretty font-semibold text-highlighted',
+          title: 'text-xl sm:text-2xl font-medium',
+          description: 'mt-0 text-base sm:text-lg',
+          container: 'space-y-4',
         }"
+        class="my-4 border-0 py-0"
       >
-        <UPageGrid class="mt-4 sm:grid-cols-1 md:grid-cols-3">
+        <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
           <UPageCard
-            v-for="(c, index) in userStatItems"
+            v-for="(item, index) in computedUserStatItems"
             :key="index"
-            :ui="{}"
-            :class="`text-${c.color}`"
-            :spotlight-color="c.color"
+            :ui="{ container: 'gap-0 sm:gap-2 p-3 lg:p-4 sm:p-3' }"
+            :class="`text-${item.color} flex-1`"
+            :spotlight-color="item.color"
             spotlight
             variant="subtle"
           >
-            <div class="flex place-content-between place-items-center">
-              <h3>{{ c.title }}</h3>
-              <UIcon :name="c.icon" size="2rem" />
+            <div class="flex place-content-between place-items-center gap-2">
+              <h3 class="lg:text-lg">{{ item.title }}</h3>
+
+              <UIcon :name="item.icon" class="size-5 sm:size-6 lg:size-7" />
             </div>
 
-            <p :class="`text-3xl font-bold`">
-              {{ c.value }}
-            </p>
-          </UPageCard>
-        </UPageGrid>
+            <div class="flex place-content-between place-items-end">
+              <p :class="`text-xl font-medium lg:text-2xl`">
+                {{ item.value }}
+              </p>
 
-        <template #title> Welcome back, {{ user?.username }} </template>
+              <span v-if="item.bonus" class="text-muted font-medium">
+                Longest: {{ item.bonus }}
+              </span>
+            </div>
+          </UPageCard>
+        </div>
+
+        <template #title> Welcome back, {{ user?.username }}! </template>
 
         <template #description>
           <ProseBlockquote>
             {{ getDailyQuote()?.text }}
-            <span class="inline-block">
+
+            <span class="inline-block space-x-2">
               <ProseIcon name="i-lucide-minus" />
-              <span class="ml-2 font-medium not-italic">{{
-                getDailyQuote()?.author
-              }}</span>
+
+              <span class="font-medium not-italic">
+                {{ getDailyQuote()?.author }}
+              </span>
             </span>
           </ProseBlockquote>
         </template>
       </UPageHeader>
 
-      <UPageBody class="space-y-4">
-        <div
-          class="flex flex-col gap-4 sm:flex-row sm:place-content-between sm:items-center"
-        >
-          <div class="flex items-center gap-4">
-            <h2 class="text-highlighted text-xl text-pretty sm:text-2xl">
-              Your Decks ({{ paginated?.data.length || 0 }})
+      <UPageBody class="mt-2 space-y-4 sm:mt-4">
+        <div class="flex flex-col place-content-between sm:flex-row sm:gap-8">
+          <div class="flex place-items-center gap-4">
+            <h2 class="text-xl text-nowrap sm:text-2xl">
+              Decks ({{ paginated?.data.length || 0 }})
             </h2>
 
             <UButton
-              class="cursor-pointer transition-all hover:scale-105"
-              label="Add a new deck"
+              class="cursor-pointer place-self-start transition-all hover:scale-105"
+              label="Add"
               variant="subtle"
               icon="i-lucide-plus"
               to="/create-deck"
@@ -230,9 +216,12 @@ function getDeckProgress(deck: DeckWithStats) {
             />
           </div>
 
-          <div class="flex items-center gap-4">
+          <div
+            class="flex w-full basis-2/3 place-content-end gap-2 place-self-end sm:gap-4"
+          >
             <UInput
               v-model="search"
+              class="flex-1"
               icon="i-lucide-search"
               placeholder="Search decks..."
             />
@@ -246,89 +235,94 @@ function getDeckProgress(deck: DeckWithStats) {
           class="flex flex-col gap-2 sm:gap-4"
         >
           <TransitionGroup name="list" appear>
-            <UCard
+            <NuxtLink
               v-for="d in paginated.data"
               :key="d.id"
-              class="hover:bg-elevated cursor-pointer shadow-md transition-all hover:scale-101"
-              variant="subtle"
-              @click="
-                router.push(`/${user?.username}/${d.slug}?deckId=${d.id}`)
-              "
+              :to="`/${user?.username}/${d.slug}?deckId=${d.id}`"
             >
-              <div class="grid grid-cols-1 sm:grid-cols-2">
-                <div class="flex place-items-center gap-1.5">
-                  <h4 class="max-w-5/6 truncate font-medium sm:text-lg">
-                    {{ d.name }}
-                  </h4>
+              <UCard
+                class="hover:bg-elevated cursor-pointer shadow-md transition-all hover:scale-101"
+                variant="subtle"
+              >
+                <div class="grid grid-cols-1 sm:grid-cols-2">
+                  <div class="flex place-items-center gap-1.5">
+                    <h4 class="max-w-5/6 truncate font-medium sm:text-lg">
+                      {{ d.name }}
+                    </h4>
 
-                  <UIcon
-                    :name="getVisibilityIcon(d.visibility)"
-                    class="shrink-0 sm:size-5"
-                  />
+                    <UIcon
+                      :name="getVisibilityIcon(d.visibility)"
+                      class="shrink-0 sm:size-5"
+                    />
+                  </div>
+
+                  <div class="text-muted text-start text-sm sm:text-end">
+                    {{
+                      d.openedAt
+                        ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
+                        : 'Never opened'
+                    }}
+                  </div>
                 </div>
 
-                <div class="text-muted text-start text-sm sm:text-end">
-                  {{
-                    d.openedAt
-                      ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
-                      : 'Never opened'
-                  }}
+                <div class="mt-2 flex place-items-center gap-2 sm:gap-4">
+                  <UTooltip :delay-duration="200" text="Known cards">
+                    <UBadge
+                      :label="d.stats.known"
+                      variant="soft"
+                      color="success"
+                      icon="i-lucide-circle-check"
+                    />
+                  </UTooltip>
+
+                  <UTooltip :delay-duration="200" text="Learning cards">
+                    <UBadge
+                      :label="d.stats.learning"
+                      variant="soft"
+                      color="warning"
+                      icon="i-lucide-circle-dashed"
+                    />
+                  </UTooltip>
+
+                  <UTooltip :delay-duration="200" text="New cards">
+                    <UBadge
+                      :label="d.stats.new"
+                      variant="soft"
+                      color="info"
+                      icon="i-lucide-sparkles"
+                    />
+                  </UTooltip>
+
+                  <UTooltip :delay-duration="200" text="Total cards">
+                    <UBadge
+                      :label="d.stats.total"
+                      variant="soft"
+                      color="neutral"
+                      icon="i-lucide-gallery-horizontal-end"
+                    />
+                  </UTooltip>
                 </div>
-              </div>
 
-              <div class="mt-2 flex place-items-center gap-2 sm:gap-4">
-                <UTooltip :delay-duration="200" text="Known cards">
-                  <UBadge
-                    :label="d.stats.known"
-                    variant="soft"
-                    color="success"
-                    icon="i-lucide-circle-check"
-                  />
-                </UTooltip>
-
-                <UTooltip :delay-duration="200" text="Learning cards">
-                  <UBadge
-                    :label="d.stats.learning"
-                    variant="soft"
-                    color="warning"
-                    icon="i-lucide-circle-dashed"
-                  />
-                </UTooltip>
-
-                <UTooltip :delay-duration="200" text="New cards">
-                  <UBadge
-                    :label="d.stats.new"
-                    variant="soft"
-                    color="info"
-                    icon="i-lucide-sparkles"
-                  />
-                </UTooltip>
-
-                <UTooltip :delay-duration="200" text="Total cards">
-                  <UBadge
-                    :label="d.stats.total"
-                    variant="soft"
-                    color="neutral"
-                    icon="i-lucide-gallery-horizontal-end"
-                  />
-                </UTooltip>
-              </div>
-
-              <UProgress :model-value="getDeckProgress(d)" class="mt-4" />
-            </UCard>
+                <UProgress :model-value="getDeckProgress(d)" class="mt-4" />
+              </UCard>
+            </NuxtLink>
           </TransitionGroup>
         </div>
+
+        <UPageSection
+          v-if="Array.isArray(paginated?.data) && paginated.data.length === 0"
+        >
+          <template #description>
+            <p v-if="!search">Click Create button to add your first deck!</p>
+            <p v-else>No decks found matching your search.</p>
+          </template>
+        </UPageSection>
 
         <UPagination
           v-model:page="page"
           :total="totalRecords"
           :items-per-page="Number(limit)"
           :ui="{ root: 'flex place-content-center' }"
-        />
-
-        <UPageSection
-          v-if="Array.isArray(paginated?.data) && paginated.data.length === 0"
-          description="Click Create button to add your first deck!"
         />
       </UPageBody>
     </UContainer>
