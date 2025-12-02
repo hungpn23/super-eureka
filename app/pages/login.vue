@@ -40,9 +40,7 @@ const providers = [
     label: 'Google',
     class: 'cursor-pointer',
     icon: 'i-simple-icons-google',
-    onClick: () => {
-      toast.add({ title: 'Google', description: 'Login with Google' });
-    },
+    onClick: onGoogleLogin,
   },
   {
     label: 'Github',
@@ -55,7 +53,7 @@ const providers = [
 ];
 
 function onGoogleLogin() {
-  // implement Google login logic here
+  window.location.href = '/api/auth/google';
 }
 
 function onSubmit(payload: FormSubmitEvent<Schema>) {
