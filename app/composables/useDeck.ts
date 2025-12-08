@@ -20,12 +20,12 @@ export const useDeck = () => {
   const isAnswersSaving = useState<boolean>('is-answers-saving', () => false);
 
   const session = reactive<StudySession>({
-    currentCard: undefined,
+    currentQuestion: undefined,
     queue: [],
     answers: [],
     savedAnswers: [],
     retryQueue: [],
-    totalCards: 0,
+    totalQuestions: 0,
     knownCount: 0,
     skippedCount: 0,
   });
@@ -43,13 +43,13 @@ export const useDeck = () => {
     watch: [deckId],
   });
 
-  const cards = computed(() => {
+  const questions = computed(() => {
     return getCards(deck.value?.cards || [], isIgnoreDate.value);
   });
 
   const progress = computed(() => {
-    if (!session.totalCards) return 0;
-    return (session.knownCount / session.totalCards) * 100;
+    if (!session.totalQuestions) return 0;
+    return (session.knownCount / session.totalQuestions) * 100;
   });
 
   // --- Watchers ---
@@ -68,21 +68,20 @@ export const useDeck = () => {
   });
 
   // Initialize Session
-  watchImmediate(cards, (newCards) => {
-    if (newCards && newCards.length > 0) {
+  watchImmediate(questions, (newQuestions) => {
+    if (newQuestions && newQuestions.length > 0) {
       // Reset session
       session.knownCount = 0;
       session.skippedCount = 0;
       session.savedAnswers = [];
-
       session.answers = [];
       session.retryQueue = [];
-      session.queue = structuredClone(newCards); // Create a copy for the queue
-      session.totalCards = session.queue.length;
+      session.queue = structuredClone(newQuestions);
+      session.totalQuestions = session.queue.length;
 
-      session.currentCard = session.queue.shift();
+      session.currentQuestion = session.queue.shift();
     } else {
-      session.currentCard = undefined;
+      session.currentQuestion = undefined;
     }
   });
 
@@ -123,11 +122,11 @@ export const useDeck = () => {
   }
 
   function handleAnswer(isCorrect: boolean) {
-    if (!session.currentCard) return;
+    if (!session.currentQuestion) return;
 
     isAnswersSaving.value = true;
 
-    const updated = updateCard(session.currentCard, isCorrect);
+    const updated = updateCard(session.currentQuestion, isCorrect);
 
     if (isCorrect) {
       session.knownCount++;
@@ -147,7 +146,7 @@ export const useDeck = () => {
     // Pick next card
     if (!session.queue.length) {
       if (!session.retryQueue.length) {
-        session.currentCard = undefined;
+        session.currentQuestion = undefined;
         return;
       }
 
@@ -155,7 +154,7 @@ export const useDeck = () => {
       session.retryQueue = [];
     }
 
-    session.currentCard = session.queue.shift();
+    session.currentQuestion = session.queue.shift();
   }
 
   async function saveAnswers() {
@@ -182,7 +181,7 @@ export const useDeck = () => {
   return {
     // Data
     deck,
-    cards,
+    cards: questions,
     session: computed(() => session),
 
     // State

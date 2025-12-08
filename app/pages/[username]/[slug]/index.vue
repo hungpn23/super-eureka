@@ -15,22 +15,22 @@ const form = useTemplateRef('form');
 
 const {
   deck,
+  session,
   status,
-  refresh,
+  isAnswersSaving,
+  progress,
   deckId,
   deckSlug,
   username,
+  refresh,
   onIgnoreDate,
   onRestarted,
-  session,
-  progress,
   handleAnswer,
-  isAnswersSaving,
 } = useDeck();
 
 const formErrorMsg = ref('');
 const isEditing = ref(false);
-const isSaving = ref(false);
+const isSavingChanges = ref(false);
 
 const state = reactive<Partial<DeckFormState>>({});
 
@@ -48,7 +48,7 @@ const deckSettingOptions = computed<DropdownMenuItem[][]>(() => [
       label: 'Delete',
       icon: 'i-lucide-trash-2',
       color: 'error',
-      onSelect: onDeckDelete,
+      onSelect: onDelete,
     },
   ],
 ]);
@@ -103,7 +103,7 @@ watch(
   },
 );
 
-async function onDeckDelete() {
+async function onDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
     method: 'DELETE',
     headers: {
@@ -126,8 +126,8 @@ async function onDeckDelete() {
 async function onSubmit(
   event: FormSubmitEvent<{ name: string; description: string; cards: Card[] }>,
 ) {
-  if (isSaving.value) return;
-  isSaving.value = true;
+  if (isSavingChanges.value) return;
+  isSavingChanges.value = true;
 
   $fetch(`/api/decks/${deckId.value}`, {
     method: 'PATCH',
@@ -158,7 +158,7 @@ async function onSubmit(
     })
     .finally(() => {
       formErrorMsg.value = '';
-      isSaving.value = false;
+      isSavingChanges.value = false;
     });
 }
 
@@ -229,7 +229,7 @@ function addCardLast() {
   });
 }
 
-function deleteCard(cardId?: UUID) {
+function removeCard(cardId?: UUID) {
   state.cards = state.cards?.filter((c) => c.id !== cardId);
 }
 </script>
@@ -398,13 +398,13 @@ function deleteCard(cardId?: UUID) {
                   icon="i-lucide-x"
                   color="neutral"
                   variant="outline"
-                  :disabled="isSaving"
+                  :disabled="isSavingChanges"
                   @click="cancelEditing"
                 />
 
                 <UButton
-                  :loading="isSaving"
-                  :label="isSaving ? 'Saving...' : 'Save Changes'"
+                  :loading="isSavingChanges"
+                  :label="isSavingChanges ? 'Saving...' : 'Save Changes'"
                   class="cursor-pointer"
                   icon="i-lucide-save"
                   loading-icon="i-lucide-loader-circle"
@@ -424,7 +424,7 @@ function deleteCard(cardId?: UUID) {
 
             <UButton
               v-if="isEditing"
-              :disabled="isSaving"
+              :disabled="isSavingChanges"
               class="cursor-pointer place-self-center px-4"
               label="Add a card"
               icon="i-lucide-plus"
@@ -452,7 +452,7 @@ function deleteCard(cardId?: UUID) {
                     icon="i-lucide-trash-2"
                     color="error"
                     variant="ghost"
-                    @click="deleteCard(c.id)"
+                    @click="removeCard(c.id)"
                   />
 
                   <span
@@ -519,7 +519,7 @@ function deleteCard(cardId?: UUID) {
 
             <UButton
               v-if="isEditing"
-              :disabled="isSaving"
+              :disabled="isSavingChanges"
               class="cursor-pointer place-self-center px-4"
               label="Add a card"
               icon="i-lucide-plus"
@@ -535,13 +535,13 @@ function deleteCard(cardId?: UUID) {
                 icon="i-lucide-x"
                 color="neutral"
                 variant="outline"
-                :disabled="isSaving"
+                :disabled="isSavingChanges"
                 @click="cancelEditing"
               />
 
               <UButton
-                :loading="isSaving"
-                :label="isSaving ? 'Saving...' : 'Save Changes'"
+                :loading="isSavingChanges"
+                :label="isSavingChanges ? 'Saving...' : 'Save Changes'"
                 class="cursor-pointer"
                 color="primary"
                 icon="i-lucide-save"

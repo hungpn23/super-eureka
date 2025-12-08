@@ -26,7 +26,7 @@ const { speak, stop } = useSpeechSynthesis(textToSpeech);
 const isFlipped = ref(false);
 
 watch(
-  () => props.session.currentCard,
+  () => props.session.currentQuestion,
   () => (isFlipped.value = false),
 );
 
@@ -42,7 +42,7 @@ function playAudio(text?: string) {
 }
 
 function toggleFlip() {
-  if (!props.session.currentCard) return;
+  if (!props.session.currentQuestion) return;
   isFlipped.value = !isFlipped.value;
 }
 
@@ -57,7 +57,7 @@ defineShortcuts({
   <div>
     <slot name="routes" />
 
-    <div v-if="session.currentCard" class="flex w-full flex-col gap-2">
+    <div v-if="session.currentQuestion" class="flex w-full flex-col gap-2">
       <h1
         v-if="deck.title"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
@@ -77,7 +77,7 @@ defineShortcuts({
           <span class="text-error text-sm">Skipped</span>
         </div>
 
-        <div>{{ `${session.knownCount} / ${session.totalCards}` }}</div>
+        <div>{{ `${session.knownCount} / ${session.totalQuestions}` }}</div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success text-sm">Known</span>
@@ -110,22 +110,22 @@ defineShortcuts({
               @click.stop="
                 playAudio(
                   !isFlipped
-                    ? session.currentCard?.term
-                    : session.currentCard?.definition,
+                    ? session.currentQuestion?.term
+                    : session.currentQuestion?.definition,
                 )
               "
             />
             {{ !isFlipped ? 'Term' : 'Definition' }}
           </span>
 
-          <CardStatusBadge :card="session.currentCard" />
+          <CardStatusBadge :card="session.currentQuestion" />
         </div>
 
         <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
           {{
             !isFlipped
-              ? session.currentCard?.term
-              : session.currentCard?.definition
+              ? session.currentQuestion?.term
+              : session.currentQuestion?.definition
           }}
         </div>
 

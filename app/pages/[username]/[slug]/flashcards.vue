@@ -1,14 +1,14 @@
 <script setup lang="ts">
 const {
   deck,
+  session,
   status,
+  progress,
   deckId,
   deckSlug,
   username,
   onRestarted,
   onIgnoreDate,
-  session,
-  progress,
   handleAnswer,
 } = useDeck();
 </script>
