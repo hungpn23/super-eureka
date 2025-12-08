@@ -1,56 +1,24 @@
 <script setup lang="ts">
-const { token } = useAuth();
-const route = useRoute();
-
-const isIgnoreDate = ref(false);
-const cards = ref<Card[]>([]);
-
-const deckId = computed(() => route.query.deckId as string);
-
-const deckSlug = computed(() => {
-  const slug = route.params.slug;
-
-  return Array.isArray(slug) ? slug[0] : slug;
-});
-
-const username = computed(() => {
-  const n = route.params.username;
-
-  return Array.isArray(n) ? n[0] : n;
-});
-
 const {
-  data: deck,
-  status,
-  refresh,
-} = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
-  headers: { Authorization: token.value || '' },
-  server: false,
-});
-
-watch(deck, (newDeck) => {
-  cards.value = getCards(newDeck?.cards || [], isIgnoreDate.value);
-});
-
-async function onIgnoreDate() {
-  isIgnoreDate.value = true;
-  await refresh();
-}
-
-async function onRestarted() {
-  isIgnoreDate.value = false;
-  await refresh();
-}
+  deck,
+  cards,
+  isFetching,
+  deckId,
+  deckSlug,
+  username,
+  onRestarted,
+  onIgnoreDate,
+} = useDeck();
 </script>
 
 <template>
-  <SkeletonFlashcardsPage v-if="status === 'idle' || status === 'pending'" />
+  <SkeletonFlashcardsPage v-if="isFetching" />
 
   <UContainer v-else>
     <AppFlashcard
       :title="deck?.name"
       :deck="{ id: deckId, slug: deckSlug }"
-      :cards
+      :cards="cards"
       @restarted="onRestarted"
       @ignore-date="onIgnoreDate"
     >

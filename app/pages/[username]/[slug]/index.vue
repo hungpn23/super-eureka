@@ -9,33 +9,28 @@ import { deckSchema } from '~~/shared/types/deck';
 
 const toast = useToast();
 const router = useRouter();
-const route = useRoute();
 const { token, data: user } = useAuth();
 
 const form = useTemplateRef('form');
 
-const isIgnoreDate = ref(false);
+const {
+  deck,
+  isFetching,
+  refresh,
+  cards,
+  deckId,
+  deckSlug,
+  username,
+  onIgnoreDate,
+  onRestarted,
+} = useDeck();
+
 const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSaving = ref(false);
 const isAnswersSaving = ref(false);
-const cards = ref<Card[]>([]);
 
 const state = reactive<Partial<DeckFormState>>({});
-
-const deckId = computed(() => route.query.deckId as string);
-
-const deckSlug = computed(() => {
-  const slug = route.params.slug;
-
-  return Array.isArray(slug) ? slug[0] : slug;
-});
-
-const username = computed(() => {
-  const n = route.params.username;
-
-  return Array.isArray(n) ? n[0] : n;
-});
 
 const deckSettingOptions = computed<DropdownMenuItem[][]>(() => [
   [
@@ -79,49 +74,9 @@ const studyOptions = computed(() => [
   },
 ]);
 
-const {
-  data: deck,
-  error,
-  status,
-  refresh,
-} = useLazyFetch<DeckWithCards, ErrorResponse>(`/api/decks/${deckId.value}`, {
-  headers: {
-    Authorization: token.value || '',
-  },
-  server: false,
+watchImmediate(deck, (newDeck) => {
+  resetFormState(newDeck);
 });
-
-watch(status, (newStatus) => {
-  if (newStatus === 'error') {
-    toast.add({
-      title: 'Error fetching decks',
-      description: JSON.stringify(error.value?.data || 'Unknown error'),
-      color: 'error',
-      duration: 2000,
-    });
-  }
-});
-
-watch(
-  deck,
-  (newDeck) => {
-    resetFormState(newDeck);
-    cards.value = getCards(deck.value?.cards || [], isIgnoreDate.value);
-  },
-  {
-    immediate: true,
-  },
-);
-
-async function onIgnoreDate() {
-  isIgnoreDate.value = true;
-  await refresh();
-}
-
-async function onRestarted() {
-  isIgnoreDate.value = false;
-  await refresh();
-}
 
 function onAnswersSaved(answers: Answer[]) {
   const map = new Map(answers.map((a) => [a.id, a]));
@@ -199,7 +154,7 @@ async function onSubmit(
     });
 }
 
-async function onError(event: FormErrorEvent) {
+async function onSubmitError(event: FormErrorEvent) {
   const formError = event.errors.find((e) => e.name === '');
 
   formErrorMsg.value = formError
@@ -272,7 +227,7 @@ function deleteCard(cardId?: UUID) {
 </script>
 
 <template>
-  <SkeletonDeckDetailPage v-if="status === 'pending' || status === 'idle'" />
+  <SkeletonDeckDetailPage v-if="isFetching" />
 
   <UPage v-else>
     <UContainer>
@@ -289,7 +244,7 @@ function deleteCard(cardId?: UUID) {
         :schema="deckSchema"
         :state="state"
         @submit="onSubmit"
-        @error="onError"
+        @error="onSubmitError"
       >
         <UPageHeader :ui="{ title: 'flex-1' }" class="py-0 pb-8">
           <div class="mt-4 flex flex-col-reverse gap-4 lg:flex-col">
