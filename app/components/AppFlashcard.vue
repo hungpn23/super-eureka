@@ -5,10 +5,7 @@ type Props = {
     title?: string;
     slug?: string;
   };
-  card?: Card;
-  totalCards: number;
-  knownCount: number;
-  skippedCount: number;
+  session: StudySession;
   progress: number;
 };
 
@@ -16,7 +13,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'restarted' | 'ignore-date'): void;
-  (e: 'answer', correct: boolean): void;
+  (e: 'answer', isCorrect: boolean): void;
 }>();
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
@@ -29,12 +26,12 @@ const { speak, stop } = useSpeechSynthesis(textToSpeech);
 const isFlipped = ref(false);
 
 watch(
-  () => props.card,
+  () => props.session.currentCard,
   () => (isFlipped.value = false),
 );
 
-function onAnswer(correct: boolean) {
-  emit('answer', correct);
+function onAnswer(isCorrect: boolean) {
+  emit('answer', isCorrect);
 }
 
 function playAudio(text?: string) {
@@ -45,7 +42,7 @@ function playAudio(text?: string) {
 }
 
 function toggleFlip() {
-  if (!props.card) return;
+  if (!props.session.currentCard) return;
   isFlipped.value = !isFlipped.value;
 }
 
@@ -60,7 +57,7 @@ defineShortcuts({
   <div>
     <slot name="routes" />
 
-    <div v-if="card" class="flex w-full flex-col gap-2">
+    <div v-if="session.currentCard" class="flex w-full flex-col gap-2">
       <h1
         v-if="deck.title"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
@@ -71,7 +68,7 @@ defineShortcuts({
       <div class="flex place-content-between">
         <div class="flex place-items-center gap-2">
           <UBadge
-            :label="skippedCount"
+            :label="session.skippedCount"
             class="rounded-full px-2"
             variant="subtle"
             color="error"
@@ -80,13 +77,13 @@ defineShortcuts({
           <span class="text-error text-sm">Skipped</span>
         </div>
 
-        <div>{{ `${knownCount} / ${totalCards}` }}</div>
+        <div>{{ `${session.knownCount} / ${session.totalCards}` }}</div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success text-sm">Known</span>
 
           <UBadge
-            :label="knownCount"
+            :label="session.knownCount"
             class="rounded-full px-2"
             variant="subtle"
             color="success"
@@ -111,17 +108,25 @@ defineShortcuts({
               variant="soft"
               color="neutral"
               @click.stop="
-                playAudio(!isFlipped ? card?.term : card?.definition)
+                playAudio(
+                  !isFlipped
+                    ? session.currentCard?.term
+                    : session.currentCard?.definition,
+                )
               "
             />
             {{ !isFlipped ? 'Term' : 'Definition' }}
           </span>
 
-          <CardStatusBadge :card="card" />
+          <CardStatusBadge :card="session.currentCard" />
         </div>
 
         <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
-          {{ !isFlipped ? card?.term : card?.definition }}
+          {{
+            !isFlipped
+              ? session.currentCard?.term
+              : session.currentCard?.definition
+          }}
         </div>
 
         <div />

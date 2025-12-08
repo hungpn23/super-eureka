@@ -26,10 +26,14 @@ export type Card = v.InferOutput<typeof cardSchema>;
 export type Answer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
 export type StudySession = {
-  totalCards: number;
+  currentCard: Card | undefined;
   queue: Card[];
   answers: Answer[];
+  savedAnswers: Answer[];
   retryQueue: Card[];
+  totalCards: number;
+  knownCount: number;
+  skippedCount: number;
 };
 
 export type QuestionType = 'multiple_choices' | 'written';

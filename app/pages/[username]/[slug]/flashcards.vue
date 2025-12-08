@@ -1,32 +1,26 @@
 <script setup lang="ts">
 const {
   deck,
-  isFetching,
+  status,
   deckId,
   deckSlug,
   username,
   onRestarted,
   onIgnoreDate,
-  currentCard,
-  totalCards,
-  knownCount,
-  skippedCount,
+  session,
   progress,
   handleAnswer,
 } = useDeck();
 </script>
 
 <template>
-  <SkeletonFlashcardsPage v-if="isFetching" />
+  <SkeletonFlashcardsPage v-if="status === 'idle' || status === 'pending'" />
 
   <UContainer v-else>
     <AppFlashcard
       :title="deck?.name"
       :deck="{ id: deckId, title: deck?.name, slug: deckSlug }"
-      :card="currentCard"
-      :total-cards
-      :known-count
-      :skipped-count
+      :session="session"
       :progress
       @restarted="onRestarted"
       @ignore-date="onIgnoreDate"

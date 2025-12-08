@@ -19,17 +19,15 @@ export const useDeck = () => {
   const isIgnoreDate = useState<boolean>('is-ignore-date', () => false);
   const isAnswersSaving = useState<boolean>('is-answers-saving', () => false);
 
-  // Learn Session State
-  const currentCard = ref<Card | undefined>(undefined);
-  const knownCount = ref(0);
-  const skippedCount = ref(0);
-  const savedAnswers = ref<Answer[]>([]); // To communicate back to consumers
-
   const session = reactive<StudySession>({
-    totalCards: 0,
+    currentCard: undefined,
     queue: [],
     answers: [],
+    savedAnswers: [],
     retryQueue: [],
+    totalCards: 0,
+    knownCount: 0,
+    skippedCount: 0,
   });
 
   // --- Fetching ---
@@ -49,21 +47,14 @@ export const useDeck = () => {
     return getCards(deck.value?.cards || [], isIgnoreDate.value);
   });
 
-  const isFetching = computed(
-    () => status.value === 'idle' || status.value === 'pending',
-  );
-
   const progress = computed(() => {
     if (!session.totalCards) return 0;
-    return (knownCount.value / session.totalCards) * 100;
+    return (session.knownCount / session.totalCards) * 100;
   });
 
   // --- Watchers ---
-
   watch(deckId, (newId, oldId) => {
-    if (newId !== oldId) {
-      isIgnoreDate.value = false;
-    }
+    if (newId !== oldId) isIgnoreDate.value = false;
   });
 
   watch(status, (newStatus) => {
@@ -80,27 +71,27 @@ export const useDeck = () => {
   watchImmediate(cards, (newCards) => {
     if (newCards && newCards.length > 0) {
       // Reset session
-      knownCount.value = 0;
-      skippedCount.value = 0;
-      savedAnswers.value = [];
+      session.knownCount = 0;
+      session.skippedCount = 0;
+      session.savedAnswers = [];
 
       session.answers = [];
       session.retryQueue = [];
-      session.queue = [...newCards]; // Create a copy for the queue
+      session.queue = structuredClone(newCards); // Create a copy for the queue
       session.totalCards = session.queue.length;
 
-      currentCard.value = session.queue.shift();
+      session.currentCard = session.queue.shift();
     } else {
-      currentCard.value = undefined;
+      session.currentCard = undefined;
     }
   });
 
-  // Auto-Save Logic
-  watchDebounced(session, saveAnswers, {
-    debounce: 1000,
-    maxWait: 3000,
-    deep: true,
-  });
+  // Auto-save
+  watchDebounced(
+    () => session.answers,
+    async () => await saveAnswers(),
+    { debounce: 1000, deep: true },
+  );
 
   // --- Actions ---
   async function onIgnoreDate() {
@@ -131,17 +122,17 @@ export const useDeck = () => {
       });
   }
 
-  function handleAnswer(correct: boolean) {
-    if (!currentCard.value) return;
+  function handleAnswer(isCorrect: boolean) {
+    if (!session.currentCard) return;
 
     isAnswersSaving.value = true;
 
-    const updated = Object.assign({}, updateCard(currentCard.value, correct));
+    const updated = updateCard(session.currentCard, isCorrect);
 
-    if (correct) {
-      knownCount.value++;
+    if (isCorrect) {
+      session.knownCount++;
     } else {
-      skippedCount.value++;
+      session.skippedCount++;
       session.retryQueue.push(updated);
     }
 
@@ -156,7 +147,7 @@ export const useDeck = () => {
     // Pick next card
     if (!session.queue.length) {
       if (!session.retryQueue.length) {
-        currentCard.value = undefined;
+        session.currentCard = undefined;
         return;
       }
 
@@ -164,11 +155,7 @@ export const useDeck = () => {
       session.retryQueue = [];
     }
 
-    currentCard.value = session.queue.shift();
-    console.log(
-      '🚀 ~ handleAnswer ~ currentCard.value:',
-      currentCard.value?.term,
-    );
+    session.currentCard = session.queue.shift();
   }
 
   async function saveAnswers() {
@@ -183,7 +170,7 @@ export const useDeck = () => {
       body: { answers: answersToSave },
     })
       .then(() => {
-        savedAnswers.value = answersToSave; // Notify watchers
+        session.savedAnswers = answersToSave; // Notify watchers
         session.answers = [];
       })
       .catch((err: ErrorResponse) => {
@@ -196,11 +183,9 @@ export const useDeck = () => {
     // Data
     deck,
     cards,
-    currentCard,
-    savedAnswers, // Exposed for side effects (like updating form state)
+    session: computed(() => session),
 
     // State
-    isFetching,
     status,
     error,
     isIgnoreDate,
@@ -208,9 +193,6 @@ export const useDeck = () => {
 
     // Stats
     progress,
-    knownCount,
-    skippedCount,
-    totalCards: computed(() => session.totalCards),
 
     // Params
     deckId,

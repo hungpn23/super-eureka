@@ -15,21 +15,17 @@ const form = useTemplateRef('form');
 
 const {
   deck,
-  isFetching,
+  status,
   refresh,
   deckId,
   deckSlug,
   username,
   onIgnoreDate,
   onRestarted,
-  currentCard,
-  totalCards,
-  knownCount,
-  skippedCount,
+  session,
   progress,
   handleAnswer,
   isAnswersSaving,
-  savedAnswers,
 } = useDeck();
 
 const formErrorMsg = ref('');
@@ -85,24 +81,27 @@ watchImmediate(deck, (newDeck) => {
 });
 
 // Update form state when auto-save happens in useDeck
-watch(savedAnswers, (answers) => {
-  if (!answers.length) return;
+watch(
+  () => session.value.savedAnswers,
+  (answers) => {
+    if (!answers.length) return;
 
-  const map = new Map(answers.map((a) => [a.id, a]));
+    const map = new Map(answers.map((a) => [a.id, a]));
 
-  if (state.cards?.length) {
-    for (const c of state.cards) {
-      const answer = map.get(c.id);
+    if (state.cards?.length) {
+      for (const c of state.cards) {
+        const answer = map.get(c.id);
 
-      if (answer) {
-        Object.assign(c, {
-          ...answer,
-          status: getCardStatus(answer.reviewDate),
-        });
+        if (answer) {
+          Object.assign(c, {
+            ...answer,
+            status: getCardStatus(answer.reviewDate),
+          });
+        }
       }
     }
-  }
-});
+  },
+);
 
 async function onDeckDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
@@ -236,7 +235,7 @@ function deleteCard(cardId?: UUID) {
 </script>
 
 <template>
-  <SkeletonDeckDetailPage v-if="isFetching" />
+  <SkeletonDeckDetailPage v-if="status === 'idle' || status === 'pending'" />
 
   <UPage v-else>
     <UContainer>
@@ -278,10 +277,7 @@ function deleteCard(cardId?: UUID) {
             <!-- Flashcard Study -->
             <AppFlashcard
               :deck="{ id: deckId, slug: deckSlug }"
-              :card="currentCard"
-              :total-cards
-              :known-count
-              :skipped-count
+              :session="session"
               :progress
               @restarted="onRestarted"
               @ignore-date="onIgnoreDate"
