@@ -1,13 +1,18 @@
 <script setup lang="ts">
 const {
   deck,
-  cards,
   isFetching,
   deckId,
   deckSlug,
   username,
   onRestarted,
   onIgnoreDate,
+  currentCard,
+  totalCards,
+  knownCount,
+  skippedCount,
+  progress,
+  handleAnswer,
 } = useDeck();
 </script>
 
@@ -17,10 +22,15 @@ const {
   <UContainer v-else>
     <AppFlashcard
       :title="deck?.name"
-      :deck="{ id: deckId, slug: deckSlug }"
-      :cards="cards"
+      :deck="{ id: deckId, title: deck?.name, slug: deckSlug }"
+      :card="currentCard"
+      :total-cards
+      :known-count
+      :skipped-count
+      :progress
       @restarted="onRestarted"
       @ignore-date="onIgnoreDate"
+      @answer="handleAnswer"
     >
       <template #routes>
         <div class="flex place-content-between place-items-center gap-2">

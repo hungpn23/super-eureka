@@ -17,18 +17,24 @@ const {
   deck,
   isFetching,
   refresh,
-  cards,
   deckId,
   deckSlug,
   username,
   onIgnoreDate,
   onRestarted,
+  currentCard,
+  totalCards,
+  knownCount,
+  skippedCount,
+  progress,
+  handleAnswer,
+  isAnswersSaving,
+  savedAnswers,
 } = useDeck();
 
 const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSaving = ref(false);
-const isAnswersSaving = ref(false);
 
 const state = reactive<Partial<DeckFormState>>({});
 
@@ -78,7 +84,10 @@ watchImmediate(deck, (newDeck) => {
   resetFormState(newDeck);
 });
 
-function onAnswersSaved(answers: Answer[]) {
+// Update form state when auto-save happens in useDeck
+watch(savedAnswers, (answers) => {
+  if (!answers.length) return;
+
   const map = new Map(answers.map((a) => [a.id, a]));
 
   if (state.cards?.length) {
@@ -93,7 +102,7 @@ function onAnswersSaved(answers: Answer[]) {
       }
     }
   }
-}
+});
 
 async function onDeckDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
@@ -268,12 +277,15 @@ function deleteCard(cardId?: UUID) {
 
             <!-- Flashcard Study -->
             <AppFlashcard
-              v-model:is-answers-saving="isAnswersSaving"
               :deck="{ id: deckId, slug: deckSlug }"
-              :cards
-              @answers-saved="onAnswersSaved"
+              :card="currentCard"
+              :total-cards
+              :known-count
+              :skipped-count
+              :progress
               @restarted="onRestarted"
               @ignore-date="onIgnoreDate"
+              @answer="handleAnswer"
             >
               <template #actions-left>
                 <UButton

@@ -1,139 +1,40 @@
 <script setup lang="ts">
 type Props = {
-  title?: string;
   deck: {
     id?: string;
+    title?: string;
     slug?: string;
   };
-  cards: Card[];
+  card?: Card;
+  totalCards: number;
+  knownCount: number;
+  skippedCount: number;
+  progress: number;
 };
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'answers-saved', answers: Answer[]): void;
   (e: 'restarted' | 'ignore-date'): void;
+  (e: 'answer', correct: boolean): void;
 }>();
 
-const isAnswersSaving = defineModel<boolean>('is-answers-saving');
-
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
-
-const { token } = useAuth();
+const throttledHandleAnswer = useThrottleFn(onAnswer, 300);
 
 // --- Text-to-Speech Setup ---
 const textToSpeech = ref('');
-const { speak, stop } = useSpeechSynthesis(textToSpeech, {
-  lang: 'en-US',
-  rate: 0.9,
-});
+const { speak, stop } = useSpeechSynthesis(textToSpeech);
 
 const isFlipped = ref(false);
-const knownCount = ref(0);
-const skippedCount = ref(0);
-const flashcard = ref<Card | undefined>(undefined);
 
-const learn = reactive<FlashcardState>({
-  totalCards: 0,
-  queue: [],
-  answers: [],
-  retryQueue: [],
-});
-
-const progress = computed(() => {
-  if (!learn.totalCards) return 0;
-  return (knownCount.value / learn.totalCards) * 100;
-});
-
-watchImmediate(
-  () => props.cards,
-  (newCards) => {
-    if (newCards && newCards.length > 0) {
-      knownCount.value = 0;
-      skippedCount.value = 0;
-
-      learn.answers = [];
-      learn.retryQueue = [];
-      learn.queue = newCards;
-      learn.totalCards = learn.queue.length;
-
-      flashcard.value = learn.queue.shift();
-    }
-  },
+watch(
+  () => props.card,
+  () => (isFlipped.value = false),
 );
 
-watch(flashcard, () => {
-  isFlipped.value = false;
-});
-
-watchDebounced(learn, saveAnswers, {
-  debounce: 1000,
-  maxWait: 3000,
-  deep: true,
-});
-
-async function saveAnswers() {
-  const answersToSave = [...learn.answers];
-  if (answersToSave.length === 0) return;
-
-  $fetch(`/api/study/save-answer/${props.deck?.id}`, {
-    method: 'POST',
-    headers: { Authorization: token.value || '' },
-    body: { answers: answersToSave },
-  })
-    .then(() => {
-      emit('answers-saved', answersToSave);
-      learn.answers = [];
-    })
-    .catch((error: ErrorResponse) => {
-      console.error('Save answers fail!', error.data);
-    })
-    .finally(() => (isAnswersSaving.value = false));
-}
-
-async function restart() {
-  $fetch(`/api/decks/restart/${props.deck?.id}`, {
-    method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
-  }).then(() => emit('restarted'));
-}
-
-function handleAnswer(correct: boolean) {
-  if (!flashcard.value) return;
-
-  isAnswersSaving.value = true;
-
-  const updated = Object.assign({}, updateCard(flashcard.value, correct));
-
-  if (correct) {
-    knownCount.value++;
-  } else {
-    skippedCount.value++;
-    learn.retryQueue.push(updated);
-  }
-
-  // trigger watchDebounced
-  const index = learn.answers.findIndex((a) => a.id === updated.id);
-  if (index !== -1) {
-    learn.answers[index] = updated;
-  } else {
-    learn.answers.push(updated);
-  }
-
-  if (!learn.queue.length) {
-    if (!learn.retryQueue.length) {
-      flashcard.value = undefined;
-      return;
-    }
-
-    learn.queue = learn.retryQueue;
-    learn.retryQueue = [];
-  }
-
-  flashcard.value = learn.queue.shift();
+function onAnswer(correct: boolean) {
+  emit('answer', correct);
 }
 
 function playAudio(text?: string) {
@@ -144,7 +45,7 @@ function playAudio(text?: string) {
 }
 
 function toggleFlip() {
-  if (!flashcard.value) return;
+  if (!props.card) return;
   isFlipped.value = !isFlipped.value;
 }
 
@@ -159,12 +60,12 @@ defineShortcuts({
   <div>
     <slot name="routes" />
 
-    <div v-if="flashcard" class="flex w-full flex-col gap-2">
+    <div v-if="card" class="flex w-full flex-col gap-2">
       <h1
-        v-if="title"
+        v-if="deck.title"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
       >
-        {{ title }}
+        {{ deck.title }}
       </h1>
 
       <div class="flex place-content-between">
@@ -179,7 +80,7 @@ defineShortcuts({
           <span class="text-error text-sm">Skipped</span>
         </div>
 
-        <div>{{ `${knownCount} / ${learn.totalCards}` }}</div>
+        <div>{{ `${knownCount} / ${totalCards}` }}</div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success text-sm">Known</span>
@@ -210,24 +111,24 @@ defineShortcuts({
               variant="soft"
               color="neutral"
               @click.stop="
-                playAudio(!isFlipped ? flashcard?.term : flashcard?.definition)
+                playAudio(!isFlipped ? card?.term : card?.definition)
               "
             />
             {{ !isFlipped ? 'Term' : 'Definition' }}
           </span>
 
-          <CardStatusBadge :card="flashcard" />
+          <CardStatusBadge :card="card" />
         </div>
 
         <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
-          {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
+          {{ !isFlipped ? card?.term : card?.definition }}
         </div>
 
         <div />
 
         <template #header>
           <UProgress
-            v-model="progress"
+            :model-value="progress"
             :ui="{ base: 'bg-inherit' }"
             size="sm"
           />
@@ -290,7 +191,7 @@ defineShortcuts({
           color: 'error',
           variant: 'outline',
           class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: restart,
+          onClick: () => emit('restarted'),
         },
         {
           icon: 'i-lucide-fast-forward',

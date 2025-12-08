@@ -25,7 +25,7 @@ export type Card = v.InferOutput<typeof cardSchema>;
 
 export type Answer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
-export type FlashcardState = {
+export type StudySession = {
   totalCards: number;
   queue: Card[];
   answers: Answer[];
