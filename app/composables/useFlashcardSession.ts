@@ -1,69 +1,58 @@
 export const useFlashcardSession = () => {
   const { token } = useAuth();
-  const {
-    deck,
-    cards,
-    status,
-    isFetching,
-    isIgnoreDate,
-    deckId,
-    deckSlug,
-    username,
-    onRestart,
-    onIgnoreDate,
-    refresh,
-  } = useDeckData();
+  const store = useDeckStore();
 
-  const isAnswersSaving = useState<boolean>('is-answers-saving', () => false);
+  const isSavingCards = useState('is-saving-cards', () => false);
 
-  const session = reactive<StudySession>({
-    currentQuestion: undefined,
-    queue: [],
-    answers: [],
-    savedAnswers: [],
+  const session = reactive<FlashcardSession>({
+    currentCard: null,
+    cardsToSave: [],
+    savedCards: [],
+    studyQueue: [],
     retryQueue: [],
-    totalQuestions: 0,
+    totalCards: 0,
     knownCount: 0,
     skippedCount: 0,
   });
 
+  const cards = computed(() =>
+    getCards(store.deck?.cards || [], store.isIgnoreDate),
+  );
+
   const progress = computed(() => {
-    if (!session.totalQuestions) return 0;
-    return (session.knownCount / session.totalQuestions) * 100;
+    if (!session.totalCards) return 0;
+    return (session.knownCount / session.totalCards) * 100;
   });
 
-  // Initialize Session
+  // Initialize session
   watchImmediate(cards, (newCards) => {
-    if (newCards && newCards.length > 0) {
-      // Reset session
-      session.knownCount = 0;
-      session.skippedCount = 0;
-      session.savedAnswers = [];
-
-      session.answers = [];
-      session.retryQueue = [];
-      session.queue = structuredClone(newCards);
-      session.totalQuestions = session.queue.length;
-
-      session.currentQuestion = session.queue.shift();
-    } else {
-      session.currentQuestion = undefined;
-    }
+    if (newCards && newCards.length > 0) resetSession(newCards);
   });
 
   // Auto-save
   watchDebounced(
-    () => session.answers,
-    async () => await saveAnswers(),
+    () => session.cardsToSave,
+    async () => await saveCards(),
     { debounce: 1000, deep: true },
   );
 
-  function handleAnswer(isCorrect: boolean) {
-    if (!session.currentQuestion) return;
+  function resetSession(cards: Card[]) {
+    session.knownCount = 0;
+    session.skippedCount = 0;
+    session.savedCards = [];
+    session.cardsToSave = [];
+    session.retryQueue = [];
+    session.studyQueue = cards;
+    session.totalCards = session.studyQueue.length;
+    session.currentCard = session.studyQueue.shift();
+  }
 
-    isAnswersSaving.value = true;
+  async function handleAnswer(isCorrect: boolean) {
+    if (!session.currentCard) return;
 
-    const updated = updateCard(session.currentQuestion, isCorrect);
+    isSavingCards.value = true;
+
+    const updated = updateCard(session.currentCard, isCorrect);
 
     if (isCorrect) {
       session.knownCount++;
@@ -72,63 +61,54 @@ export const useFlashcardSession = () => {
       session.retryQueue.push(updated);
     }
 
-    // Update answers queue for saving
-    const index = session.answers.findIndex((a) => a.id === updated.id);
+    // Update cardsToSave queue for saving
+    const index = session.cardsToSave.findIndex((a) => a.id === updated.id);
     if (index !== -1) {
-      session.answers[index] = updated;
+      session.cardsToSave[index] = updated;
     } else {
-      session.answers.push(updated);
+      session.cardsToSave.push(updated);
     }
 
     // Pick next card
-    if (!session.queue.length) {
+    if (!session.studyQueue.length) {
       if (!session.retryQueue.length) {
-        session.currentQuestion = undefined;
+        if (store.isIgnoreDate)
+          await Promise.all([saveCards(), store.refetch()]);
+
+        session.currentCard = undefined;
         return;
       }
 
-      session.queue = session.retryQueue;
+      session.studyQueue = session.retryQueue;
       session.retryQueue = [];
     }
 
-    session.currentQuestion = session.queue.shift();
+    session.currentCard = session.studyQueue.shift();
   }
 
-  async function saveAnswers() {
-    const answersToSave = [...session.answers];
-    if (answersToSave.length === 0) return;
+  async function saveCards() {
+    const cardsToSave = [...session.cardsToSave];
+    if (cardsToSave.length === 0) return;
 
-    const id = deckId.value;
-
-    $fetch(`/api/study/save-answer/${id}`, {
+    $fetch(`/api/study/save-answer/${store.deckId}`, {
       method: 'POST',
       headers: { Authorization: token.value || '' },
-      body: { answers: answersToSave },
+      body: { answers: cardsToSave },
     })
       .then(() => {
-        session.savedAnswers = answersToSave; // Notify watchers
-        session.answers = [];
+        session.savedCards = cardsToSave; // trigger watcher in consumer
+        session.cardsToSave = [];
       })
-      .catch((err: ErrorResponse) => {
-        console.error('Save answers fail!', err.data);
-      })
-      .finally(() => (isAnswersSaving.value = false));
+      .catch((err: ErrorResponse) =>
+        console.error('Save cardsToSave fail!', err.data),
+      )
+      .finally(() => (isSavingCards.value = false));
   }
 
   return {
-    deck,
+    isSavingCards,
     session,
-    status,
-    isFetching,
-    isIgnoreDate,
-    isAnswersSaving,
     progress,
-    deckId,
-    deckSlug,
-    username,
-    onRestart,
-    onIgnoreDate,
     handleAnswer,
-    refresh,
   };
 };

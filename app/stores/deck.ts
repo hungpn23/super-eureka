@@ -3,32 +3,28 @@ import { defineStore, acceptHMRUpdate } from 'pinia';
 export const useDeckStore = defineStore('deck', () => {
   // --- Composables ---
   const route = useRoute();
-  const { token, data: _user } = useAuth();
+  const { token, data: user } = useAuth();
   const toast = useToast();
 
   // --- State ---
   const isIgnoreDate = ref(false);
 
   // --- Getters ---
-  const deckId = computed(() => {
-    const id = route.query.deckId;
-    return Array.isArray(id) ? id[0] : id;
+  const deckId = computed(() => route.query.deckId as string | undefined);
+
+  const slug = computed(() => {
+    const s = route.params.slug;
+    return Array.isArray(s) ? s[0] : s;
   });
-  console.log('🚀 ~ deckId:', deckId.value);
 
-  // const deckSlug = computed(() => {
-  //   const s = route.params.slug;
-  //   return Array.isArray(s) ? s[0] : s;
-  // });
+  const username = computed(() => {
+    const n = route.params.username;
+    return Array.isArray(n) ? n[0] : n;
+  });
 
-  // const username = computed(() => {
-  //   const n = route.params.username;
-  //   return Array.isArray(n) ? n[0] : n;
-  // });
-
-  // const isOwner = computed(() => {
-  //   return user.value?.username === username.value;
-  // });
+  const isOwner = computed(() => {
+    return user.value?.username === username.value;
+  });
 
   // --- Define fetch composable ---
   const {
@@ -36,36 +32,36 @@ export const useDeckStore = defineStore('deck', () => {
     status,
     error,
     refresh: refetch,
-    execute: _,
+    execute,
   } = useLazyFetch<DeckWithCards, ErrorResponse>(
     () => `/api/decks/${deckId.value}`,
     {
       headers: { Authorization: token.value || '' },
       server: false,
       immediate: false,
+      watch: false, // handled manually
     },
   );
 
-  // --- Actions ---
-  async function fetchDeck(id?: string) {
-    console.log(id);
+  // --- Watchers ---
+  watchImmediate(
+    () => route.fullPath,
+    async () => await execute(),
+  );
 
-    // if (!deckId.value || deck.value) return;
-
-    // await execute();
-    console.log('FETCH DECK SUCCESSFULLY!');
-  }
-
-  function updateCard(updatedCard: Card) {
-    if (!deck.value) return;
-
-    const index = deck.value.cards.findIndex((c) => c.id === updatedCard.id);
-    if (index !== -1) {
-      deck.value.cards[index] = updatedCard;
+  watch(status, () => {
+    if (status.value === 'error') {
+      toast.add({
+        title: 'Error fetching deck.',
+        description: JSON.stringify(
+          error.value?.data?.message || 'Unknown error.',
+        ),
+        color: 'error',
+      });
     }
-  }
+  });
 
-  // OK
+  // --- Actions ---
   async function restartDeck() {
     if (!deckId.value) return;
 
@@ -91,24 +87,26 @@ export const useDeckStore = defineStore('deck', () => {
       });
   }
 
+  function updateIgnoreDate(checked: boolean) {
+    isIgnoreDate.value = checked;
+  }
+
   return {
     // State
-    deck,
-    status,
-    error,
-    isIgnoreDate,
+    deck: computed(() => deck.value),
+    status: computed(() => status.value),
+    isIgnoreDate: computed(() => isIgnoreDate.value),
 
     // Getters
     deckId,
-    // deckSlug,
-    // username,
-    // isOwner,
+    slug,
+    username,
+    isOwner,
 
     // Actions
     refetch,
-    fetchDeck,
-    updateCard,
     restartDeck,
+    updateIgnoreDate,
   };
 });
 

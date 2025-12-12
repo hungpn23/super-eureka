@@ -25,6 +25,8 @@ export type Card = v.InferOutput<typeof cardSchema>;
 
 export type Answer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
+export type CardToSave = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
+
 export type StudySession = {
   currentQuestion: Card | undefined;
   queue: Card[];
@@ -32,6 +34,17 @@ export type StudySession = {
   savedAnswers: Answer[];
   retryQueue: Card[];
   totalQuestions: number;
+  knownCount: number;
+  skippedCount: number;
+};
+
+export type FlashcardSession = {
+  currentCard?: Card | null;
+  cardsToSave: CardToSave[];
+  savedCards: CardToSave[];
+  studyQueue: Card[];
+  retryQueue: Card[];
+  totalCards: number;
   knownCount: number;
   skippedCount: number;
 };
