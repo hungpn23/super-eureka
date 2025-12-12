@@ -9,31 +9,17 @@ import { formatDistanceToNowStrict } from 'date-fns';
 const toast = useToast();
 const router = useRouter();
 const { token, data: user } = useAuth();
+const store = useDeckStore();
+
+const { isSavingCards, session, progress, handleAnswer } =
+  useFlashcardSession();
+
+const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
+const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 
 const form = useTemplateRef('form');
 
-const {
-  deck,
-  session,
-  status,
-  isIgnoreDate,
-  isAnswersSaving,
-  progress,
-  deckId,
-  deckSlug,
-  username,
-  refresh,
-  onIgnoreDate,
-  onRestart,
-  handleAnswer,
-} = useDeck();
-
-onMounted(() => {
-  const { fetchDeck } = useDeckStore();
-
-  fetchDeck(deckId.value);
-});
-
+const isFlipped = ref(false);
 const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSavingChanges = ref(false);
@@ -46,20 +32,15 @@ const settingOptions = computed<DropdownMenuItem[][]>(() => [
       label: 'Restart progress',
       icon: 'i-lucide-refresh-cw',
       color: 'warning',
-      onSelect: onRestart,
+      onSelect: store.restartDeck,
     },
     {
       label: 'Ignore review dates',
-      icon: `i-lucide-calendar${isIgnoreDate.value ? '-off' : ''}`,
+      icon: `i-lucide-calendar${store.isIgnoreDate ? '-off' : ''}`,
       type: 'checkbox',
-      checked: isIgnoreDate.value,
-      onUpdateChecked(checked: boolean) {
-        isIgnoreDate.value = checked;
-      },
-      onSelect(e: Event) {
-        e.preventDefault();
-        isIgnoreDate.value = !isIgnoreDate.value;
-      },
+      checked: store.isIgnoreDate,
+      onUpdateChecked: (checked) => store.updateIgnoreDate(checked),
+      onSelect: (e) => e.preventDefault(),
     },
     {
       label: 'Edit deck',
@@ -82,17 +63,17 @@ const studyOptions = computed(() => [
   {
     label: 'Flashcards',
     icon: 'i-lucide-gallery-horizontal-end',
-    to: `/${username.value}/${deckSlug.value}/flashcards?deckId=${deckId.value}`,
+    to: `/${store.username}/${store.slug}/flashcards?deckId=${store.deckId}`,
   },
   {
     label: 'Learn',
     icon: 'i-lucide-notebook-pen',
-    to: `/${username.value}/${deckSlug.value}/learn?deckId=${deckId.value}`,
+    to: `/${store.username}/${store.slug}/learn?deckId=${store.deckId}`,
   },
   {
     label: 'Test',
     icon: 'i-lucide-flask-conical',
-    to: `/${username.value}/${deckSlug.value}/test?deckId=${deckId.value}`,
+    to: `/${store.username}/${store.slug}/test?deckId=${store.deckId}`,
   },
   {
     label: 'Coming soon',
@@ -101,17 +82,18 @@ const studyOptions = computed(() => [
   },
 ]);
 
-watchImmediate(deck, (newDeck) => {
-  resetFormState(newDeck);
-});
+watchImmediate(
+  () => store.deck,
+  (newDeck) => resetFormState(newDeck),
+);
 
 // Update form state when auto-save happens in useDeck
 watch(
-  () => session.value.savedAnswers,
-  (answers) => {
-    if (!answers.length) return;
+  () => session.savedCards,
+  (newCards) => {
+    if (!newCards.length) return;
 
-    const map = new Map(answers.map((a) => [a.id, a]));
+    const map = new Map(newCards.map((a) => [a.id, a]));
 
     if (state.cards?.length) {
       for (const c of state.cards) {
@@ -128,22 +110,22 @@ watch(
   },
 );
 
+watch(
+  () => session.currentCard,
+  () => (isFlipped.value = false),
+);
+
 async function onDelete() {
-  $fetch(`/api/decks/${deckId.value}`, {
+  $fetch(`/api/decks/${store.deckId}`, {
     method: 'DELETE',
-    headers: {
-      Authorization: token.value || '',
-    },
+    headers: { Authorization: token.value || '' },
   })
-    .then(() => {
-      router.push(`/home`);
-    })
+    .then(() => router.push(`/home`))
     .catch((error: ErrorResponse) => {
       toast.add({
         title: 'Error deleting deck',
-        description: JSON.stringify(error.data || 'Unknown error'),
+        description: JSON.stringify(error.data?.message || 'Unknown error'),
         color: 'error',
-        duration: 2000,
       });
     });
 }
@@ -154,29 +136,25 @@ async function onSubmit(
   if (isSavingChanges.value) return;
   isSavingChanges.value = true;
 
-  $fetch(`/api/decks/${deckId.value}`, {
+  $fetch(`/api/decks/${store.deckId}`, {
     method: 'PATCH',
-    headers: {
-      Authorization: token.value || '',
-    },
+    headers: { Authorization: token.value || '' },
     body: event.data,
   })
     .then(async () => {
       isEditing.value = false;
-      await refresh();
+      await store.refetch();
 
       toast.add({
         title: 'Changes saved successfully.',
         color: 'success',
-        duration: 2000,
       });
     })
     .catch((error: ErrorResponse) => {
       toast.add({
         title: 'Error saving changes',
-        description: JSON.stringify(error.data || 'Unknown error'),
+        description: JSON.stringify(error.data?.message || 'Unknown error'),
         color: 'error',
-        duration: 2000,
       });
 
       return;
@@ -200,7 +178,7 @@ function startEditing() {
 }
 
 function cancelEditing() {
-  resetFormState(deck.value);
+  resetFormState(store.deck);
   isEditing.value = false;
   form.value?.clear();
   formErrorMsg.value = '';
@@ -208,15 +186,14 @@ function cancelEditing() {
   toast.add({
     title: 'Editing canceled successfully.',
     color: 'success',
-    duration: 2000,
   });
 }
 
-function resetFormState(newRes?: DeckWithCards) {
-  if (newRes) {
-    state.name = newRes.name;
-    state.description = newRes.description || '';
-    state.cards = structuredClone(newRes.cards);
+function resetFormState(deck?: DeckWithCards) {
+  if (deck) {
+    state.name = deck.name;
+    state.description = deck.description || '';
+    state.cards = structuredClone(deck.cards);
   }
 }
 
@@ -233,7 +210,6 @@ function addCardFirst() {
   toast.add({
     title: 'Added first successfully.',
     color: 'success',
-    duration: 2000,
   });
 }
 
@@ -250,17 +226,29 @@ function addCardLast() {
   toast.add({
     title: 'Added last successfully.',
     color: 'success',
-    duration: 2000,
   });
 }
 
 function removeCard(cardId?: UUID) {
   state.cards = state.cards?.filter((c) => c.id !== cardId);
 }
+
+function toggleFlip() {
+  if (!session.currentCard) return;
+  isFlipped.value = !isFlipped.value;
+}
+
+defineShortcuts({
+  ' ': throttledToggleFlip,
+  arrowright: () => throttledHandleAnswer(true),
+  arrowleft: () => throttledHandleAnswer(false),
+});
 </script>
 
 <template>
-  <SkeletonDeckDetailPage v-if="status === 'idle' || status === 'pending'" />
+  <SkeletonDeckDetailPage
+    v-if="store.status === 'idle' || store.status === 'pending'"
+  />
 
   <UPage v-else>
     <UContainer>
@@ -300,39 +288,145 @@ function removeCard(cardId?: UUID) {
             </div>
 
             <!-- Flashcard Study -->
-            <AppFlashcard
-              :deck="{ id: deckId, slug: deckSlug }"
-              :session="session"
-              :progress
-              @restarted="onRestart"
-              @ignore-date="onIgnoreDate"
-              @answer="handleAnswer"
-            >
-              <template #actions-left>
-                <UButton
-                  :to="`/${username}`"
-                  variant="link"
-                  color="neutral"
-                  class="w-fit p-0"
+            <div v-if="session.currentCard" class="flex w-full flex-col gap-2">
+              <!-- Status bar -->
+              <div class="flex place-content-between">
+                <div class="flex place-items-center gap-2">
+                  <UBadge
+                    :label="session.skippedCount"
+                    class="rounded-full px-2"
+                    variant="subtle"
+                    color="error"
+                  />
+
+                  <span class="text-error text-sm">Skipped</span>
+                </div>
+
+                <div>
+                  {{ `${session.knownCount} / ${session.totalCards}` }}
+                </div>
+
+                <div class="flex place-items-center gap-2">
+                  <span class="text-success text-sm">Known</span>
+
+                  <UBadge
+                    :label="session.knownCount"
+                    class="rounded-full px-2"
+                    variant="subtle"
+                    color="success"
+                  />
+                </div>
+              </div>
+
+              <UCard
+                :ui="{
+                  header: 'p-0 sm:px-0',
+                  body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
+                }"
+                class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
+                variant="subtle"
+                @click="throttledToggleFlip"
+              >
+                <div
+                  class="flex w-full place-content-between place-items-center"
                 >
-                  <div class="flex place-items-center gap-2">
-                    <UAvatar :src="user?.avatarUrl || ''" size="xl" />
+                  <span class="flex place-items-center gap-1 font-medium">
+                    <UButton
+                      class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+                      icon="i-lucide-volume-2"
+                      variant="soft"
+                      color="neutral"
+                      @click.stop="console.log('TTS not implemented yet')"
+                    />
 
-                    <div class="flex flex-col">
-                      <p class="text-muted text-sm font-normal text-pretty">
-                        Created by
-                      </p>
+                    {{ !isFlipped ? 'Term' : 'Definition' }}
+                  </span>
 
-                      <p class="text-highlighted text-base font-medium">
-                        {{ username }}
-                      </p>
+                  <CardStatusBadge :card="session.currentCard" />
+                </div>
+
+                <div
+                  class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl"
+                >
+                  {{
+                    !isFlipped
+                      ? session.currentCard?.term
+                      : session.currentCard?.definition
+                  }}
+                </div>
+
+                <div />
+
+                <template #header>
+                  <UProgress
+                    :model-value="progress"
+                    :ui="{ base: 'bg-inherit' }"
+                    size="sm"
+                  />
+                </template>
+              </UCard>
+
+              <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <div class="col-span-1">
+                  <UButton
+                    :to="`/${store.username}`"
+                    variant="link"
+                    color="neutral"
+                    class="w-fit p-0"
+                  >
+                    <div class="flex place-items-center gap-2">
+                      <UAvatar :src="user?.avatarUrl || ''" size="xl" />
+
+                      <div class="flex flex-col">
+                        <p class="text-muted text-sm font-normal text-pretty">
+                          Created by
+                        </p>
+
+                        <p class="text-highlighted text-base font-medium">
+                          {{ store.username }}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </UButton>
-              </template>
+                  </UButton>
+                </div>
 
-              <template #actions-right>
-                <div class="flex place-content-end place-items-center gap-2">
+                <div
+                  class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
+                >
+                  <UTooltip
+                    :delay-duration="200"
+                    :kbds="['arrowleft']"
+                    text="Skip this card"
+                  >
+                    <UButton
+                      label="Skip"
+                      icon="i-heroicons-x-mark"
+                      size="lg"
+                      variant="subtle"
+                      color="error"
+                      class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
+                      @click="throttledHandleAnswer(false)"
+                    />
+                  </UTooltip>
+
+                  <UTooltip
+                    :delay-duration="200"
+                    :kbds="['arrowright']"
+                    text="Next card"
+                  >
+                    <UButton
+                      label="Next"
+                      icon="i-heroicons-check"
+                      size="lg"
+                      variant="subtle"
+                      color="success"
+                      class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
+                      @click="throttledHandleAnswer(true)"
+                    />
+                  </UTooltip>
+                </div>
+
+                <div class="col-span-1 flex place-content-end gap-2">
                   <UButton
                     class="cursor-pointer"
                     color="neutral"
@@ -351,8 +445,43 @@ function removeCard(cardId?: UUID) {
                     />
                   </UDropdownMenu>
                 </div>
-              </template>
-            </AppFlashcard>
+              </div>
+            </div>
+
+            <UEmpty
+              v-else
+              :actions="[
+                {
+                  to: '/home',
+                  icon: 'i-lucide-house',
+                  label: 'Home',
+                  color: 'success',
+                  variant: 'subtle',
+                  class: 'cursor-pointer hover:scale-102 hover:shadow',
+                },
+                {
+                  icon: 'i-lucide-refresh-cw',
+                  label: 'Restart',
+                  color: 'error',
+                  variant: 'outline',
+                  class: 'cursor-pointer hover:scale-102 hover:shadow',
+                  onClick: store.restartDeck,
+                },
+                {
+                  icon: 'i-lucide-fast-forward',
+                  label: 'Ignore & continue',
+                  color: 'neutral',
+                  variant: 'subtle',
+                  class: 'cursor-pointer hover:scale-102 hover:shadow',
+                  onClick: () => store.updateIgnoreDate(true),
+                },
+              ]"
+              variant="naked"
+              icon="i-lucide-party-popper"
+              title="You're all caught up — nothing to review now."
+              description="Optimize your retention by strictly adhering to the next review date."
+              size="xl"
+            />
           </div>
 
           <!-- Title and Description -->
@@ -402,7 +531,7 @@ function removeCard(cardId?: UUID) {
 
                 <span v-if="!isEditing" class="inline-flex">
                   <UIcon
-                    v-if="!isAnswersSaving"
+                    v-if="!isSavingCards"
                     class="text-success size-6"
                     name="i-lucide-check"
                   />
