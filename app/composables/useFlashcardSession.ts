@@ -105,10 +105,17 @@ export const useFlashcardSession = () => {
       .finally(() => (isSavingCards.value = false));
   }
 
+  function shuffleCards() {
+    session.studyQueue = shuffleArray(session.studyQueue);
+    session.retryQueue = shuffleArray(session.retryQueue);
+    session.currentCard = session.studyQueue.shift();
+  }
+
   return {
     isSavingCards,
     session,
     progress,
     handleAnswer,
+    shuffleCards,
   };
 };

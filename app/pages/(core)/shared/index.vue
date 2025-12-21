@@ -111,7 +111,11 @@ watch(error, (newErr) => {
               color="neutral"
             >
               <div class="flex place-items-center gap-2">
-                <UAvatar :src="d.owner.avatarUrl || ''" />
+                <UAvatar
+                  :ui="{ fallback: 'uppercase' }"
+                  :src="d.owner.avatarUrl || ''"
+                  :alt="d.owner.username"
+                />
 
                 <div class="flex flex-col">
                   <NuxtLink

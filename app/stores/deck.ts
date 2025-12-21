@@ -2,7 +2,6 @@ import { defineStore, acceptHMRUpdate } from 'pinia';
 
 export const useDeckStore = defineStore('deck', () => {
   // --- Composables ---
-  // const router = useRouter();
   const route = useRoute();
   const { token } = useAuth();
   const toast = useToast();

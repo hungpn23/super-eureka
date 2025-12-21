@@ -11,7 +11,7 @@ const router = useRouter();
 const { token, data: user } = useAuth();
 const store = useDeckStore();
 
-const { isSavingCards, session, progress, handleAnswer } =
+const { isSavingCards, session, progress, handleAnswer, shuffleCards } =
   useFlashcardSession();
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
@@ -257,7 +257,7 @@ defineShortcuts({
         class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
         variant="link"
         icon="i-lucide-move-left"
-        label="Back to home"
+        label="Back to library"
       />
 
       <UForm
@@ -369,21 +369,22 @@ defineShortcuts({
               <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div class="col-span-1">
                   <UButton
-                    :to="`/${user?.username}`"
+                    v-if="user"
+                    :to="`/${user.username}`"
                     variant="link"
                     color="neutral"
                     class="w-fit p-0"
                   >
                     <div class="flex place-items-center gap-2">
-                      <UAvatar :src="user?.avatarUrl || ''" size="xl" />
+                      <UAvatar :ui="{ fallback: 'uppercase' }" :src="user.avatarUrl || ''" :alt="user.username" size="xl" />
 
                       <div class="flex flex-col">
                         <p class="text-muted text-sm font-normal text-pretty">
                           Created by
                         </p>
 
-                        <p class="text-highlighted text-base font-medium">
-                          {{ user!.username }}
+                        <p class="text-base font-medium">
+                          {{ user.username }}
                         </p>
                       </div>
                     </div>
@@ -428,11 +429,12 @@ defineShortcuts({
 
                 <div class="col-span-1 flex place-content-end gap-2">
                   <UButton
-                    class="cursor-pointer"
+                    class="cursor-pointer transition-all active:scale-80"
                     color="neutral"
                     icon="i-lucide-shuffle"
                     variant="ghost"
                     size="lg"
+                    @click="shuffleCards"
                   />
 
                   <UDropdownMenu :items="settingOptions">
@@ -491,7 +493,7 @@ defineShortcuts({
                 v-model="state.name"
                 :disabled="!isEditing"
                 :ui="{
-                  base: `${!isEditing ? 'p-0' : ''} text-highlighted text-lg font-semibold text-pretty sm:text-xl disabled:opacity-100 disabled:cursor-default`,
+                  base: `${!isEditing ? 'p-0' : ''} text-lg font-semibold text-pretty sm:text-xl disabled:opacity-100 disabled:cursor-default`,
                 }"
                 :variant="isEditing ? 'subtle' : 'ghost'"
                 class="w-full"
@@ -528,7 +530,7 @@ defineShortcuts({
               <h2
                 class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
               >
-                Terms ({{ state.cards?.length || 0 }})
+                Cards ({{ state.cards?.length || 0 }})
 
                 <span v-if="!isEditing" class="inline-flex">
                   <UIcon

@@ -19,9 +19,10 @@ const tabItems = ref<TabsItem[]>(profileTabItems);
           </div>
 
           <UAvatar
+            :ui="{ fallback: 'text-2xl uppercase' }"
             :src="user.avatarUrl || ''"
+            :alt="user.username"
             class="size-20 rounded-full"
-            icon="i-lucide-user"
           />
         </div>
 

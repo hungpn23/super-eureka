@@ -66,6 +66,7 @@ export type LearnQuestionState = {
   userChoiceIndex: number;
   isInReview: boolean;
   isCorrect?: boolean;
+  hintUsedCount: number;
 };
 
 export type LearnSetting = {

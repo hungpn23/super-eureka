@@ -6,7 +6,7 @@ const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 const store = useDeckStore();
 
-const { session, progress, handleAnswer } = useFlashcardSession();
+const { session, progress, handleAnswer, shuffleCards } = useFlashcardSession();
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
 const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
@@ -185,11 +185,12 @@ defineShortcuts({
 
         <div class="col-span-1 flex place-content-end gap-2">
           <UButton
-            class="cursor-pointer"
+            class="cursor-pointer transition-all active:scale-80"
             color="neutral"
             icon="i-lucide-shuffle"
             variant="ghost"
             size="lg"
+            @click="shuffleCards"
           />
 
           <UDropdownMenu :items="settingOptions">

@@ -29,6 +29,7 @@ const state = reactive<LearnQuestionState>({
   userChoiceIndex: -1,
   isInReview: false,
   isCorrect: undefined,
+  hintUsedCount: 0,
 });
 
 const setting = reactive<LearnSetting>({
@@ -182,6 +183,20 @@ async function onSettingClosed() {
 
   snapshotSetting = '';
   await store.refetch();
+}
+
+// TODO: calculate next review date based on hint used count
+function onGetAHint() {
+  if (session.currentQuestion) {
+    state.userAnswer = session.currentQuestion.correctAnswer.substring(
+      0,
+      state.hintUsedCount + 1,
+    );
+
+    state.hintUsedCount++;
+  }
+
+  inputElement.value?.inputRef?.focus();
 }
 
 function handleChoiceShortcut(index: number) {
@@ -358,10 +373,12 @@ defineShortcuts({
           </span>
 
           <UButton
+            v-if="session.currentQuestion.type === 'written'"
             class="mr-0 cursor-pointer"
             icon="i-lucide-lightbulb"
             :variant="smAndLarger ? 'soft' : 'ghost'"
             color="neutral"
+            @click="onGetAHint"
           >
             Get a hint
           </UButton>
@@ -477,7 +494,8 @@ defineShortcuts({
           "
           class="place-self-center font-semibold"
         >
-          Press <AppKbd label="Space" />
+          Press
+          <AppKbd label="Space" />
           <span v-if="session.currentQuestion.correctChoiceIndex">
             or
             <AppKbd :label="session.currentQuestion.correctChoiceIndex + 1" />

@@ -14,7 +14,7 @@ defineProps<{ card: Pick<Card, 'status'> }>();
     "
     :icon="
       {
-        known: 'i-lucide-circle-check',
+        known: 'i-lucide-graduation-cap',
         learning: 'i-lucide-circle-dashed',
         new: 'i-lucide-sparkles',
       }[card.status]

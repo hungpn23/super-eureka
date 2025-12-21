@@ -208,7 +208,7 @@ function getDeckProgress(deck: DeckWithStats) {
                     :label="d.stats.known"
                     variant="outline"
                     color="success"
-                    icon="i-lucide-circle-check"
+                    icon="i-lucide-graduation-cap"
                   />
                 </UTooltip>
 
