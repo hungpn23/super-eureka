@@ -5,28 +5,57 @@ definePageMeta({
   auth: false,
 });
 
+const router = useRouter();
 const toast = useToast();
-const { data: user } = useAuth();
-const { page, limit, filter, search, filterItems, query } = useDeckSearch();
+const { token, data: user } = useAuth();
+const {
+  page,
+  limit,
+  filter,
+  search,
+  filterItems,
+  query: searchQuery,
+} = useDeckSearch();
 
 const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
 
-const {
-  data: paginated,
-  error,
-  status,
-} = await useFetch<Paginated<PublicDeck>, ErrorResponse>('/api/decks/shared', {
-  query: {
-    ...query.value,
-    userId: user.value?.id,
-  },
+const query = computed(() => ({
+  ...searchQuery.value,
+  userId: user.value?.id,
+}));
+
+const { data: paginated, error } = await useFetch<
+  Paginated<PublicDeck>,
+  ErrorResponse
+>('/api/decks/shared', {
+  query,
 });
 
 watch(error, (newErr) => {
   if (newErr) toast.add({ title: 'Error fetching decks' });
 });
+
+async function onAddToLibrary(deckId: UUID) {
+  if (!token.value) {
+    toast.add({ title: 'Please login first before adding deck to library' });
+    router.push('/login');
+    return;
+  }
+
+  $fetch(`/api/decks/clone/${deckId}`, {
+    method: 'POST',
+    headers: { Authorization: token.value || '' },
+  })
+    .then(() => {
+      toast.add({ title: 'Deck added to library' });
+      router.push('/library');
+    })
+    .catch((err: ErrorResponse) => {
+      toast.add({ title: err.data?.message });
+    });
+}
 </script>
 
 <template>
@@ -54,8 +83,8 @@ watch(error, (newErr) => {
       <TransitionGroup name="list" appear>
         <NuxtLink
           v-for="d in paginated.data"
-          :key="d.id"
           v-slot="{ navigate }"
+          :key="d.id"
           :to="`/shared/${d.owner.username}/${d.slug}?deckId=${d.id}`"
           custom
         >
@@ -84,7 +113,9 @@ watch(error, (newErr) => {
               >
                 <UTooltip :delay-duration="200" text="Total cards">
                   <UBadge
+                    :ui="{ base: 'flex place-content-center' }"
                     :label="d.totalCards"
+                    class="min-w-12"
                     variant="outline"
                     color="neutral"
                     icon="i-lucide-gallery-horizontal-end"
@@ -93,17 +124,21 @@ watch(error, (newErr) => {
 
                 <UTooltip :delay-duration="200" text="Views">
                   <UBadge
-                    :label="d.cloneCount"
+                    :ui="{ base: 'flex place-content-center' }"
+                    :label="d.learnerCount"
+                    class="min-w-12"
                     icon="i-lucide-eye"
                     variant="outline"
                     color="neutral"
                   />
                 </UTooltip>
 
-                <UTooltip :delay-duration="200" text="Cloned times">
+                <UTooltip :delay-duration="200" text="Learners">
                   <UBadge
-                    :label="d.cloneCount"
-                    icon="i-lucide-git-fork"
+                    :ui="{ base: 'flex place-content-center' }"
+                    :label="d.learnerCount"
+                    class="min-w-12"
+                    icon="i-lucide-users"
                     variant="outline"
                     color="neutral"
                   />
@@ -111,7 +146,7 @@ watch(error, (newErr) => {
               </div>
             </div>
 
-            <div class="flex place-content-between place-items-center">
+            <div class="flex place-content-between place-items-center gap-2">
               <UButton
                 class="w-fit p-0 hover:bg-inherit active:bg-inherit"
                 variant="ghost"
@@ -140,10 +175,12 @@ watch(error, (newErr) => {
               </UButton>
 
               <UButton
-                label="Clone"
-                icon="i-lucide-git-fork"
+                :ui="{ label: 'hidden sm:inline' }"
+                class="cursor-pointer transition-all active:scale-90"
+                label="Add to library"
+                icon="i-lucide-plus"
                 variant="subtle"
-                @click.stop="console.log('Method not implemented')"
+                @click.stop="() => onAddToLibrary(d.id)"
               />
             </div>
           </UCard>

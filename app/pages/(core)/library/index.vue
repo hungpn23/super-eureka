@@ -161,14 +161,16 @@ function getDeckProgress(deck: DeckWithStats) {
         <TransitionGroup name="list" appear>
           <NuxtLink
             v-for="d in paginated.data"
+            v-slot="{ navigate }"
             :key="d.id"
             :to="`/library/${d.slug}?deckId=${d.id}`"
             custom
           >
             <UCard
               :ui="{ body: 'space-y-2' }"
-              class="shadow-md hover:translate-x-3 transition-all"
+              class="shadow-md transition-all hover:translate-x-3"
               variant="subtle"
+              @click="navigate"
             >
               <!-- Title -->
               <div
@@ -194,10 +196,12 @@ function getDeckProgress(deck: DeckWithStats) {
                 </div>
               </div>
 
-              <div class="mt-4 flex place-items-center gap-2 sm:gap-4">
+              <div class="mt-4 flex place-items-center gap-2">
                 <UTooltip :delay-duration="200" text="Total cards">
                   <UBadge
+                    :ui="{ base: 'flex place-content-center' }"
                     :label="d.stats.total"
+                    class="min-w-12"
                     variant="outline"
                     color="neutral"
                     icon="i-lucide-gallery-horizontal-end"
@@ -206,7 +210,9 @@ function getDeckProgress(deck: DeckWithStats) {
 
                 <UTooltip :delay-duration="200" text="Known cards">
                   <UBadge
+                    :ui="{ base: 'flex place-content-center' }"
                     :label="d.stats.known"
+                    class="min-w-12"
                     variant="outline"
                     color="success"
                     icon="i-lucide-graduation-cap"
@@ -215,7 +221,9 @@ function getDeckProgress(deck: DeckWithStats) {
 
                 <UTooltip :delay-duration="200" text="Learning cards">
                   <UBadge
+                    :ui="{ base: 'flex place-content-center' }"
                     :label="d.stats.learning"
+                    class="min-w-12"
                     variant="outline"
                     color="warning"
                     icon="i-lucide-circle-dashed"
@@ -224,7 +232,9 @@ function getDeckProgress(deck: DeckWithStats) {
 
                 <UTooltip :delay-duration="200" text="New cards">
                   <UBadge
+                    :ui="{ base: 'flex place-content-center' }"
                     :label="d.stats.new"
+                    class="min-w-12"
                     variant="outline"
                     color="info"
                     icon="i-lucide-sparkles"

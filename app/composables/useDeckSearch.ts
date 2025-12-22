@@ -3,6 +3,8 @@ import { deckFilterItems } from '~/utils/constants';
 import { QueryOrder } from '~/utils/enums';
 
 export const useDeckSearch = (baseMode: 'history' = 'history') => {
+  const route = useRoute();
+
   const defaults: DeckUrlParams = {
     page: '1',
     limit: '10',
@@ -10,7 +12,9 @@ export const useDeckSearch = (baseMode: 'history' = 'history') => {
     search: '',
   } as const;
 
-  const urlParams = useUrlSearchParams<Partial<DeckUrlParams>>(baseMode);
+  const urlParams = useUrlSearchParams<Partial<DeckUrlParams>>(baseMode, {
+    initialValue: route.query,
+  });
 
   const filterItems = ref<SelectMenuItem[]>(deckFilterItems);
 
