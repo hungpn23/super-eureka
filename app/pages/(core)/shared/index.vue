@@ -16,14 +16,13 @@ import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 definePageMeta({ auth: false });
 
-const router = useRouter();
 const toast = useDeckToasts();
 const { token, data: user } = useAuth();
 const { page, limit, filter, search, filterItems, searchQuery } =
 	useDeckSearch();
 const { state, isModalOpen } = useDeckClone();
 
-const input = useTemplateRef("input");
+const searchInput = useTemplateRef("input");
 
 const deckId = ref<UUID | null>(null);
 
@@ -42,25 +41,28 @@ const {
 	pending: isCloning,
 	data: cloneResponse,
 } = api.cloneDeck({ deckId, token, state });
-const { data: paginated, error } = api.getSharedDecks({ query, token });
 
-watch([error, cloneError], () => {
-	if (error.value) toast.getSharedDecksFailed();
+const { data: paginated, error: getDecksError } = api.getSharedDecks({
+	query,
+	token,
+});
+
+watch([getDecksError, cloneError], () => {
+	if (getDecksError.value) toast.getSharedDecksFailed();
 	if (cloneError.value) toast.cloneDeckFailed();
 });
 
 watch(cloneResponse, () => {
 	if (cloneResponse.value?.success) {
 		toast.cloneDeckSuccess();
-		navigateTo("/library");
+		return navigateTo("/library");
 	}
 });
 
 async function handleAddToLibrary(deck: GetSharedDecksData) {
 	if (!token.value) {
 		toast.guestAddDeckToLibrary();
-		router.push("/login");
-		return;
+		navigateTo("/login");
 	}
 
 	deckId.value = deck.id;
@@ -82,7 +84,7 @@ async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
 
 defineShortcuts({
 	"/": () => {
-		focusInput(input.value?.inputRef);
+		focusInput(searchInput.value?.inputRef);
 	},
 });
 </script>

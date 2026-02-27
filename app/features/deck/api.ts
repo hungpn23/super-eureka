@@ -1,6 +1,8 @@
 import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import type {
 	CloneDeckOptions,
+	GetSharedDeckDetailOptions,
+	GetSharedDeckDetailResponse,
 	GetSharedDecksOptions,
 	GetSharedDecksResponse,
 } from "./types";
@@ -30,6 +32,16 @@ class DeckApi {
 				method: "GET",
 				headers: { Authorization: token.value || "" },
 				query,
+			},
+		);
+	}
+
+	getSharedDeckDetail({ deckId, token }: GetSharedDeckDetailOptions) {
+		return useFetch<GetSharedDeckDetailResponse, ErrorResponse>(
+			computed(() => `${this.GET_SHARED_DECKS_URL}/${deckId.value}`),
+			{
+				method: "GET",
+				headers: { Authorization: token.value || "" },
 			},
 		);
 	}

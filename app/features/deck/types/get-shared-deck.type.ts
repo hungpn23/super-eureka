@@ -35,6 +35,11 @@ export type GetSharedDecksData = Pick<
 
 export type GetSharedDecksResponse = Paginated<GetSharedDecksData>;
 
+export type GetSharedDeckDetailOptions = {
+	deckId: Ref<string | null>;
+	token: Ref<string | null>;
+};
+
 export type GetSharedDeckDetailResponse = Pick<
 	Deck,
 	"id" | "name" | "description" | "visibility"

@@ -1,59 +1,63 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { breakpointsTailwind } from "@vueuse/core";
-import * as v from "valibot";
-import { type GetSharedDeckDetailResponse, Visibility } from "~/features/deck";
-import type { ErrorResponse } from "~/shared/types";
+import {
+	api,
+	CLONE_DECK_SCHEMA,
+	type CloneDeckSchema,
+	useDeckClone,
+	useDeckToasts,
+	Visibility,
+} from "~/features/deck";
+import type { UUID } from "~/shared/types";
 
 definePageMeta({
 	auth: false,
 });
 
-const schema = v.object({
-	passcode: v.pipe(
-		v.string(),
-		v.minLength(4, "Passcode must be at least 4 characters"),
-	),
-});
-
-type Schema = v.InferOutput<typeof schema>;
-
 const route = useRoute();
-const router = useRouter();
-const toast = useToast();
+const toast = useDeckToasts();
 const { token } = useAuth();
-
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual("sm");
-
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
+const { state, isModalOpen } = useDeckClone();
 
 const isFlipped = ref(false);
-const isModalOpen = ref(false);
 
-const state = reactive<Schema>({
-	passcode: "",
+const deckId = computed(() => route.query.deckId as UUID);
+
+const {
+	execute: cloneDeck,
+	error: cloneError,
+	pending: isCloning,
+	data: cloneResponse,
+} = api.cloneDeck({ deckId, token, state });
+
+const { data: deck, error: getDeckError } = api.getSharedDeckDetail({
+	deckId,
+	token,
 });
 
-const { data: deck, error } = await useFetch<
-	GetSharedDeckDetailResponse,
-	ErrorResponse
->(`/api/decks/shared/${route.query.deckId}`, {
-	headers: { Authorization: token.value || "" },
+watch([getDeckError, cloneError], () => {
+	if (getDeckError.value) toast.getSharedDecksFailed();
+	if (cloneError.value) toast.cloneDeckFailed();
 });
 
-watchImmediate(error, (newErr) => {
-	if (newErr) toast.add({ title: "Error fetching deck", color: "error" });
+watch(cloneResponse, () => {
+	if (cloneResponse.value?.success) {
+		toast.cloneDeckSuccess();
+		return navigateTo("/library");
+	}
 });
 
-async function onAddToLibrary() {
+async function handleAddToLibrary(visibility: Visibility) {
 	if (!token.value) {
-		toast.add({ title: "Please login first before adding deck to library" });
-		router.push("/login");
-		return;
+		toast.guestAddDeckToLibrary();
+		navigateTo("/login");
 	}
 
-	if (deck.value?.visibility === Visibility.PROTECTED) {
+	if (visibility === Visibility.PROTECTED) {
 		state.passcode = "";
 		isModalOpen.value = true;
 		return;
@@ -62,29 +66,10 @@ async function onAddToLibrary() {
 	await cloneDeck();
 }
 
-async function handleSubmit(event: FormSubmitEvent<Schema>) {
+async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
 	state.passcode = event.data.passcode;
-
-	isModalOpen.value = false;
+	isModalOpen.reset();
 	await cloneDeck();
-}
-
-async function cloneDeck() {
-	await $fetch(`/api/decks/clone/${deck.value?.id}`, {
-		method: "POST",
-		headers: { Authorization: token.value || "" },
-		body: state,
-	})
-		.then(() => {
-			toast.add({ title: "Deck added to library", color: "success" });
-			router.push("/library");
-		})
-		.catch((err: ErrorResponse) => {
-			toast.add({
-				title: err.data?.message || "Failed to add deck",
-				color: "error",
-			});
-		});
 }
 
 function toggleFlip() {
@@ -97,7 +82,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <UContainer>
+  <UContainer v-if="deck">
     <UButton
       to="/shared"
       class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
@@ -107,11 +92,11 @@ defineShortcuts({
     />
 
     <h1 class="text-lg font-semibold sm:text-xl">
-      {{ deck?.name }}
+      {{ deck.name }}
     </h1>
 
     <p class="text-muted">
-      {{ deck?.description }}
+      {{ deck.description }}
     </p>
 
     <div class="my-4 flex flex-col gap-4">
@@ -122,7 +107,8 @@ defineShortcuts({
               label: 'Add to Library',
               variant: 'subtle',
               icon: 'i-lucide-plus',
-              onClick: () => onAddToLibrary(),
+              disabled: isCloning,
+              onClick: () => handleAddToLibrary(deck!.visibility),
             },
           ]"
           :orientation="smAndLarger ? 'horizontal' : 'vertical'"
@@ -159,7 +145,7 @@ defineShortcuts({
           </div>
 
           <div
-            v-if="deck && deck.cards[0]"
+            v-if="deck.cards[0]"
             class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl"
           >
             {{ !isFlipped ? deck.cards[0].term : deck.cards[0].definition }}
@@ -171,7 +157,6 @@ defineShortcuts({
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div class="col-span-1 cursor-default">
             <UButton
-              v-if="deck"
               class="w-fit p-0 hover:bg-inherit active:bg-inherit"
               variant="ghost"
               color="neutral"
@@ -226,7 +211,7 @@ defineShortcuts({
 
     <USeparator class="my-6" />
 
-    <div v-if="deck" class="space-y-4">
+    <div class="space-y-4">
       <h2 class="text-lg font-medium sm:text-xl">
         Cards ({{ deck.totalCards }})
       </h2>
@@ -267,7 +252,7 @@ defineShortcuts({
       <template #body>
         <UForm
           id="passcode-form"
-          :schema="schema"
+          :schema="CLONE_DECK_SCHEMA"
           :state="state"
           @submit="handleSubmit"
         >
