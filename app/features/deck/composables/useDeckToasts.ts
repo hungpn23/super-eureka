@@ -24,5 +24,11 @@ export function useDeckToasts() {
 				description: undefined,
 			});
 		},
+		getSharedDecksFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to get shared decks.",
+			});
+		},
 	};
 }

@@ -1,6 +1,7 @@
 import type { PreviewCard } from "~/features/card";
 import type { Owner } from "~/features/user";
 import type { Paginated } from "~/shared/types";
+import type { QueryOrder } from "../enums";
 import type { Deck } from "./common.type";
 import type { DeckOrderBy } from "./search-deck.type";
 

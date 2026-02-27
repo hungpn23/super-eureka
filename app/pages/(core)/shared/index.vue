@@ -40,11 +40,12 @@ const {
 	execute: cloneDeck,
 	error: cloneError,
 	pending: isCloning,
+	status,
 } = api.cloneDeck({ deckId, token, state });
-const { data: paginated, error } = api.getSharedDecks(query, token);
+const { data: paginated, error } = api.getSharedDecks({ query, token });
 
 watch([error, cloneError], () => {
-	if (error.value) toast.cloneDeckFailed();
+	if (error.value) toast.getSharedDecksFailed();
 	if (cloneError.value) toast.cloneDeckFailed();
 });
 
@@ -64,14 +65,20 @@ async function handleAddToLibrary(deck: GetSharedDecksData) {
 	}
 
 	await cloneDeck();
+	if (status.value === "success") {
+		toast.cloneDeckSuccess();
+		navigateTo("/library");
+	}
 }
 
 async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
 	state.passcode = event.data.passcode;
+	isModalOpen.reset();
+	await cloneDeck();
 
-	if (deckId.value) {
-		isModalOpen.reset();
-		await cloneDeck();
+	if (status.value === "success") {
+		toast.cloneDeckSuccess();
+		navigateTo("/library");
 	}
 }
 

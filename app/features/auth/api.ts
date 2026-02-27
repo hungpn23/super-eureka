@@ -18,6 +18,7 @@ export class AuthApi {
 			method: "POST",
 			body: { email },
 			immediate: false,
+			watch: false,
 		});
 	}
 
@@ -26,6 +27,7 @@ export class AuthApi {
 			method: "POST",
 			query: { token },
 			immediate: false,
+			watch: false,
 		});
 	}
 
@@ -36,6 +38,7 @@ export class AuthApi {
 				method: "POST",
 				body: computed(() => ({ email: state.email })),
 				immediate: false,
+				watch: false,
 			},
 		);
 	}
@@ -47,6 +50,7 @@ export class AuthApi {
 				method: "POST",
 				body: computed(() => ({ email: state.email, otp: state.otp })),
 				immediate: false,
+				watch: false,
 			},
 		);
 	}
@@ -60,6 +64,7 @@ export class AuthApi {
 				password: state.password,
 			})),
 			immediate: false,
+			watch: false,
 		});
 	}
 }

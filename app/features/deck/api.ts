@@ -1,5 +1,9 @@
 import type { ErrorResponse, SuccessResponse } from "~/shared/types";
-import type { CloneDeckOptions, GetSharedDecksResponse } from "./types";
+import type {
+	CloneDeckOptions,
+	GetSharedDecksOptions,
+	GetSharedDecksResponse,
+} from "./types";
 
 class DeckApi {
 	private readonly BASE_URL = "/api/decks";
@@ -8,17 +12,18 @@ class DeckApi {
 
 	cloneDeck({ deckId, token, state }: CloneDeckOptions) {
 		return useFetch<SuccessResponse, ErrorResponse>(
-			`${this.CLONE_DECK_URL}/${deckId.value}`,
+			computed(() => `${this.CLONE_DECK_URL}/${deckId.value}`),
 			{
 				method: "POST",
 				headers: { Authorization: token.value || "" },
 				body: state,
 				immediate: false,
+				watch: false,
 			},
 		);
 	}
 
-	getSharedDecks(query: ComputedRef, token: Ref<string | null>) {
+	getSharedDecks({ query, token }: GetSharedDecksOptions) {
 		return useFetch<GetSharedDecksResponse, ErrorResponse>(
 			this.GET_SHARED_DECKS_URL,
 			{
