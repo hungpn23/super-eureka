@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from "@nuxt/ui";
 import { breakpointsTailwind } from "@vueuse/core";
 import {
 	api,
 	CLONE_DECK_SCHEMA,
-	type CloneDeckSchema,
 	useDeckClone,
 	useDeckToasts,
-	Visibility,
 } from "~/features/deck";
 import type { UUID } from "~/shared/types";
 
@@ -20,18 +17,12 @@ const toast = useDeckToasts();
 const { token } = useAuth();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 
-const { state, isModalOpen } = useDeckClone();
-
-const isFlipped = ref(false);
-
 const deckId = computed(() => route.query.deckId as UUID);
 
-const {
-	execute: cloneDeck,
-	error: cloneError,
-	pending: isCloning,
-	data: cloneResponse,
-} = api.cloneDeck({ deckId, token, state });
+const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
+	useDeckClone(deckId);
+
+const isFlipped = ref(false);
 
 const { data: deck, error: getDeckError } = api.getSharedDeckDetail({
 	deckId,
@@ -42,38 +33,9 @@ const throttledToggleFlip = useThrottleFn(() => {
 	isFlipped.value = !isFlipped.value;
 }, 300);
 
-watch([getDeckError, cloneError], () => {
+watch(getDeckError, () => {
 	if (getDeckError.value) toast.getSharedDecksFailed();
-	if (cloneError.value) toast.cloneDeckFailed();
 });
-
-watch(cloneResponse, () => {
-	if (cloneResponse.value?.success) {
-		toast.cloneDeckSuccess();
-		return navigateTo("/library");
-	}
-});
-
-async function handleAddToLibrary(visibility: Visibility) {
-	if (!token.value) {
-		toast.guestAddDeckToLibrary();
-		navigateTo("/login");
-	}
-
-	if (visibility === Visibility.PROTECTED) {
-		state.passcode = "";
-		isModalOpen.value = true;
-		return;
-	}
-
-	await cloneDeck();
-}
-
-async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
-	state.passcode = event.data.passcode;
-	isModalOpen.reset();
-	await cloneDeck();
-}
 
 defineShortcuts({
 	" ": throttledToggleFlip,
@@ -107,7 +69,7 @@ defineShortcuts({
               variant: 'subtle',
               icon: 'i-lucide-plus',
               disabled: isCloning,
-              onClick: () => handleAddToLibrary(deck!.visibility),
+              onClick: () => addToLibrary(deck!.visibility),
             },
           ]"
           :orientation="smAndLarger ? 'horizontal' : 'vertical'"

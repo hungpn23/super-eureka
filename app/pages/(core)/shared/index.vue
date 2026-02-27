@@ -1,15 +1,12 @@
 <script lang="ts" setup>
-import type { FormSubmitEvent } from "@nuxt/ui";
 import { formatTimeAgo } from "@vueuse/core";
 import {
 	api,
 	CLONE_DECK_SCHEMA,
-	type CloneDeckSchema,
 	type GetSharedDecksData,
 	useDeckClone,
 	useDeckSearch,
 	useDeckToasts,
-	Visibility,
 } from "~/features/deck";
 import type { UUID } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
@@ -20,11 +17,12 @@ const toast = useDeckToasts();
 const { token, data: user } = useAuth();
 const { page, limit, filter, search, filterItems, searchQuery } =
 	useDeckSearch();
-const { state, isModalOpen } = useDeckClone();
 
 const searchInput = useTemplateRef("input");
 
 const deckId = ref<UUID | null>(null);
+const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
+	useDeckClone(deckId);
 
 const totalRecords = computed(
 	() => paginated.value?.metadata.totalRecords || 0,
@@ -35,51 +33,18 @@ const query = computed(() => ({
 	visitorId: user.value?.id,
 }));
 
-const {
-	execute: cloneDeck,
-	error: cloneError,
-	pending: isCloning,
-	data: cloneResponse,
-} = api.cloneDeck({ deckId, token, state });
-
 const { data: paginated, error: getDecksError } = api.getSharedDecks({
 	query,
 	token,
 });
 
-watch([getDecksError, cloneError], () => {
+watch(getDecksError, () => {
 	if (getDecksError.value) toast.getSharedDecksFailed();
-	if (cloneError.value) toast.cloneDeckFailed();
 });
 
-watch(cloneResponse, () => {
-	if (cloneResponse.value?.success) {
-		toast.cloneDeckSuccess();
-		return navigateTo("/library");
-	}
-});
-
-async function handleAddToLibrary(deck: GetSharedDecksData) {
-	if (!token.value) {
-		toast.guestAddDeckToLibrary();
-		navigateTo("/login");
-	}
-
+function handleAddToLibrary(deck: GetSharedDecksData) {
 	deckId.value = deck.id;
-
-	if (deck.visibility === Visibility.PROTECTED) {
-		state.passcode = "";
-		isModalOpen.value = true;
-		return;
-	}
-
-	await cloneDeck();
-}
-
-async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
-	state.passcode = event.data.passcode;
-	isModalOpen.reset();
-	await cloneDeck();
+	addToLibrary(deck.visibility);
 }
 
 defineShortcuts({
