@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 import { breakpointsTailwind } from "@vueuse/core";
 
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual("sm");
+const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 
 const isShortcutOpen = ref(false);
 </script>

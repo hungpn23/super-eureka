@@ -18,9 +18,8 @@ definePageMeta({
 const route = useRoute();
 const toast = useDeckToasts();
 const { token } = useAuth();
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual("sm");
-const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
+const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
+
 const { state, isModalOpen } = useDeckClone();
 
 const isFlipped = ref(false);
@@ -38,6 +37,10 @@ const { data: deck, error: getDeckError } = api.getSharedDeckDetail({
 	deckId,
 	token,
 });
+
+const throttledToggleFlip = useThrottleFn(() => {
+	isFlipped.value = !isFlipped.value;
+}, 300);
 
 watch([getDeckError, cloneError], () => {
 	if (getDeckError.value) toast.getSharedDecksFailed();
@@ -70,10 +73,6 @@ async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
 	state.passcode = event.data.passcode;
 	isModalOpen.reset();
 	await cloneDeck();
-}
-
-function toggleFlip() {
-	isFlipped.value = !isFlipped.value;
 }
 
 defineShortcuts({

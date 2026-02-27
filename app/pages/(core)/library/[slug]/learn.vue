@@ -17,8 +17,7 @@ import { focusInput, getCards } from "~/shared/utils";
 
 const { token } = useAuth();
 const toast = useToast();
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual("sm");
+const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
 
 const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);

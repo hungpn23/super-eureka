@@ -6,8 +6,7 @@ import { UAvatar } from "#components";
 const { status, data: user } = useAuthState();
 const { signOut } = useAuth();
 const colorMode = useColorMode();
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual("sm");
+const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 
 const isDarkMode = computed(() => colorMode.value === "dark");
 

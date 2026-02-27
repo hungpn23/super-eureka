@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 import { breakpointsTailwind } from "@vueuse/core";
+import { useFlashcardSession } from "~/features/deck";
 
-const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual("sm");
+const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
 
 const { session, progress, handleAnswer, shuffleCards } = useFlashcardSession();
