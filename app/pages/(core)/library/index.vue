@@ -10,7 +10,6 @@ import type { ErrorResponse, Paginated } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useToast();
-const router = useRouter();
 const { token, data: user } = useAuth();
 
 const { page, limit, filter, search, filterItems, searchQuery } =
@@ -22,7 +21,7 @@ const totalRecords = computed(
 	() => paginated.value?.metadata.totalRecords || 0,
 );
 
-const computedUserStatItems = computed(() =>
+const userStatistics = computed(() =>
 	USER_STATS_ITEMS.map((item, index) => {
 		if (!userStats.value) return item;
 
@@ -79,7 +78,7 @@ defineShortcuts({
 		focusInput(input.value?.inputRef);
 	},
 	a: () => {
-		router.push("/create-deck");
+		navigateTo("/create-deck");
 	},
 });
 </script>
@@ -114,7 +113,7 @@ defineShortcuts({
 
       <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
         <UPageCard
-          v-for="(item, index) in computedUserStatItems"
+          v-for="(item, index) in userStatistics"
           :key="index"
           :ui="{ container: 'gap-0 sm:gap-2 p-3 lg:p-4 sm:p-3' }"
           :class="`text-${item.color} flex-1`"

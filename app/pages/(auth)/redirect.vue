@@ -9,14 +9,13 @@ definePageMeta({
 });
 
 const route = useRoute();
-const router = useRouter();
 const toast = useAuthToasts();
 const users = useUsers();
 const token = computed(() => route.query.token as string);
 const { execute, data, error, pending } = api.verifyToken(token);
 
 onMounted(async () => {
-	if (!token.value) return router.push("/login");
+	if (!token.value) return navigateTo("/login");
 
 	await execute();
 

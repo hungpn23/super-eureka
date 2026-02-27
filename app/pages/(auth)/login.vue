@@ -20,10 +20,9 @@ definePageMeta({
 const schema = v.pick(AUTH_SCHEMA, ["email", "password"]);
 const providerWithHandlers = applyProviderHandlers({
 	google: handleLoginWithGoogle,
-	"magic-link": handleLoginWithMagicLink,
+	"magic-link": () => navigateTo("/magic-link"),
 });
 const config = useRuntimeConfig();
-const router = useRouter();
 const auth = useAuth();
 const toast = useAuthToasts();
 
@@ -44,10 +43,6 @@ function handleLoginWithGoogle() {
 	const searchParams = new URLSearchParams(options).toString();
 
 	window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams}`;
-}
-
-function handleLoginWithMagicLink() {
-	router.push("/magic-link");
 }
 
 function handleSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {

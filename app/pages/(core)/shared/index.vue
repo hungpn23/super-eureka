@@ -21,6 +21,7 @@ const { page, limit, filter, search, filterItems, searchQuery } =
 const searchInput = useTemplateRef("input");
 
 const deckId = ref<UUID | null>(null);
+
 const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
 	useDeckClone(deckId);
 

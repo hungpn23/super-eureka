@@ -16,7 +16,6 @@ import {
 import type { ErrorResponse, UUID } from "~/shared/types";
 
 const toast = useToast();
-const router = useRouter();
 const { token, data: user } = useAuth();
 const store = useDeckStore();
 
@@ -131,7 +130,9 @@ async function onDelete() {
 		method: "DELETE",
 		headers: { Authorization: token.value || "" },
 	})
-		.then(() => router.push(`/library`))
+		.then(() => {
+			navigateTo(`/library`);
+		})
 		.catch((error: ErrorResponse) => {
 			toast.add({
 				title: "Error deleting deck",
