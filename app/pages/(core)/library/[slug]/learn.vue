@@ -13,7 +13,7 @@ import {
 	updateCard,
 } from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
-import { getCards } from "~/shared/utils";
+import { focusInput, getCards } from "~/shared/utils";
 
 const { token } = useAuth();
 const toast = useToast();
@@ -170,12 +170,7 @@ function resetQuestionState() {
 	state.userChoiceIndex = -1;
 	state.hintUsedCount = 0;
 
-	const inputRef = inputElement.value?.inputRef;
-	if (inputRef) {
-		setTimeout(() => {
-			inputRef.focus();
-		}, 300);
-	}
+	focusInput(inputElement.value?.inputRef);
 }
 
 async function saveAnswers() {
@@ -220,7 +215,7 @@ function onGetAHint() {
 		state.hintUsedCount++;
 	}
 
-	inputElement.value?.inputRef?.focus();
+	focusInput(inputElement.value?.inputRef);
 }
 
 function handleChoiceShortcut(index: number) {

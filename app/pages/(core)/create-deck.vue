@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
+	api,
 	CARD_SEPARATOR_ITEMS,
 	CONTENT_SEPARATOR_ITEMS,
 	CREATE_DECK_SCHEMA,
-	type CreateDeckResponse,
 	type CreateDeckSchema,
 	DEFINITION_LANGUAGE_ITEMS,
 	getNewCard,
@@ -17,10 +17,8 @@ import {
 	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import { Visibility } from "~/features/deck";
-import type { ErrorResponse } from "~/shared/types";
-import { getVisibilityIcon } from "~/shared/utils";
+import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
-const router = useRouter();
 const toast = useToast();
 const { token } = useAuth();
 
@@ -28,7 +26,6 @@ const passcodeRef = useTemplateRef("passcode");
 const definitionRef = useTemplateRef("definition");
 
 const isVisibilityModalOpen = ref(false);
-const isSubmitting = ref(false);
 const formErrorMsg = ref("");
 
 const createState = reactive<CreateDeckSchema>({
@@ -56,45 +53,43 @@ const {
 	isWord,
 } = useCardSuggestion(definitionRef);
 
-function onPasscodeInputMounted() {
-	setTimeout(() => {
-		passcodeRef.value?.inputRef?.focus();
-	}, 300);
-}
+const {
+	execute: createDeck,
+	pending: isCreating,
+	status,
+	error,
+} = api.createDeck({
+	data: createState,
+	token,
+});
 
-async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
-	formErrorMsg.value = "";
-	if (isSubmitting.value) return;
-	isSubmitting.value = true;
-
-	$fetch<CreateDeckResponse>("/api/decks", {
-		method: "POST",
-		headers: { Authorization: token.value || "" },
-		body: event.data,
-	})
-		.then(() => {
-			router.push("/library");
-
-			toast.add({
-				title: "New deck created!",
-				color: "success",
-				duration: 2000,
-			});
-		})
-		.catch((error: ErrorResponse) => {
-			toast.add({
-				title: "Create failed!",
-				description: JSON.stringify(error.data || "Unknown error"),
-				color: "error",
-				duration: 2000,
-			});
-		})
-		.finally(() => {
-			isSubmitting.value = false;
+watch(error, () => {
+	if (error.value)
+		toast.add({
+			title: "Create failed!",
+			description: error.value.data?.message || "Unknown error",
+			color: "error",
+			duration: 2000,
 		});
+});
+
+async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
+	formErrorMsg.value = "";
+
+	Object.assign(createState, event.data);
+	await createDeck();
+
+	if (status.value === "success") {
+		navigateTo("/library");
+		toast.add({
+			title: "New deck created!",
+			color: "success",
+			duration: 2000,
+		});
+	}
 }
 
-async function onError(event: FormErrorEvent) {
+async function onValidationError(event: FormErrorEvent) {
 	const cardError = event.errors.find((e) => e.name === "input");
 
 	formErrorMsg.value = cardError
@@ -126,6 +121,7 @@ async function onError(event: FormErrorEvent) {
           color="primary"
           type="submit"
           form="create-deck-form"
+          :disabled="isCreating"
         />
       </div>
 
@@ -145,8 +141,8 @@ async function onError(event: FormErrorEvent) {
       :schema="CREATE_DECK_SCHEMA"
       :state="createState"
       class="mt-4 flex flex-col gap-2"
-      @submit="onCreateSubmit"
-      @error="onError"
+      @submit="handleSubmit"
+      @error="onValidationError"
     >
       <UFormField label="Name" name="name" required>
         <UInput
@@ -419,7 +415,7 @@ async function onError(event: FormErrorEvent) {
               ref="passcode"
               v-model="createState.passcode"
               @keydown.enter="isVisibilityModalOpen = false"
-              @vue:mounted="onPasscodeInputMounted"
+              @vue:mounted="focusInput(passcodeRef?.inputRef);"
             />
           </UFormField>
         </template>

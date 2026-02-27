@@ -8,7 +8,7 @@ import {
 	QUESTION_TYPE_ITEMS,
 	shuffleArray,
 } from "~/features/deck";
-import { getCards } from "~/shared/utils";
+import { focusInput, getCards } from "~/shared/utils";
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual("sm");
@@ -98,8 +98,7 @@ function scrollAndFocus() {
 		const newInput = session.element.querySelector("input");
 		if (newInput) {
 			session.input = newInput;
-			setTimeout(() => newInput.focus(), 300);
-			return;
+			return focusInput(newInput);
 		}
 
 		session.input = null;

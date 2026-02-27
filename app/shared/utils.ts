@@ -18,3 +18,9 @@ export const getCards = (cards: Card[], isIgnoreDate: boolean): Card[] => {
 				(c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
 			);
 };
+
+export const focusInput = (
+	inputRef?: HTMLInputElement | HTMLTextAreaElement | null,
+) => {
+	setTimeout(() => inputRef?.focus(), 300);
+};

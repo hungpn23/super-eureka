@@ -1,5 +1,6 @@
 import type { ShallowRef } from "vue";
 import type { CardSuggestion } from "~/features/card";
+import { focusInput } from "~/shared/utils";
 import type { CreateCardSchema, TextareaRef } from "../types";
 
 export function useCardSuggestion(
@@ -56,7 +57,7 @@ export function useCardSuggestion(
 		card.pronunciation = suggestion.pronunciation;
 		card.examples = suggestion.examples.length ? suggestion.examples : [""];
 
-		definitionRef.value?.[index]?.textareaRef?.focus();
+		focusInput(definitionRef.value?.[index]?.textareaRef);
 	}
 
 	function isWord(term: string) {

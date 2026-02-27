@@ -7,10 +7,12 @@ import {
 	type CloneDeckSchema,
 	type GetSharedDecksData,
 	useDeckClone,
+	useDeckSearch,
 	useDeckToasts,
 	Visibility,
 } from "~/features/deck";
 import type { UUID } from "~/shared/types";
+import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 definePageMeta({ auth: false });
 
@@ -75,7 +77,7 @@ async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
 
 defineShortcuts({
 	"/": () => {
-		input.value?.inputRef?.focus();
+		focusInput(input.value?.inputRef);
 	},
 });
 </script>

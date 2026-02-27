@@ -1,9 +1,13 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
-import { type GetManyRes, USER_STATS_ITEMS } from "~/features/deck";
+import {
+	type GetManyRes,
+	USER_STATS_ITEMS,
+	useDeckSearch,
+} from "~/features/deck";
 import type { UserStats } from "~/features/user";
 import type { ErrorResponse, Paginated } from "~/shared/types";
-import { getVisibilityIcon } from "~/shared/utils";
+import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useToast();
 const router = useRouter();
@@ -72,7 +76,7 @@ function getDeckProgress(deck: GetManyRes) {
 
 defineShortcuts({
 	"/": () => {
-		input.value?.inputRef?.focus();
+		focusInput(input.value?.inputRef);
 	},
 	a: () => {
 		router.push("/create-deck");
