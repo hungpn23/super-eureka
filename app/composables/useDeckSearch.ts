@@ -1,7 +1,6 @@
 import type { SelectMenuItem } from "@nuxt/ui";
 import type { DeckOrderBy, DeckUrlParams } from "~/features/deck";
-import { deckFilterItems } from "~/utils/constants";
-import { QueryOrder } from "~/utils/enums";
+import { DECK_FILTER_ITEMS, QueryOrder } from "~/features/deck";
 
 export const useDeckSearch = (baseMode: "history" = "history") => {
 	const route = useRoute();
@@ -17,7 +16,7 @@ export const useDeckSearch = (baseMode: "history" = "history") => {
 		initialValue: route.query,
 	});
 
-	const filterItems = ref<SelectMenuItem[]>(deckFilterItems);
+	const filterItems = ref<SelectMenuItem[]>(DECK_FILTER_ITEMS);
 
 	const page = computed({
 		get: () => Number(urlParams.page || defaults.page),

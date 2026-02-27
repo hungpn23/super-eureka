@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
-import type { GetManyRes } from "~/features/deck";
+import { type GetManyRes, USER_STATS_ITEMS } from "~/features/deck";
 import type { UserStats } from "~/features/user";
 import type { ErrorResponse, Paginated } from "~/shared/types";
+import { getVisibilityIcon } from "~/shared/utils";
 
 const toast = useToast();
 const router = useRouter();
@@ -18,7 +19,7 @@ const totalRecords = computed(
 );
 
 const computedUserStatItems = computed(() =>
-	userStatsItems.map((item, index) => {
+	USER_STATS_ITEMS.map((item, index) => {
 		if (!userStats.value) return item;
 
 		const { currentStreak, longestStreak, totalCardsLearned, masteryRate } =

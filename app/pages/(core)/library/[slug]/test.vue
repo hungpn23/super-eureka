@@ -2,6 +2,13 @@
 import { breakpointsTailwind } from "@vueuse/core";
 import type { UCard } from "#components";
 import type { TestQuestion, TestSession, TestSetting } from "~/features/card";
+import {
+	generateQuestions,
+	QUESTION_DIRECTION_ITEMS,
+	QUESTION_TYPE_ITEMS,
+	shuffleArray,
+} from "~/features/deck";
+import { getCards } from "~/shared/utils";
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual("sm");
@@ -409,7 +416,7 @@ onMounted(() => {
 
             <USelect
               v-model="setting.types"
-              :items="questionTypeItems"
+              :items="QUESTION_TYPE_ITEMS"
               :ui="{ content: 'min-w-fit' }"
               size="lg"
               value-key="value"
@@ -422,7 +429,7 @@ onMounted(() => {
 
             <USelect
               v-model="setting.direction"
-              :items="questionDirectionItems"
+              :items="QUESTION_DIRECTION_ITEMS"
               :ui="{ content: 'min-w-fit' }"
               size="lg"
             />

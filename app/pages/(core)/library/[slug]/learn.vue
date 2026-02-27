@@ -6,7 +6,14 @@ import type {
 	LearnSession,
 	LearnSetting,
 } from "~/features/card";
+import {
+	generateQuestions,
+	QUESTION_DIRECTION_ITEMS,
+	QUESTION_TYPE_ITEMS,
+	updateCard,
+} from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
+import { getCards } from "~/shared/utils";
 
 const { token } = useAuth();
 const toast = useToast();
@@ -615,7 +622,7 @@ defineShortcuts({
 
             <USelect
               v-model="setting.types"
-              :items="questionTypeItems"
+              :items="QUESTION_TYPE_ITEMS"
               :ui="{ content: 'min-w-fit' }"
               size="lg"
               value-key="value"
@@ -628,7 +635,7 @@ defineShortcuts({
 
             <USelect
               v-model="setting.direction"
-              :items="questionDirectionItems"
+              :items="QUESTION_DIRECTION_ITEMS"
               :ui="{ content: 'min-w-fit' }"
               size="lg"
             />

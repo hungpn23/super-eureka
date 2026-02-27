@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { TabsItem } from "@nuxt/ui";
+import { PROFILE_TAB_ITEMS } from "~/features/user";
 
 const { status, data: user } = useAuth();
 
-const tabItems = ref<TabsItem[]>(profileTabItems);
+const tabItems = ref<TabsItem[]>(PROFILE_TAB_ITEMS);
 </script>
 
 <template>

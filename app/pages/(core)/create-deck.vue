@@ -8,6 +8,7 @@ import {
 	type CreateDeckSchema,
 	DEFINITION_LANGUAGE_ITEMS,
 	getNewCard,
+	getVisibilityDesc,
 	IMPORT_CARD_SCHEMA,
 	TERM_LANGUAGE_ITEMS,
 	useCardSuggestion,
