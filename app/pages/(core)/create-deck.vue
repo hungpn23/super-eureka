@@ -8,9 +8,10 @@ import {
 	type CreateCardSchema,
 	type CreateDeckSchema,
 	DEFINITION_LANGUAGE_ITEMS,
+	getNewCard,
 	IMPORT_CARD_SCHEMA,
-	type ImportCardsSchema,
 	TERM_LANGUAGE_ITEMS,
+	useImportCards,
 	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import type { ErrorResponse } from "~/shared/types";
@@ -23,7 +24,6 @@ const passcodeRef = useTemplateRef("passcode");
 const definitionRef = useTemplateRef("definition");
 
 const isVisibilityModalOpen = ref(false);
-const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
 const formErrorMsg = ref("");
 
@@ -40,52 +40,14 @@ const createState = reactive<CreateDeckSchema>({
 	cards: [getNewCard(), getNewCard(), getNewCard(), getNewCard()],
 });
 
-const importState = reactive({
-	input: "",
-	contentSeparator: "tab" as ContentSeparator,
-	cardSeparator: "new_line" as CardSeparator,
-	customContentSeparator: "-",
-	customCardSeparator: "\\",
-});
-
-const contentSeparatorPreview = computed(
-	() =>
-		`Term${getContentSeparator(
-			importState.contentSeparator,
-			importState.customContentSeparator,
-		)}Definition`,
-);
-
-const cardSeparatorPreview = computed(
-	() =>
-		`Card1${getCardSeparator(
-			importState.cardSeparator,
-			importState.customCardSeparator,
-		)}Card2`,
-);
-
-const parsedCards = computed(() => {
-	const sep = getContentSeparator(
-		importState.contentSeparator,
-		importState.customContentSeparator,
-	);
-	const cardSep = getCardSeparator(
-		importState.cardSeparator,
-		importState.customCardSeparator,
-	);
-
-	if (!importState.input || !sep || !cardSep) return [];
-
-	const cards = importState.input
-		.split(cardSep)
-		.filter((card) => card.trim().length > 0);
-
-	return cards.map((card) => {
-		const [term = "", definition = ""] = card.split(sep);
-
-		return { term, definition };
-	});
-});
+const {
+	isImportModalOpen,
+	importState,
+	contentSeparatorPreview,
+	cardSeparatorPreview,
+	parsedCards,
+	onImportSubmit,
+} = useImportCards(createState);
 
 const debouncedGetCardSuggestion = useDebounceFn(
 	async (card: CreateCardSchema, cardIndex: number) => {
@@ -173,47 +135,6 @@ async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
 		.finally(() => {
 			isSubmitting.value = false;
 		});
-}
-
-async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
-	const sep = getContentSeparator(
-		importState.contentSeparator,
-		importState.customContentSeparator,
-	);
-
-	const cardSep = getCardSeparator(
-		importState.cardSeparator,
-		importState.customCardSeparator,
-	);
-
-	if (!sep || !cardSep) return;
-
-	const importCards = event.data.input
-		.split(cardSep)
-		.filter((card) => card.trim().length > 0)
-		.map((card) => {
-			const [term = "", definition = ""] = card.split(sep);
-
-			const newCard: CreateCardSchema = {
-				term,
-				definition,
-				termLanguage: "en",
-				definitionLanguage: "vi",
-				examples: [],
-			};
-
-			return newCard;
-		});
-
-	const currentCards = createState.cards.filter(
-		(c) => c.term.trim().length > 0 || c.definition.trim().length > 0,
-	);
-
-	createState.cards = [...currentCards, ...importCards];
-
-	isImportModalOpen.value = false;
-
-	toast.add({ title: "Successfully imported!", color: "success" });
 }
 
 async function onError(event: FormErrorEvent) {
