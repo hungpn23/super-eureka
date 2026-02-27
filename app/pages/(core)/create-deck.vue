@@ -1,21 +1,19 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import type { UTextarea } from "#components";
-import type { ErrorResponse } from "~/shared/types";
 import {
+	CARD_SEPARATOR_ITEMS,
+	CONTENT_SEPARATOR_ITEMS,
+	CREATE_DECK_SCHEMA,
 	type CreateCardSchema,
 	type CreateDeckSchema,
-	createDeckSchema,
+	DEFINITION_LANGUAGE_ITEMS,
+	IMPORT_CARD_SCHEMA,
 	type ImportCardsSchema,
-	importCardsSchema,
-} from "./schemas";
-import {
-	cardSeparatorItems,
-	contentSeparatorItems,
-	definitionLanguageItems,
-	termLanguageItems,
-	visibilityItems,
-} from "./select-items";
+	TERM_LANGUAGE_ITEMS,
+	VISIBILITY_ITEMS,
+} from "~/features/create-deck";
+import type { ErrorResponse } from "~/shared/types";
 
 const router = useRouter();
 const toast = useToast();
@@ -266,7 +264,7 @@ async function onError(event: FormErrorEvent) {
     <!-- Create Deck Form -->
     <UForm
       id="create-deck-form"
-      :schema="createDeckSchema"
+      :schema="CREATE_DECK_SCHEMA"
       :state="createState"
       class="mt-4 flex flex-col gap-2"
       @submit="onCreateSubmit"
@@ -334,7 +332,7 @@ async function onError(event: FormErrorEvent) {
 
                   <USelectMenu
                     v-model="card.termLanguage"
-                    :items="termLanguageItems"
+                    :items="TERM_LANGUAGE_ITEMS"
                     value-key="id"
                   />
                 </div>
@@ -421,7 +419,7 @@ async function onError(event: FormErrorEvent) {
                 <USelectMenu
                   class="place-self-end"
                   v-model="card.definitionLanguage"
-                  :items="definitionLanguageItems"
+                  :items="DEFINITION_LANGUAGE_ITEMS"
                   value-key="id"
                 />
 
@@ -519,7 +517,7 @@ async function onError(event: FormErrorEvent) {
           >
             <USelect
               v-model="createState.visibility"
-              :items="visibilityItems"
+              :items="VISIBILITY_ITEMS"
               :icon="getVisibilityIcon(createState.visibility)"
               :ui="{ content: 'min-w-fit' }"
               value-key="id"
@@ -566,7 +564,7 @@ async function onError(event: FormErrorEvent) {
         <!-- Import Cards Form -->
         <UForm
           id="import-form"
-          :schema="importCardsSchema"
+          :schema="IMPORT_CARD_SCHEMA"
           :state="importState"
           class="flex flex-col gap-4"
           @submit="onImportSubmit"
@@ -597,7 +595,7 @@ async function onError(event: FormErrorEvent) {
               >
                 <USelect
                   v-model="importState.contentSeparator"
-                  :items="contentSeparatorItems"
+                  :items="CONTENT_SEPARATOR_ITEMS"
                   class="w-full"
                   variant="subtle"
                   value-key="id"
@@ -632,7 +630,7 @@ async function onError(event: FormErrorEvent) {
               >
                 <USelect
                   v-model="importState.cardSeparator"
-                  :items="cardSeparatorItems"
+                  :items="CARD_SEPARATOR_ITEMS"
                   class="w-full"
                   variant="subtle"
                   value-key="id"

@@ -5,6 +5,7 @@ import type {
 	FormSubmitEvent,
 } from "@nuxt/ui";
 import { formatDistanceToNowStrict } from "date-fns";
+import type { ErrorResponse } from "~/shared/types";
 
 const toast = useToast();
 const router = useRouter();

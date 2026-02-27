@@ -2,6 +2,7 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { formatTimeAgo } from "@vueuse/core";
 import * as v from "valibot";
+import type { ErrorResponse } from "~/shared/types";
 import { Visibility } from "~/utils/enums";
 
 definePageMeta({

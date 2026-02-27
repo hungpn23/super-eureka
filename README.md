@@ -147,7 +147,7 @@ Create a `.env` file in the root directory:
 NUXT_API_URL=http://localhost:3000/api
 NUXT_PUBLIC_APP_URL=http://localhost:3000
 NUXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-NUXT_PUBLIC_GOOGLE_REDIRECT_URI=http://localhost:3000/login/callback
+NUXT_PUBLIC_GOOGLE_REDIRECT_URI=http://localhost:3000/redirect
 ```
 
 ### Development

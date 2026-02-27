@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
+import type { ErrorResponse } from "~/shared/types";
 
 const toast = useToast();
 const router = useRouter();
