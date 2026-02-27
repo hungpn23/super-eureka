@@ -14,12 +14,13 @@ import {
 	TERM_LANGUAGE_ITEMS,
 	useCardSuggestion,
 	useCardsImport,
+	useCreateDeckToasts,
 	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import { Visibility } from "~/features/deck";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
-const toast = useToast();
+const toast = useCreateDeckToasts();
 const { token } = useAuth();
 
 const passcodeRef = useTemplateRef("passcode");
@@ -57,21 +58,7 @@ const {
 	execute: createDeck,
 	pending: isCreating,
 	status,
-	error,
-} = api.createDeck({
-	data: createState,
-	token,
-});
-
-watch(error, () => {
-	if (error.value)
-		toast.add({
-			title: "Create failed!",
-			description: error.value.data?.message || "Unknown error",
-			color: "error",
-			duration: 2000,
-		});
-});
+} = api.createDeck({ data: createState, token });
 
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
 	formErrorMsg.value = "";
@@ -81,11 +68,11 @@ async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
 
 	if (status.value === "success") {
 		navigateTo("/library");
-		toast.add({
-			title: "New deck created!",
-			color: "success",
-			duration: 2000,
-		});
+		toast.createDeckSuccess();
+	}
+
+	if (status.value === "error") {
+		toast.createDeckFailed();
 	}
 }
 

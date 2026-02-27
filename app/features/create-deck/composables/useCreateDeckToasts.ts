@@ -1,27 +1,20 @@
 import { DEFAULT_TOAST_OPTIONS } from "~/shared/constants";
 
-export function useDeckToasts() {
+export function useCreateDeckToasts() {
 	const toast = useToast();
 
 	return {
-		cloneDeckSuccess: () => {
+		createDeckSuccess: () => {
 			toast.add({
 				...DEFAULT_TOAST_OPTIONS.SUCCESS,
-				title: "Deck added to library.",
+				title: "Deck created successfully.",
 				description: "You can now access the deck in your library.",
 			});
 		},
-		cloneDeckFailed: () => {
+		createDeckFailed: () => {
 			toast.add({
 				...DEFAULT_TOAST_OPTIONS.FAIL,
-				title: "Failed to clone deck.",
-			});
-		},
-		guestAddDeckToLibrary: () => {
-			toast.add({
-				...DEFAULT_TOAST_OPTIONS.FAIL,
-				title: "Please login first before adding deck to library.",
-				description: undefined,
+				title: "Failed to create deck.",
 			});
 		},
 	};

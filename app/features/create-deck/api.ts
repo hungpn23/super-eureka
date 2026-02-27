@@ -10,6 +10,7 @@ class CreateDeckApi {
 			headers: { Authorization: token.value || "" },
 			body: data,
 			immediate: false,
+			watch: false,
 		});
 	}
 }
