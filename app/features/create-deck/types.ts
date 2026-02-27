@@ -13,3 +13,4 @@ export type LanguageCode = (typeof LANGUAGE_CODES)[number];
 export type CreateCardSchema = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
 export type CreateDeckSchema = v.InferOutput<typeof CREATE_DECK_SCHEMA>;
 export type ImportCardsSchema = v.InferOutput<typeof IMPORT_CARD_SCHEMA>;
+export type TextareaRef = { textareaRef?: HTMLTextAreaElement | null } | null;

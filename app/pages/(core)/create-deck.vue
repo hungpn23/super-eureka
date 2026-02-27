@@ -9,14 +9,16 @@ import {
 	DEFINITION_LANGUAGE_ITEMS,
 	getNewCard,
 	getVisibilityDesc,
+	getVisibilityLabel,
 	IMPORT_CARD_SCHEMA,
 	TERM_LANGUAGE_ITEMS,
 	useCardSuggestion,
-	useImportCards,
+	useCardsImport,
 	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import { Visibility } from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
+import { getVisibilityIcon } from "~/shared/utils";
 
 const router = useRouter();
 const toast = useToast();
@@ -43,7 +45,7 @@ const {
 	cardSeparatorPreview,
 	parsedCards,
 	onImportSubmit,
-} = useImportCards(createState);
+} = useCardsImport(createState);
 
 const {
 	suggestion,

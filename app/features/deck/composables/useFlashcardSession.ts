@@ -1,6 +1,7 @@
 import type { Card, FlashcardSession } from "~/features/card";
 import type { ErrorResponse } from "~/shared/types";
 import { getCards } from "~/shared/utils";
+import { shuffleArray, updateCard } from "../utils";
 
 export const useFlashcardSession = () => {
 	const { token } = useAuth();
