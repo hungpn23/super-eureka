@@ -1,3 +1,6 @@
+import type { Card, FlashcardSession } from "~/features/card";
+import type { ErrorResponse } from "~/shared/types";
+
 export const useFlashcardSession = () => {
 	const { token } = useAuth();
 	const store = useDeckStore();

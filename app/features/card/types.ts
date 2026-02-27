@@ -1,25 +1,8 @@
-import * as v from "valibot";
-import type { UUID } from "./branded";
+import type * as v from "valibot";
+import type { UUID } from "~/shared/types";
+import type { UPDATE_CARD_SCHEMA } from "./constants";
 
-export const updateCardSchema = v.object({
-	id: v.pipe(
-		v.string(),
-		v.transform((val) => val as UUID),
-	),
-	term: v.pipe(v.string(), v.minLength(1, "Term is required")),
-	definition: v.pipe(v.string(), v.minLength(1, "Definition is required")),
-	streak: v.pipe(v.number(), v.minValue(0, "Streak cannot be negative")),
-	reviewDate: v.nullish(
-		v.pipe(
-			v.string(),
-			v.minLength(1, "Review date is required"),
-			v.transform((val) => new Date(val).toISOString()),
-		),
-	),
-	status: v.picklist(["known", "learning", "new"] as const),
-});
-
-export type UpdateCardSchema = v.InferOutput<typeof updateCardSchema>;
+export type UpdateCardSchema = v.InferOutput<typeof UPDATE_CARD_SCHEMA>;
 
 export type Card = {
 	id: UUID;
@@ -35,9 +18,7 @@ export type Card = {
 	reviewDate?: string;
 	status: CardStatus;
 };
-
 export type PreviewCard = Pick<Card, "term" | "definition">;
-
 export type CardToSave = Pick<Card, "id" | "streak" | "reviewDate">;
 
 // --- FLASHCARD ---
@@ -64,7 +45,6 @@ export type LearnQuestion = Pick<
 	choices: string[];
 	correctChoiceIndex: number;
 };
-
 export type LearnSession = {
 	isSavingAnswers: boolean;
 	correctCount: number;
@@ -75,7 +55,6 @@ export type LearnSession = {
 	totalQuestions: number;
 	currentQuestion?: LearnQuestion;
 };
-
 export type LearnQuestionState = {
 	userAnswer: string;
 	userChoiceIndex: number;
@@ -83,7 +62,6 @@ export type LearnQuestionState = {
 	isCorrect?: boolean;
 	hintUsedCount: number;
 };
-
 export type LearnSetting = {
 	showCorrectAnswer: boolean;
 	types: QuestionType[];
@@ -98,7 +76,6 @@ export type TestQuestion = Omit<LearnQuestion, "streak" | "reviewDate"> &
 		isUserAnswerCorrect: boolean;
 		isMarkedAsDontKnow: boolean;
 	}>;
-
 export type TestSession = {
 	index: number;
 	isSubmitted: boolean;
@@ -107,12 +84,21 @@ export type TestSession = {
 	input: HTMLInputElement | null;
 	element: Element | null;
 };
-
 export type TestSetting = {
 	questionAmount: number;
 	isIgnoreDate: boolean;
 	types: QuestionType[];
 	direction: QuestionDirection;
+};
+
+// --- SUGGESTION ---
+export type CardSuggestion = {
+	currentCardIndex: number;
+	definition: string;
+	pronunciation?: string;
+	partOfSpeech?: string;
+	usageOrGrammar?: string;
+	examples: string[];
 };
 
 // --- COMMON ---

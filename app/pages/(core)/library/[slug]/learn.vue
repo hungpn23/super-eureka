@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
+import type {
+	LearnQuestion,
+	LearnQuestionState,
+	LearnSession,
+	LearnSetting,
+} from "~/features/card";
 import type { ErrorResponse } from "~/shared/types";
 
 const { token } = useAuth();

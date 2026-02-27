@@ -1,11 +1,9 @@
-import type { Reactive } from "vue";
-
-import type { ErrorResponse, SuccessResponse } from "../types";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import type {
 	ConfirmEmailVerificationResponse,
 	SignUpState,
 	TokenPairResponse,
-} from "./auth.type";
+} from "./types";
 
 export class AuthApi {
 	private readonly BASE_URL = "/api/auth";
@@ -31,7 +29,7 @@ export class AuthApi {
 		});
 	}
 
-	requestEmailVerification(state: Reactive<SignUpState>) {
+	requestEmailVerification(state: SignUpState) {
 		return useFetch<SuccessResponse, ErrorResponse>(
 			`${this.EMAIL_VERIFICATION_URL}/request`,
 			{
@@ -42,7 +40,7 @@ export class AuthApi {
 		);
 	}
 
-	confirmEmailVerification(state: Reactive<SignUpState>) {
+	confirmEmailVerification(state: SignUpState) {
 		return useFetch<ConfirmEmailVerificationResponse, ErrorResponse>(
 			`${this.EMAIL_VERIFICATION_URL}/confirm`,
 			{
@@ -53,7 +51,7 @@ export class AuthApi {
 		);
 	}
 
-	signUpMutation(state: Reactive<SignUpState>) {
+	signUp(state: SignUpState) {
 		return useFetch<TokenPairResponse, ErrorResponse>(this.SIGN_UP_URL, {
 			method: "POST",
 			body: computed(() => ({
@@ -65,3 +63,5 @@ export class AuthApi {
 		});
 	}
 }
+
+export const api = new AuthApi();

@@ -3,12 +3,6 @@ export enum UserRole {
 	ADMIN,
 }
 
-export enum Visibility {
-	PUBLIC = "public",
-	PROTECTED = "protected",
-	PRIVATE = "private",
-}
-
 // https://github.com/mikro-orm/mikro-orm/blob/master/packages/core/src/enums.ts#L73
 export enum QueryOrder {
 	ASC = "ASC",

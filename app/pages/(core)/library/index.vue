@@ -1,12 +1,15 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
-import type { ErrorResponse } from "~/shared/types";
+import type { GetManyRes } from "~/features/deck";
+import type { UserStats } from "~/features/user";
+import type { ErrorResponse, Paginated } from "~/shared/types";
 
 const toast = useToast();
 const router = useRouter();
 const { token, data: user } = useAuth();
 
-const { page, limit, filter, search, filterItems, query } = useDeckSearch();
+const { page, limit, filter, search, filterItems, searchQuery } =
+	useDeckSearch();
 
 const input = useTemplateRef("input");
 
@@ -41,7 +44,7 @@ const {
 	error,
 	status,
 } = useLazyFetch<Paginated<GetManyRes>, ErrorResponse>("/api/decks", {
-	query,
+	query: searchQuery,
 	headers: { Authorization: token.value || "" },
 	server: false,
 });

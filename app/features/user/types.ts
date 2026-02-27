@@ -1,5 +1,5 @@
+import type { UUID } from "~/shared/types";
 import type { UserRole } from "~/utils/enums";
-import type { UUID } from "./branded";
 
 export type User = {
 	id: UUID;

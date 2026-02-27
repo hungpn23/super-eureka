@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { useAuthToasts, useUsers } from "~/features/auth";
-import { api } from "~/shared/apis";
+import { api, useAuthToasts, useUsers } from "~/features/auth";
 
 definePageMeta({
 	auth: {
@@ -14,7 +13,7 @@ const router = useRouter();
 const toast = useAuthToasts();
 const users = useUsers();
 const token = computed(() => route.query.token as string);
-const { execute, data, error, pending } = api.auth.verifyToken(token);
+const { execute, data, error, pending } = api.verifyToken(token);
 
 onMounted(async () => {
 	if (!token.value) return router.push("/login");

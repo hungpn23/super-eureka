@@ -1,3 +1,5 @@
+import type { QuestionDirection, QuestionType } from "~/features/card";
+
 export const questionDirectionItems = [
 	{
 		label: "Term to Definition",

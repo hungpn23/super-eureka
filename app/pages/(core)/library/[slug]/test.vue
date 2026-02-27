@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
 import type { UCard } from "#components";
+import type { TestQuestion, TestSession, TestSetting } from "~/features/card";
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual("sm");

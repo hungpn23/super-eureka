@@ -1,4 +1,6 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
+import type { GetOneRes } from "~/features/deck";
+import type { ErrorResponse } from "~/shared/types";
 
 export const useDeckStore = defineStore("deck", () => {
 	// --- Composables ---

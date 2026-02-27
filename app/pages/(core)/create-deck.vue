@@ -4,6 +4,7 @@ import {
 	CARD_SEPARATOR_ITEMS,
 	CONTENT_SEPARATOR_ITEMS,
 	CREATE_DECK_SCHEMA,
+	type CreateDeckResponse,
 	type CreateDeckSchema,
 	DEFINITION_LANGUAGE_ITEMS,
 	getNewCard,
@@ -13,6 +14,7 @@ import {
 	useImportCards,
 	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
+import { Visibility } from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
 
 const router = useRouter();
@@ -62,7 +64,7 @@ async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
 	if (isSubmitting.value) return;
 	isSubmitting.value = true;
 
-	$fetch<CreateDeckRes>("/api/decks", {
+	$fetch<CreateDeckResponse>("/api/decks", {
 		method: "POST",
 		headers: { Authorization: token.value || "" },
 		body: event.data,

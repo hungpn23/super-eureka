@@ -1,4 +1,7 @@
 import { addDays, isAfter } from "date-fns";
+import type { Card, CardStatus, LearnQuestion } from "~/features/card";
+import type { CardSeparator, ContentSeparator } from "~/features/create-deck";
+import { Visibility } from "~/features/deck";
 
 export const getVisibilityIcon = (visibility: Visibility) => {
 	const icons: Record<Visibility, string> = {

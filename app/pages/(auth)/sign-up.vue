@@ -3,11 +3,12 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
 import {
 	AUTH_SCHEMA,
+	api,
 	pickFields,
+	type SignUpState,
 	useAuthToasts,
 	useUsers,
 } from "~/features/auth";
-import { api, type SignUpState } from "~/shared/apis";
 
 definePageMeta({
 	layout: "auth",
@@ -41,9 +42,9 @@ const state = reactive<SignUpState>({
 	isEmailVerified: false,
 	verifiedToken: "",
 });
-const requestMutation = api.auth.requestEmailVerification(state);
-const confirmMutation = api.auth.confirmEmailVerification(state);
-const signUpMutation = api.auth.signUpMutation(state);
+const requestMutation = api.requestEmailVerification(state);
+const confirmMutation = api.confirmEmailVerification(state);
+const signUpMutation = api.signUp(state);
 
 async function handleEmailSubmit(
 	payload: FormSubmitEvent<v.InferOutput<typeof emailSchema>>,

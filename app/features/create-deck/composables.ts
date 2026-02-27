@@ -1,6 +1,9 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { ShallowRef } from "vue";
+import type { CardSuggestion } from "../card";
 import type {
+	CardSeparator,
+	ContentSeparator,
 	CreateCardSchema,
 	CreateDeckSchema,
 	ImportCardsSchema,

@@ -1,4 +1,11 @@
 import { pick } from "lodash";
+import type {
+	Card,
+	LearnQuestion,
+	QuestionDirection,
+	QuestionType,
+	TestQuestion,
+} from "~/features/card";
 
 export const generateQuestions = <
 	T extends LearnQuestion | TestQuestion,

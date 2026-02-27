@@ -1,4 +1,5 @@
 import type { SelectMenuItem } from "@nuxt/ui";
+import type { DeckOrderBy, DeckUrlParams } from "~/features/deck";
 import { deckFilterItems } from "~/utils/constants";
 import { QueryOrder } from "~/utils/enums";
 
@@ -49,7 +50,7 @@ export const useDeckSearch = (baseMode: "history" = "history") => {
 		urlParams.page = undefined;
 	});
 
-	const query = computed(() => {
+	const searchQuery = computed(() => {
 		let orderBy: DeckOrderBy = "openedAt";
 		let order: QueryOrder = QueryOrder.DESC_NULLS_LAST;
 
@@ -91,7 +92,7 @@ export const useDeckSearch = (baseMode: "history" = "history") => {
 		filter,
 		search,
 		filterItems,
-		query,
+		searchQuery,
 		defaults,
 	};
 };

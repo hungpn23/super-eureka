@@ -1,5 +1,7 @@
 import type { SelectMenuItem } from "@nuxt/ui";
 import * as v from "valibot";
+import { LANGUAGE_CODES, Visibility } from "../deck";
+import type { CardSeparator, ContentSeparator, LanguageCode } from "./types";
 
 export const CREATE_CARD_SCHEMA = v.object({
 	term: v.pipe(v.string(), v.nonEmpty("Term is required")),

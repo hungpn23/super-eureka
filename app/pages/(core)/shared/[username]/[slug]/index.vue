@@ -2,6 +2,7 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { breakpointsTailwind } from "@vueuse/core";
 import * as v from "valibot";
+import { type GetSharedDeckDetailResponse, Visibility } from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
 
 definePageMeta({
@@ -34,10 +35,12 @@ const state = reactive<Schema>({
 	passcode: "",
 });
 
-const { data: deck, error } = await useFetch<GetSharedOneRes, ErrorResponse>(
-	`/api/decks/shared/${route.query.deckId}`,
-	{ headers: { Authorization: token.value || "" } },
-);
+const { data: deck, error } = await useFetch<
+	GetSharedDeckDetailResponse,
+	ErrorResponse
+>(`/api/decks/shared/${route.query.deckId}`, {
+	headers: { Authorization: token.value || "" },
+});
 
 watchImmediate(error, (newErr) => {
 	if (newErr) toast.add({ title: "Error fetching deck", color: "error" });

@@ -5,7 +5,13 @@ import type {
 	FormSubmitEvent,
 } from "@nuxt/ui";
 import { formatDistanceToNowStrict } from "date-fns";
-import type { ErrorResponse } from "~/shared/types";
+import type { UpdateCardSchema } from "~/features/card";
+import {
+	type GetOneRes,
+	UPDATE_DECK_SCHEMA,
+	type UpdateDeckSchema,
+} from "~/features/deck";
+import type { ErrorResponse, UUID } from "~/shared/types";
 
 const toast = useToast();
 const router = useRouter();
@@ -269,7 +275,7 @@ defineShortcuts({
 
       <UForm
         ref="form"
-        :schema="updateDeckSchema"
+        :schema="UPDATE_DECK_SCHEMA"
         :state="state"
         @submit="onSubmit"
         @error="onSubmitError"

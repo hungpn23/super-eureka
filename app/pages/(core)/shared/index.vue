@@ -1,43 +1,29 @@
 <script lang="ts" setup>
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { formatTimeAgo } from "@vueuse/core";
-import * as v from "valibot";
-import type { ErrorResponse } from "~/shared/types";
-import { Visibility } from "~/utils/enums";
+import {
+	api,
+	CLONE_DECK_SCHEMA,
+	type CloneDeckSchema,
+	type GetSharedDecksData,
+	useDeckClone,
+	useDeckToasts,
+	Visibility,
+} from "~/features/deck";
+import type { UUID } from "~/shared/types";
 
-definePageMeta({
-	auth: false,
-});
-
-const schema = v.object({
-	passcode: v.pipe(
-		v.string(),
-		v.minLength(4, "Passcode must be at least 4 characters"),
-	),
-});
-
-type Schema = v.InferOutput<typeof schema>;
+definePageMeta({ auth: false });
 
 const router = useRouter();
-const toast = useToast();
+const toast = useDeckToasts();
 const { token, data: user } = useAuth();
-const {
-	page,
-	limit,
-	filter,
-	search,
-	filterItems,
-	query: searchQuery,
-} = useDeckSearch();
+const { page, limit, filter, search, filterItems, searchQuery } =
+	useDeckSearch();
+const { state, isModalOpen } = useDeckClone();
 
 const input = useTemplateRef("input");
 
-const isModalOpen = ref(false);
 const deckId = ref<UUID | null>(null);
-
-const state = reactive<Schema>({
-	passcode: "",
-});
 
 const totalRecords = computed(
 	() => paginated.value?.metadata.totalRecords || 0,
@@ -48,21 +34,21 @@ const query = computed(() => ({
 	visitorId: user.value?.id,
 }));
 
-const { data: paginated, error } = await useFetch<
-	Paginated<GetSharedManyRes>,
-	ErrorResponse
->("/api/decks/shared", {
-	query,
-	headers: { Authorization: token.value || "" },
+const {
+	execute: cloneDeck,
+	error: cloneError,
+	pending: isCloning,
+} = api.cloneDeck({ deckId, token, state });
+const { data: paginated, error } = api.getSharedDecks(query, token);
+
+watch([error, cloneError], () => {
+	if (error.value) toast.cloneDeckFailed();
+	if (cloneError.value) toast.cloneDeckFailed();
 });
 
-watch(error, (newErr) => {
-	if (newErr) toast.add({ title: "Error fetching decks" });
-});
-
-async function onAddToLibrary(deck: GetSharedManyRes) {
+async function handleAddToLibrary(deck: GetSharedDecksData) {
 	if (!token.value) {
-		toast.add({ title: "Please login first before adding deck to library" });
+		toast.guestAddDeckToLibrary();
 		router.push("/login");
 		return;
 	}
@@ -78,31 +64,13 @@ async function onAddToLibrary(deck: GetSharedManyRes) {
 	await cloneDeck();
 }
 
-async function handleSubmit(event: FormSubmitEvent<Schema>) {
+async function handleSubmit(event: FormSubmitEvent<CloneDeckSchema>) {
 	state.passcode = event.data.passcode;
 
 	if (deckId.value) {
-		isModalOpen.value = false;
+		isModalOpen.reset();
 		await cloneDeck();
 	}
-}
-
-async function cloneDeck() {
-	await $fetch(`/api/decks/clone/${deckId.value}`, {
-		method: "POST",
-		headers: { Authorization: token.value || "" },
-		body: state,
-	})
-		.then(() => {
-			toast.add({ title: "Deck added to library", color: "success" });
-			router.push("/library");
-		})
-		.catch((err: ErrorResponse) => {
-			toast.add({
-				title: err.data?.message || "Failed to add deck",
-				color: "error",
-			});
-		});
 }
 
 defineShortcuts({
@@ -239,7 +207,7 @@ defineShortcuts({
                 label="Add to library"
                 icon="i-lucide-plus"
                 variant="subtle"
-                @click.stop="() => onAddToLibrary(d)"
+                @click.stop="() => handleAddToLibrary(d)"
               />
             </div>
           </UCard>
@@ -271,7 +239,7 @@ defineShortcuts({
       <template #body>
         <UForm
           id="passcode-form"
-          :schema="schema"
+          :schema="CLONE_DECK_SCHEMA"
           :state="state"
           @submit="handleSubmit"
         >
@@ -291,6 +259,7 @@ defineShortcuts({
           label="Cancel"
           color="neutral"
           variant="outline"
+          :disabled="isCloning"
           @click="close"
         />
 
