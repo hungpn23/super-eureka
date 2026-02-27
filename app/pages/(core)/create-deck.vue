@@ -57,7 +57,8 @@ const {
 const {
 	execute: createDeck,
 	pending: isCreating,
-	status,
+	data,
+	error,
 } = api.createDeck({ data: createState, token });
 
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
@@ -66,12 +67,12 @@ async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
 	Object.assign(createState, event.data);
 	await createDeck();
 
-	if (status.value === "success") {
-		navigateTo("/library");
+	if (data.value?.slug) {
+		navigateTo(`/library/${data.value.slug}`);
 		toast.createDeckSuccess();
 	}
 
-	if (status.value === "error") {
+	if (error.value) {
 		toast.createDeckFailed();
 	}
 }
