@@ -19,3 +19,7 @@ export enum QueryOrder {
 	desc_nulls_last = "desc nulls last",
 	desc_nulls_first = "desc nulls first",
 }
+
+export enum FormId {
+	CLONE_DECK = "clone-deck",
+}

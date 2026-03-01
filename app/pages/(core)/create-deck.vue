@@ -7,6 +7,7 @@ import {
 	CREATE_DECK_SCHEMA,
 	type CreateDeckSchema,
 	DEFINITION_LANGUAGE_ITEMS,
+	FormId,
 	getNewCard,
 	getVisibilityDesc,
 	getVisibilityLabel,
@@ -24,7 +25,7 @@ const toast = useCreateDeckToasts();
 const { token } = useAuth();
 
 const passcodeRef = useTemplateRef("passcode");
-const definitionRef = useTemplateRef("definition");
+const definitionRefs = useTemplateRef("definition");
 
 const isVisibilityModalOpen = ref(false);
 const formErrorMsg = ref("");
@@ -52,7 +53,7 @@ const {
 	hasSuggestion,
 	applySuggestion,
 	isWord,
-} = useCardSuggestion(definitionRef);
+} = useCardSuggestion(definitionRefs);
 
 const {
 	execute: createDeck,
@@ -103,13 +104,13 @@ async function onValidationError(event: FormErrorEvent) {
         </h1>
 
         <UButton
+          :form="FormId.CREATE_DECK"
+          :disabled="isCreating"
           class="cursor-pointer"
           icon="i-lucide-plus"
           label="Create"
           color="primary"
           type="submit"
-          form="create-deck-form"
-          :disabled="isCreating"
         />
       </div>
 
@@ -125,7 +126,7 @@ async function onValidationError(event: FormErrorEvent) {
 
     <!-- Create Deck Form -->
     <UForm
-      id="create-deck-form"
+      :id="FormId.CREATE_DECK"
       :schema="CREATE_DECK_SCHEMA"
       :state="createState"
       class="mt-4 flex flex-col gap-2"
@@ -425,7 +426,7 @@ async function onValidationError(event: FormErrorEvent) {
       <template #body>
         <!-- Import Cards Form -->
         <UForm
-          id="import-form"
+          :id="FormId.IMPORT"
           :schema="IMPORT_CARD_SCHEMA"
           :state="importState"
           class="flex flex-col gap-4"
@@ -583,13 +584,13 @@ async function onValidationError(event: FormErrorEvent) {
           />
 
           <UButton
+            :form="FormId.IMPORT"
             class="cursor-pointer"
             label="Import"
             icon="i-lucide-copy-plus"
             variant="subtle"
             size="lg"
             type="submit"
-            form="import-form"
           />
         </div>
       </template>

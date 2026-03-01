@@ -12,15 +12,9 @@ import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useDeckToasts();
 const { token, data: user } = useAuth();
-
+const searchRef = useTemplateRef("search");
 const { page, limit, filter, search, filterItems, searchQuery } =
 	useDeckSearch();
-
-const input = useTemplateRef("input");
-
-const totalRecords = computed(
-	() => paginated.value?.metadata.totalRecords || 0,
-);
 
 const userStatistics = computed(() =>
 	USER_STATS_ITEMS.map((item, index) => {
@@ -76,7 +70,7 @@ function getDeckProgress(deck: GetManyRes) {
 
 defineShortcuts({
 	"/": () => {
-		focusInput(input.value?.inputRef);
+		focusInput(searchRef.value?.inputRef);
 	},
 	a: () => {
 		navigateTo("/create-deck");
@@ -167,7 +161,7 @@ defineShortcuts({
           class="flex w-full basis-2/3 place-content-end gap-2 place-self-end sm:gap-4"
         >
           <UInput
-            ref="input"
+            ref="search"
             v-model="search"
             class="flex-1"
             icon="i-lucide-search"
@@ -287,9 +281,9 @@ defineShortcuts({
       </UPageSection>
 
       <UPagination
-        v-if="totalRecords > 0"
+        v-if="paginated && paginated.metadata.totalRecords > 0"
         v-model:page="page"
-        :total="totalRecords"
+        :total="paginated.metadata.totalRecords"
         :items-per-page="Number(limit)"
         :ui="{ root: 'flex place-content-center' }"
       />

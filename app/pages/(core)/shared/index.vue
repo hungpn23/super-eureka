@@ -3,6 +3,7 @@ import { formatTimeAgo } from "@vueuse/core";
 import {
 	api,
 	CLONE_DECK_SCHEMA,
+	FormId,
 	type GetSharedDecksData,
 	useDeckClone,
 	useDeckSearch,
@@ -18,7 +19,7 @@ const { token, data: user } = useAuth();
 const { page, limit, filter, search, filterItems, searchQuery } =
 	useDeckSearch();
 
-const searchInput = useTemplateRef("input");
+const searchRef = useTemplateRef("search");
 
 const deckId = ref<UUID | null>(null);
 
@@ -50,7 +51,7 @@ function handleAddToLibrary(deck: GetSharedDecksData) {
 
 defineShortcuts({
 	"/": () => {
-		focusInput(searchInput.value?.inputRef);
+		focusInput(searchRef.value?.inputRef);
 	},
 });
 </script>
@@ -63,7 +64,7 @@ defineShortcuts({
 
     <div class="flex w-full place-content-between gap-2">
       <UInput
-        ref="input"
+        ref="search"
         v-model="search"
         class="sm:basis-1/2"
         icon="i-lucide-search"
@@ -213,7 +214,7 @@ defineShortcuts({
     >
       <template #body>
         <UForm
-          id="passcode-form"
+          :id="FormId.CLONE_DECK"
           :schema="CLONE_DECK_SCHEMA"
           :state="state"
           @submit="handleSubmit"
@@ -238,7 +239,7 @@ defineShortcuts({
           @click="close"
         />
 
-        <UButton form="passcode-form" type="submit">Add to Library</UButton>
+        <UButton :form="FormId.CLONE_DECK" type="submit">Add to Library</UButton>
       </template>
     </UModal>
   </UContainer>

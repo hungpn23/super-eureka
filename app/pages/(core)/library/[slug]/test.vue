@@ -12,7 +12,7 @@ import { focusInput, getCards } from "~/shared/utils";
 
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
-const cardRefs = useTemplateRef("cards");
+const questionRefs = useTemplateRef("questions");
 
 const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
 
@@ -39,9 +39,9 @@ watch([() => session.questions, () => session.index], () => {
 	session.currentQuestion = session.questions[session.index];
 });
 
-watch([cardRefs, () => session.index], () => {
-	if (cardRefs.value?.length) {
-		session.element = cardRefs.value[session.index]?.$el as Element;
+watch([questionRefs, () => session.index], () => {
+	if (questionRefs.value?.length) {
+		session.element = questionRefs.value[session.index]?.$el as Element;
 	}
 });
 
@@ -105,11 +105,11 @@ function scrollAndFocus() {
 }
 
 function handleChangeQuestion(dir: "left" | "right") {
-	if (!cardRefs.value || !cardRefs.value.length) return;
+	if (!questionRefs.value?.length) return;
 
 	if (dir === "left" && session.index > 0) {
 		session.index--;
-	} else if (dir === "right" && session.index < cardRefs.value.length - 1) {
+	} else if (dir === "right" && session.index < questionRefs.value.length - 1) {
 		session.index++;
 	}
 }
@@ -254,7 +254,7 @@ onMounted(() => {
       <UCard
         v-for="(q, qIndex) in session.questions"
         :key="qIndex"
-        ref="cards"
+        ref="questions"
         :ui="{
           header: 'p-0 sm:px-0',
           body: `flex-1 w-full flex flex-col gap-4 p-2`,

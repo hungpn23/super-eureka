@@ -23,7 +23,7 @@ const store = useDeckStore();
 const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
 const throttledNextAnswer = useThrottleFn(nextAnswer, 500);
 
-const inputElement = useTemplateRef("input");
+const userWrittenAnswerRef = useTemplateRef("user-written-answer");
 
 const isSettingOpen = ref(false);
 
@@ -105,7 +105,7 @@ function submitAnswer(userAnswer: number | string) {
 		state.userChoiceIndex = userAnswer;
 		state.isCorrect = userAnswer === q.correctChoiceIndex;
 	} else if (q.type === "written" && typeof userAnswer === "string") {
-		const inputRef = inputElement.value?.inputRef;
+		const inputRef = userWrittenAnswerRef.value?.inputRef;
 		if (inputRef) inputRef.blur();
 
 		state.isCorrect =
@@ -169,7 +169,7 @@ function resetQuestionState() {
 	state.userChoiceIndex = -1;
 	state.hintUsedCount = 0;
 
-	focusInput(inputElement.value?.inputRef);
+	focusInput(userWrittenAnswerRef.value?.inputRef);
 }
 
 async function saveAnswers() {
@@ -214,7 +214,7 @@ function onGetAHint() {
 		state.hintUsedCount++;
 	}
 
-	focusInput(inputElement.value?.inputRef);
+	focusInput(userWrittenAnswerRef.value?.inputRef);
 }
 
 function handleChoiceShortcut(index: number) {
@@ -467,7 +467,7 @@ defineShortcuts({
             <!-- Written Answer -->
             <div v-else class="flex w-full flex-col gap-2">
               <UInput
-                ref="input"
+                ref="user-written-answer"
                 v-model="state.userAnswer"
                 :ui="{
                   base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,

@@ -25,7 +25,7 @@ const { isSavingCards, session, progress, handleAnswer, shuffleCards } =
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
 const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 
-const form = useTemplateRef("form");
+const updateDeckFormRef = useTemplateRef("update-deck-form");
 
 const isFlipped = ref(false);
 const formErrorMsg = ref("");
@@ -196,7 +196,7 @@ function startEditing() {
 function cancelEditing() {
 	resetFormState(store.deck);
 	isEditing.value = false;
-	form.value?.clear();
+	updateDeckFormRef.value?.clear();
 	formErrorMsg.value = "";
 
 	toast.add({
@@ -275,7 +275,7 @@ defineShortcuts({
       />
 
       <UForm
-        ref="form"
+        ref="update-deck-form"
         :schema="UPDATE_DECK_SCHEMA"
         :state="state"
         @submit="onSubmit"

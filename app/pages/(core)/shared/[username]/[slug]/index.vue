@@ -3,6 +3,7 @@ import { breakpointsTailwind } from "@vueuse/core";
 import {
 	api,
 	CLONE_DECK_SCHEMA,
+	FormId,
 	useDeckClone,
 	useDeckToasts,
 } from "~/features/deck";
@@ -212,7 +213,7 @@ defineShortcuts({
     >
       <template #body>
         <UForm
-          id="passcode-form"
+          :id="FormId.CLONE_DECK"
           :schema="CLONE_DECK_SCHEMA"
           :state="state"
           @submit="handleSubmit"
@@ -236,7 +237,7 @@ defineShortcuts({
           @click="close"
         />
 
-        <UButton form="passcode-form" type="submit">Add to Library</UButton>
+        <UButton :form="FormId.CLONE_DECK" type="submit">Add to Library</UButton>
       </template>
     </UModal>
   </UContainer>
