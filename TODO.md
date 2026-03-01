@@ -1,3 +1,4 @@
-1. shared detail page DONE
-2. all library pages
-3. user page
+- [x] refactor shared detail page
+- [ ] refactor all library pages
+- [ ] refactor this: `headers: { Authorization: token.value || "" }`
+- [ ] refactor user page

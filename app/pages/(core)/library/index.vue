@@ -4,12 +4,13 @@ import {
 	type GetManyRes,
 	USER_STATS_ITEMS,
 	useDeckSearch,
+	useDeckToasts,
 } from "~/features/deck";
 import type { UserStats } from "~/features/user";
 import type { ErrorResponse, Paginated } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
-const toast = useToast();
+const toast = useDeckToasts();
 const { token, data: user } = useAuth();
 
 const { page, limit, filter, search, filterItems, searchQuery } =
@@ -61,7 +62,7 @@ const { data: userStats, error: userStatsError } = await useFetch<
 });
 
 watch([error, userStatsError], (newErr) => {
-	if (newErr) toast.add({ title: "Error fetching decks" });
+	if (newErr) toast.getDecksFailed();
 });
 
 function getDeckProgress(deck: GetManyRes) {

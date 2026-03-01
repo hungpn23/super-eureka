@@ -200,7 +200,7 @@ async function onSettingClosed() {
 	if (JSON.stringify(setting) === snapshotSetting) return;
 
 	snapshotSetting = "";
-	await store.refetch();
+	await store.refetchDeckDetail();
 }
 
 // TODO: calculate next review date based on hint used count
@@ -312,9 +312,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonLearnPage
-    v-if="store.status === 'idle' || store.status === 'pending'"
-  />
+  <SkeletonLearnPage v-if="store.isFetchingDeck" />
 
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
@@ -556,7 +554,7 @@ defineShortcuts({
               variant="ghost"
               color="neutral"
               size="lg"
-              @click="store.toggleIgnoreDate"
+              @click="store.handleToggleIgnoreDate"
             />
           </UTooltip>
 
@@ -567,7 +565,7 @@ defineShortcuts({
               variant="ghost"
               color="neutral"
               size="lg"
-              @click="store.restartDeck"
+              @click="store.handleRestartDeck"
             />
           </UTooltip>
 

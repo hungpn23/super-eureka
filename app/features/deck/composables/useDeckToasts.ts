@@ -36,5 +36,24 @@ export function useDeckToasts() {
 				title: "Failed to open this deck.",
 			});
 		},
+		getDecksFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to load your library.",
+			});
+		},
+		restartDeckSuccess: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.SUCCESS,
+				title: "Progress restarted.",
+				description: "You can now start learning from scratch.",
+			});
+		},
+		restartDeckFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to restart progess.",
+			});
+		},
 	};
 }

@@ -1,6 +1,6 @@
 import type { PreviewCard } from "~/features/card";
 import type { Owner } from "~/features/user";
-import type { Paginated } from "~/shared/types";
+import type { Paginated, UUID } from "~/shared/types";
 import type { QueryOrder } from "../enums";
 import type { Deck } from "./common.type";
 import type { DeckOrderBy } from "./search-deck.type";
@@ -36,7 +36,7 @@ export type GetSharedDecksData = Pick<
 export type GetSharedDecksResponse = Paginated<GetSharedDecksData>;
 
 export type GetSharedDeckDetailOptions = {
-	deckId: Ref<string | null>;
+	deckId: Ref<UUID | null>;
 	token: Ref<string | null>;
 };
 

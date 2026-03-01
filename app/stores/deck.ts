@@ -1,96 +1,69 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
-import type { GetOneRes } from "~/features/deck";
-import type { ErrorResponse } from "~/shared/types";
+import { api, useDeckToasts } from "~/features/deck";
+import type { UUID } from "~/shared/types";
 
 export const useDeckStore = defineStore("deck", () => {
-	// --- Composables ---
 	const route = useRoute();
 	const { token } = useAuth();
-	const toast = useToast();
-
-	// --- State ---
+	const toast = useDeckToasts();
 	const isIgnoreDate = ref(false);
-	const deckId = ref<string>("");
+	const deckId = ref<UUID | null>(null);
 	const slug = ref<string>("");
 
-	// --- Define fetch composable ---
+	const {
+		execute: restartDeck,
+		data: restartData,
+		error: restartError,
+	} = api.restartDeck({ deckId, token });
+
 	const {
 		data: deck,
 		status,
-		refresh: refetch,
-		execute,
-	} = useLazyFetch<GetOneRes, ErrorResponse>(
-		() => `/api/decks/${deckId.value}`,
-		{
-			headers: { Authorization: token.value || "" },
-			server: false,
-			immediate: false,
-			watch: false, // handled manually
+		refresh: refetchDeckDetail,
+		execute: getDeckDetail,
+	} = api.getDeckDetail({ deckId, token });
 
-			onResponseError: ({ response }) => {
-				console.log(`🚀 ~ response:`, response._data);
-
-				showError({
-					statusCode: 404,
-					statusMessage: "Page Not Found",
-				});
-			},
-		},
-	);
-
-	// --- Watchers ---
 	watchImmediate(
 		() => route.name,
-		async (newName) => {
-			const newNameStr = newName?.toString() || "";
+		async (routeName) => {
+			const routeNameStr = routeName?.toString() || "";
 
-			if (newNameStr.includes("library-slug")) {
-				deckId.value = route.query.deckId as string;
+			if (routeNameStr.includes("library-slug")) {
+				deckId.value = route.query.deckId as UUID;
 				slug.value = route.params.slug as string;
 
-				await execute();
+				await getDeckDetail();
 			}
 		},
 	);
 
-	// --- Actions ---
-	async function restartDeck() {
+	async function handleRestartDeck() {
 		if (!deckId.value) return;
 
-		await $fetch(`/api/decks/restart/${deckId.value}`, {
-			method: "POST",
-			headers: { Authorization: token.value || "" },
-		})
-			.then(async () => {
-				await refetch();
+		await restartDeck();
 
-				toast.add({
-					title: "Progress restarted.",
-					description: "You can now start learning from scratch.",
-					color: "success",
-				});
-			})
-			.catch((err: ErrorResponse) => {
-				toast.add({
-					title: "Error restarting deck.",
-					description: JSON.stringify(err.data?.message || "Unknown error."),
-					color: "error",
-				});
-			});
+		if (restartData.value?.success) {
+			await refetchDeckDetail();
+			toast.restartDeckSuccess();
+		}
+
+		if (restartError.value) toast.restartDeckFailed();
 	}
 
-	function updateIgnoreDate(checked: boolean) {
+	function handleCheckIgnoreDate(checked: boolean) {
 		isIgnoreDate.value = checked;
 	}
 
-	function toggleIgnoreDate() {
+	function handleToggleIgnoreDate() {
 		isIgnoreDate.value = !isIgnoreDate.value;
 	}
 
 	return {
 		// State
 		deck: computed(() => deck.value),
-		status: computed(() => status.value),
+		isFetchingDeck: computed(
+			() => status.value === "idle" || status.value === "pending",
+		),
 		isIgnoreDate: computed(() => isIgnoreDate.value),
 
 		// Getters
@@ -98,10 +71,10 @@ export const useDeckStore = defineStore("deck", () => {
 		slug,
 
 		// Actions
-		refetch,
-		restartDeck,
-		updateIgnoreDate,
-		toggleIgnoreDate,
+		refetchDeckDetail,
+		handleRestartDeck,
+		handleCheckIgnoreDate,
+		handleToggleIgnoreDate,
 	};
 });
 

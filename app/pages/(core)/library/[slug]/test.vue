@@ -121,7 +121,7 @@ async function onSettingClosed() {
 	}
 
 	snapshotSetting = "";
-	await store.refetch();
+	await store.refetchDeckDetail();
 	scrollAndFocus();
 }
 
@@ -220,9 +220,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SkeletonTestPage
-    v-if="store.status === 'idle' || store.status === 'pending'"
-  />
+  <SkeletonTestPage v-if="store.isFetchingDeck" />
 
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">

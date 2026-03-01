@@ -19,7 +19,7 @@ const store = useDeckStore();
         color: 'error',
         variant: 'outline',
         class: 'cursor-pointer hover:scale-102 hover:shadow',
-        onClick: store.restartDeck,
+        onClick: store.handleRestartDeck,
       },
       {
         icon: 'i-lucide-fast-forward',
@@ -27,7 +27,7 @@ const store = useDeckStore();
         color: 'neutral',
         variant: 'subtle',
         class: 'cursor-pointer hover:scale-102 hover:shadow',
-        onClick: () => store.updateIgnoreDate(true),
+        onClick: () => store.handleCheckIgnoreDate(true),
       },
     ]"
     variant="naked"

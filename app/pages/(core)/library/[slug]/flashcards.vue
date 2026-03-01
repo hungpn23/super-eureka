@@ -19,14 +19,15 @@ const settingOptions = computed<DropdownMenuItem[]>(() => [
 			label: "Restart progress",
 			icon: "i-lucide-refresh-cw",
 			color: "warning",
-			onSelect: store.restartDeck,
+			onSelect: store.handleRestartDeck,
 		},
 		{
 			label: "Ignore review dates",
 			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
 			type: "checkbox",
 			checked: store.isIgnoreDate,
-			onUpdateChecked: (checked: boolean) => store.updateIgnoreDate(checked),
+			onUpdateChecked: (checked: boolean) =>
+				store.handleCheckIgnoreDate(checked),
 			onSelect: (e: Event) => e.preventDefault(),
 		},
 	],
@@ -52,9 +53,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonFlashcardsPage
-    v-if="store.status === 'idle' || store.status === 'pending'"
-  />
+  <SkeletonFlashcardsPage v-if="store.isFetchingDeck" />
 
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">

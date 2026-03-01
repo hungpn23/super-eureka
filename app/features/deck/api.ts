@@ -1,10 +1,13 @@
 import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import type {
 	CloneDeckOptions,
+	GetDeckDetailOptions,
+	GetDeckDetailResponse,
 	GetSharedDeckDetailOptions,
 	GetSharedDeckDetailResponse,
 	GetSharedDecksOptions,
 	GetSharedDecksResponse,
+	RestartDeckOptions,
 } from "./types";
 
 class DeckApi {
@@ -42,6 +45,38 @@ class DeckApi {
 			{
 				method: "GET",
 				headers: { Authorization: token.value || "" },
+			},
+		);
+	}
+
+	restartDeck({ deckId, token }: RestartDeckOptions) {
+		return useFetch<SuccessResponse, ErrorResponse>(
+			computed(() => `${this.BASE_URL}/restart/${deckId.value}`),
+			{
+				method: "POST",
+				headers: { Authorization: token.value || "" },
+				immediate: false,
+				watch: false,
+			},
+		);
+	}
+
+	getDeckDetail({ deckId, token }: GetDeckDetailOptions) {
+		return useFetch<GetDeckDetailResponse, ErrorResponse>(
+			computed(() => `${this.BASE_URL}/${deckId.value}`),
+			{
+				method: "GET",
+				headers: { Authorization: token.value || "" },
+				server: false,
+				immediate: false,
+				watch: false,
+
+				onResponseError: () => {
+					showError({
+						statusCode: 404,
+						statusMessage: "Page Not Found",
+					});
+				},
 			},
 		);
 	}

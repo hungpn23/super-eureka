@@ -7,7 +7,7 @@ import type {
 import { formatDistanceToNowStrict } from "date-fns";
 import type { UpdateCardSchema } from "~/features/card";
 import {
-	type GetOneRes,
+	type GetDeckDetailResponse,
 	getCardStatus,
 	UPDATE_DECK_SCHEMA,
 	type UpdateDeckSchema,
@@ -40,14 +40,14 @@ const settingOptions = computed<DropdownMenuItem[][]>(() => [
 			label: "Restart progress",
 			icon: "i-lucide-refresh-cw",
 			color: "warning",
-			onSelect: store.restartDeck,
+			onSelect: store.handleRestartDeck,
 		},
 		{
 			label: "Ignore review dates",
 			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
 			type: "checkbox",
 			checked: store.isIgnoreDate,
-			onUpdateChecked: (checked) => store.updateIgnoreDate(checked),
+			onUpdateChecked: (checked) => store.handleCheckIgnoreDate(checked),
 			onSelect: (e) => e.preventDefault(),
 		},
 		{
@@ -159,7 +159,7 @@ async function onSubmit(
 	})
 		.then(async () => {
 			isEditing.value = false;
-			await store.refetch();
+			await store.refetchDeckDetail();
 
 			toast.add({
 				title: "Changes saved successfully.",
@@ -205,7 +205,7 @@ function cancelEditing() {
 	});
 }
 
-function resetFormState(deck?: GetOneRes) {
+function resetFormState(deck?: GetDeckDetailResponse) {
 	if (deck) {
 		state.name = deck.name;
 		state.description = deck.description || "";
@@ -262,9 +262,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonDeckDetailPage
-    v-if="store.status === 'idle' || store.status === 'pending'"
-  />
+  <SkeletonDeckDetailPage v-if="store.isFetchingDeck" />
 
   <UPage v-else>
     <UContainer>

@@ -78,7 +78,7 @@ export const useFlashcardSession = () => {
 		if (!session.studyQueue.length) {
 			if (!session.retryQueue.length) {
 				if (store.isIgnoreDate)
-					await Promise.all([saveCards(), store.refetch()]);
+					await Promise.all([saveCards(), store.refetchDeckDetail()]);
 
 				session.currentCard = undefined;
 				return;
