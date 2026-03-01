@@ -7,7 +7,7 @@ import type {
 import { formatDistanceToNowStrict } from "date-fns";
 import type { UpdateCardSchema } from "~/features/card";
 import {
-	type GetDeckDetailResponse,
+	type GetDeckResponse,
 	getCardStatus,
 	UPDATE_DECK_SCHEMA,
 	type UpdateDeckSchema,
@@ -159,7 +159,7 @@ async function onSubmit(
 	})
 		.then(async () => {
 			isEditing.value = false;
-			await store.refetchDeckDetail();
+			await store.fetchDeck();
 
 			toast.add({
 				title: "Changes saved successfully.",
@@ -205,7 +205,7 @@ function cancelEditing() {
 	});
 }
 
-function resetFormState(deck?: GetDeckDetailResponse) {
+function resetFormState(deck?: GetDeckResponse) {
 	if (deck) {
 		state.name = deck.name;
 		state.description = deck.description || "";
@@ -262,7 +262,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonDeckDetailPage v-if="store.isFetchingDeck" />
+  <SkeletonDeckPage v-if="store.isFetchingDeck" />
 
   <UPage v-else>
     <UContainer>

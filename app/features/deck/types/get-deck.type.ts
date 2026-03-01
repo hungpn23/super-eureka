@@ -2,12 +2,12 @@ import type { Card } from "~/features/card";
 import type { UUID } from "~/shared/types";
 import type { Deck, DeckStats } from "./common.type";
 
-export type GetDeckDetailOptions = {
+export type GetDeckOptions = {
 	deckId: Ref<UUID | null>;
 	token: Ref<string | null>;
 };
 
-export type GetDeckDetailResponse = Pick<
+export type GetDeckResponse = Pick<
 	Deck,
 	"id" | "name" | "slug" | "description"
 > & {

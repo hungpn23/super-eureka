@@ -11,17 +11,16 @@ export const useDeckStore = defineStore("deck", () => {
 	const slug = ref<string>("");
 
 	const {
-		execute: restartDeck,
 		data: restartData,
 		error: restartError,
+		execute: restartDeck,
 	} = api.restartDeck({ deckId, token });
 
 	const {
 		data: deck,
 		status,
-		refresh: refetchDeckDetail,
-		execute: getDeckDetail,
-	} = api.getDeckDetail({ deckId, token });
+		execute: fetchDeck,
+	} = api.getDeck({ deckId, token });
 
 	watchImmediate(
 		() => route.name,
@@ -32,7 +31,7 @@ export const useDeckStore = defineStore("deck", () => {
 				deckId.value = route.query.deckId as UUID;
 				slug.value = route.params.slug as string;
 
-				await getDeckDetail();
+				await fetchDeck();
 			}
 		},
 	);
@@ -43,7 +42,7 @@ export const useDeckStore = defineStore("deck", () => {
 		await restartDeck();
 
 		if (restartData.value?.success) {
-			await refetchDeckDetail();
+			await fetchDeck();
 			toast.restartDeckSuccess();
 		}
 
@@ -59,19 +58,14 @@ export const useDeckStore = defineStore("deck", () => {
 	}
 
 	return {
-		// State
 		deck: computed(() => deck.value),
 		isFetchingDeck: computed(
 			() => status.value === "idle" || status.value === "pending",
 		),
 		isIgnoreDate: computed(() => isIgnoreDate.value),
-
-		// Getters
 		deckId,
 		slug,
-
-		// Actions
-		refetchDeckDetail,
+		fetchDeck,
 		handleRestartDeck,
 		handleCheckIgnoreDate,
 		handleToggleIgnoreDate,

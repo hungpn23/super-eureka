@@ -30,7 +30,7 @@ export function useDeckToasts() {
 				title: "Failed to get decks.",
 			});
 		},
-		getSharedDeckDetailFailed: () => {
+		getSharedDeckFailed: () => {
 			toast.add({
 				...DEFAULT_TOAST_OPTIONS.FAIL,
 				title: "Failed to open this deck.",

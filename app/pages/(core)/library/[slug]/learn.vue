@@ -200,7 +200,7 @@ async function onSettingClosed() {
 	if (JSON.stringify(setting) === snapshotSetting) return;
 
 	snapshotSetting = "";
-	await store.refetchDeckDetail();
+	await store.fetchDeck();
 }
 
 // TODO: calculate next review date based on hint used count

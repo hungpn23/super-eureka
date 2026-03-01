@@ -5,17 +5,16 @@ import type { QueryOrder } from "../enums";
 import type { Deck } from "./common.type";
 import type { DeckOrderBy } from "./search-deck.type";
 
-export type GetSharedDecksQuery = ComputedRef<{
-	visitorId?: string;
-	page: number;
-	limit: string;
-	search: string;
-	orderBy: DeckOrderBy;
-	order: QueryOrder;
-}>;
-
 export type GetSharedDecksOptions = {
-	query: GetSharedDecksQuery;
+	query: ComputedRef<{
+		visitorId?: string;
+		page: number;
+		limit: string;
+		search: string;
+		orderBy: DeckOrderBy;
+		order: QueryOrder;
+	}>;
+
 	token: Ref<string | null>;
 };
 
@@ -35,12 +34,12 @@ export type GetSharedDecksData = Pick<
 
 export type GetSharedDecksResponse = Paginated<GetSharedDecksData>;
 
-export type GetSharedDeckDetailOptions = {
+export type GetSharedDeckOptions = {
 	deckId: Ref<UUID | null>;
 	token: Ref<string | null>;
 };
 
-export type GetSharedDeckDetailResponse = Pick<
+export type GetSharedDeckResponse = Pick<
 	Deck,
 	"id" | "name" | "description" | "visibility"
 > & {

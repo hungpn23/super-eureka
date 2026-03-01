@@ -121,7 +121,7 @@ async function onSettingClosed() {
 	}
 
 	snapshotSetting = "";
-	await store.refetchDeckDetail();
+	await store.fetchDeck();
 	scrollAndFocus();
 }
 

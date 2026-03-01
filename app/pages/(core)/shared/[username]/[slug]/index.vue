@@ -24,7 +24,7 @@ const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
 
 const isFlipped = ref(false);
 
-const { data: deck, error: getDeckError } = api.getSharedDeckDetail({
+const { data: deck, error: getDeckError } = api.getSharedDeck({
 	deckId,
 	token,
 });
