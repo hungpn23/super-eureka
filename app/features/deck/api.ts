@@ -3,6 +3,8 @@ import type {
 	CloneDeckOptions,
 	GetDeckOptions,
 	GetDeckResponse,
+	GetDecksOptions,
+	GetDecksResponse,
 	GetSharedDeckOptions,
 	GetSharedDeckResponse,
 	GetSharedDecksOptions,
@@ -59,6 +61,16 @@ class DeckApi {
 				watch: false,
 			},
 		);
+	}
+
+	getDecks({ query, token }: GetDecksOptions) {
+		return useFetch<GetDecksResponse, ErrorResponse>(this.BASE_URL, {
+			method: "GET",
+			headers: { Authorization: token.value || "" },
+			query,
+			lazy: true,
+			server: false,
+		});
 	}
 
 	getDeck({ deckId, token }: GetDeckOptions) {

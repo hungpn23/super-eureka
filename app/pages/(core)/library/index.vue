@@ -1,16 +1,17 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
 import {
-	type GetManyRes,
+	api,
+	type GetDecksData,
 	USER_STATS_ITEMS,
 	useDeckSearch,
 	useDeckToasts,
 } from "~/features/deck";
-import type { UserStats } from "~/features/user";
-import type { ErrorResponse, Paginated } from "~/shared/types";
+import { api as studyApi, useStudyToasts } from "~/features/study";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useDeckToasts();
+const studyToast = useStudyToasts();
 const { token, data: user } = useAuth();
 const searchRef = useTemplateRef("search");
 const { page, limit, filter, search, filterItems, searchQuery } =
@@ -39,27 +40,19 @@ const userStatistics = computed(() =>
 );
 
 const {
-	data: paginated,
-	error,
+	data: paginatedDecks,
+	error: fetchDecksError,
 	status,
-} = useLazyFetch<Paginated<GetManyRes>, ErrorResponse>("/api/decks", {
-	query: searchQuery,
-	headers: { Authorization: token.value || "" },
-	server: false,
+} = api.getDecks({ query: searchQuery, token });
+
+const { data: userStats, error: getUserStatsError } = studyApi.getStats(token);
+
+watch([fetchDecksError, getUserStatsError], () => {
+	if (fetchDecksError.value) toast.getDecksFailed();
+	if (getUserStatsError.value) studyToast.getUserStatsFailed();
 });
 
-const { data: userStats, error: userStatsError } = await useFetch<
-	UserStats,
-	ErrorResponse
->("/api/study/stats", {
-	headers: { Authorization: token.value || "" },
-});
-
-watch([error, userStatsError], (newErr) => {
-	if (newErr) toast.getDecksFailed();
-});
-
-function getDeckProgress(deck: GetManyRes) {
+function getDeckProgress(deck: GetDecksData) {
 	const total = deck.stats.total;
 	const known = deck.stats.known;
 
@@ -141,7 +134,7 @@ defineShortcuts({
       >
         <div class="flex place-items-center gap-4">
           <h2 class="text-xl text-nowrap sm:text-2xl">
-            Decks ({{ paginated?.data.length || 0 }})
+            Decks ({{ paginatedDecks?.data.length || 0 }})
           </h2>
 
           <UButton
@@ -178,12 +171,12 @@ defineShortcuts({
       </div>
 
       <div
-        v-if="paginated && paginated.metadata.totalRecords > 0"
+        v-if="paginatedDecks && paginatedDecks.metadata.totalRecords > 0"
         class="flex flex-col gap-2 sm:gap-4"
       >
         <TransitionGroup name="list" appear>
           <NuxtLink
-            v-for="d in paginated.data"
+            v-for="d in paginatedDecks.data"
             v-slot="{ navigate }"
             :key="d.id"
             :to="`/library/${d.slug}?deckId=${d.id}`"
@@ -272,7 +265,7 @@ defineShortcuts({
       </div>
 
       <UPageSection
-        v-if="Array.isArray(paginated?.data) && paginated.data.length === 0"
+        v-if="Array.isArray(paginatedDecks?.data) && paginatedDecks.data.length === 0"
       >
         <template #description>
           <p v-if="!search">Click "Add" button to add your first deck!</p>
@@ -281,9 +274,9 @@ defineShortcuts({
       </UPageSection>
 
       <UPagination
-        v-if="paginated && paginated.metadata.totalRecords > 0"
+        v-if="paginatedDecks && paginatedDecks.metadata.totalRecords > 0"
         v-model:page="page"
-        :total="paginated.metadata.totalRecords"
+        :total="paginatedDecks.metadata.totalRecords"
         :items-per-page="Number(limit)"
         :ui="{ root: 'flex place-content-center' }"
       />
