@@ -12,6 +12,7 @@ import {
 	QUESTION_TYPE_ITEMS,
 	updateCard,
 } from "~/features/deck";
+import { ShortcutKey } from "~/shared/enums";
 import type { ErrorResponse } from "~/shared/types";
 import { focusInput, getCards } from "~/shared/utils";
 
@@ -21,7 +22,7 @@ const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
 
 const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
-const throttledNextAnswer = useThrottleFn(nextAnswer, 500);
+const throttledNextQuestion = useThrottleFn(nextQuestion, 500);
 
 const userWrittenAnswerRef = useTemplateRef("user-written-answer");
 
@@ -120,18 +121,18 @@ function submitAnswer(userAnswer: number | string) {
 		session.correctCount++;
 
 		setTimeout(() => {
-			throttledNextAnswer(true, q);
+			throttledNextQuestion(true, q);
 		}, 500);
 	} else {
 		session.incorrectCount++;
 
 		if (setting.showCorrectAnswer) return;
 
-		throttledNextAnswer(false, q);
+		throttledNextQuestion(false, q);
 	}
 }
 
-function nextAnswer(isCorrect?: boolean, q?: LearnQuestion) {
+function nextQuestion(isCorrect?: boolean, q?: LearnQuestion) {
 	if (!q || isCorrect === undefined) return;
 
 	session.isSavingAnswers = true;
@@ -223,7 +224,7 @@ function handleChoiceShortcut(index: number) {
 		state.isInReview &&
 		session.currentQuestion?.correctChoiceIndex === index
 	) {
-		throttledNextAnswer(state.isCorrect, session.currentQuestion);
+		throttledNextQuestion(state.isCorrect, session.currentQuestion);
 	} else {
 		throttledSubmitAnswer(index);
 	}
@@ -295,16 +296,17 @@ function handleSkip() {
 }
 
 defineShortcuts({
-	" ": () => throttledNextAnswer(state.isCorrect, session.currentQuestion),
-	"1": () => handleChoiceShortcut(0),
-	"2": () => handleChoiceShortcut(1),
-	"3": () => handleChoiceShortcut(2),
-	"4": () => handleChoiceShortcut(3),
-	"meta_shift_/": {
+	[ShortcutKey.LEARN_NEXT_QUESTION]: () =>
+		throttledNextQuestion(state.isCorrect, session.currentQuestion),
+	[ShortcutKey.CHOICE_1]: () => handleChoiceShortcut(0),
+	[ShortcutKey.CHOICE_2]: () => handleChoiceShortcut(1),
+	[ShortcutKey.CHOICE_3]: () => handleChoiceShortcut(2),
+	[ShortcutKey.CHOICE_4]: () => handleChoiceShortcut(3),
+	[ShortcutKey.GET_A_HINT]: {
 		handler: () => onGetAHint(),
 		usingInput: true,
 	},
-	meta_shift_x: {
+	[ShortcutKey.SKIP]: {
 		handler: () => handleSkip(),
 		usingInput: true,
 	},

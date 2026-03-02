@@ -7,6 +7,7 @@ import {
 	useDeckClone,
 	useDeckToasts,
 } from "~/features/deck";
+import { ShortcutKey } from "~/shared/enums";
 import type { UUID } from "~/shared/types";
 
 definePageMeta({
@@ -39,7 +40,7 @@ watch(getDeckError, () => {
 });
 
 defineShortcuts({
-	" ": throttledToggleFlip,
+	[ShortcutKey.FLASHCARD_FLIP_CARD]: throttledToggleFlip,
 });
 </script>
 

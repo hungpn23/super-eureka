@@ -9,6 +9,7 @@ import {
 	useDeckSearch,
 	useDeckToasts,
 } from "~/features/deck";
+import { ShortcutKey } from "~/shared/enums";
 import type { UUID } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
@@ -50,7 +51,7 @@ function handleAddToLibrary(deck: GetSharedDecksData) {
 }
 
 defineShortcuts({
-	"/": () => {
+	[ShortcutKey.SEARCH]: () => {
 		focusInput(searchRef.value?.inputRef);
 	},
 });

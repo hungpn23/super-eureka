@@ -8,6 +8,7 @@ import {
 	useDeckToasts,
 } from "~/features/deck";
 import { api as studyApi, useStudyToasts } from "~/features/study";
+import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useDeckToasts();
@@ -62,10 +63,10 @@ function getDeckProgress(deck: GetDecksData) {
 }
 
 defineShortcuts({
-	"/": () => {
+	[ShortcutKey.SEARCH]: () => {
 		focusInput(searchRef.value?.inputRef);
 	},
-	a: () => {
+	[ShortcutKey.CREATE_DECK]: () => {
 		navigateTo("/create-deck");
 	},
 });

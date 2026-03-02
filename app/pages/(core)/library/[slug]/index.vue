@@ -13,6 +13,7 @@ import {
 	type UpdateDeckSchema,
 	useFlashcardSession,
 } from "~/features/deck";
+import { ShortcutKey } from "~/shared/enums";
 import type { ErrorResponse, UUID } from "~/shared/types";
 
 const toast = useToast();
@@ -255,9 +256,9 @@ function toggleFlip() {
 }
 
 defineShortcuts({
-	" ": throttledToggleFlip,
-	arrowright: () => throttledHandleAnswer(true),
-	arrowleft: () => throttledHandleAnswer(false),
+	[ShortcutKey.FLASHCARD_FLIP_CARD]: throttledToggleFlip,
+	[ShortcutKey.NEXT_CARD]: () => throttledHandleAnswer(true),
+	[ShortcutKey.PREV_CARD]: () => throttledHandleAnswer(false),
 });
 </script>
 

@@ -2,6 +2,7 @@
 import type { DropdownMenuItem, NavigationMenuItem } from "@nuxt/ui";
 import { breakpointsTailwind } from "@vueuse/core";
 import { UAvatar } from "#components";
+import { ShortcutKey } from "~/shared/enums";
 
 const { status, data: user } = useAuthState();
 const { signOut } = useAuth();
@@ -62,7 +63,7 @@ async function onSignOut() {
 }
 
 defineShortcuts({
-	"`": toggleColorMode,
+	[ShortcutKey.TOGGLE_COLOR_MODE]: toggleColorMode,
 });
 </script>
 

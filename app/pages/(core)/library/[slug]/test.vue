@@ -8,6 +8,7 @@ import {
 	QUESTION_TYPE_ITEMS,
 	shuffleArray,
 } from "~/features/deck";
+import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards } from "~/shared/utils";
 
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
@@ -194,21 +195,21 @@ function getWrittenInputClass(q: TestQuestion) {
 }
 
 defineShortcuts({
-	"1": () =>
+	[ShortcutKey.CHOICE_1]: () =>
 		throttledOnChoiceSelected(0, session.index, session.currentQuestion),
-	"2": () =>
+	[ShortcutKey.CHOICE_2]: () =>
 		throttledOnChoiceSelected(1, session.index, session.currentQuestion),
-	"3": () =>
+	[ShortcutKey.CHOICE_3]: () =>
 		throttledOnChoiceSelected(2, session.index, session.currentQuestion),
-	"4": () =>
+	[ShortcutKey.CHOICE_4]: () =>
 		throttledOnChoiceSelected(3, session.index, session.currentQuestion),
 
-	arrowleft: {
+	[ShortcutKey.PREV_CARD]: {
 		handler: () => handleChangeQuestion("left"),
 		usingInput: true,
 	},
 
-	arrowright: {
+	[ShortcutKey.NEXT_CARD]: {
 		handler: () => handleChangeQuestion("right"),
 		usingInput: true,
 	},
