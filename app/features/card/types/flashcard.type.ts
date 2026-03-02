@@ -1,7 +1,7 @@
 import type { Card, CardToSave } from "./common.type";
 
 export type FlashcardSession = {
-	currentCard?: Card | null;
+	currentCard?: Card;
 	cardsToSave: CardToSave[];
 	savedCards: CardToSave[];
 	studyQueue: Card[];
@@ -9,4 +9,5 @@ export type FlashcardSession = {
 	totalCards: number;
 	knownCount: number;
 	skippedCount: number;
+	isCardFlipped: boolean;
 };

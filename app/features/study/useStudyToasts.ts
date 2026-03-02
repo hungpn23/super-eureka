@@ -11,5 +11,12 @@ export function useStudyToasts() {
 				description: undefined,
 			});
 		},
+		saveAnswersFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to save your answers.",
+				description: undefined,
+			});
+		},
 	};
 }

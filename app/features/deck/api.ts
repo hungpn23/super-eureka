@@ -1,6 +1,7 @@
 import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import type {
 	CloneDeckOptions,
+	DeleteDeckOptions,
 	GetDeckOptions,
 	GetDeckResponse,
 	GetDecksOptions,
@@ -10,6 +11,7 @@ import type {
 	GetSharedDecksOptions,
 	GetSharedDecksResponse,
 	RestartDeckOptions,
+	UpdateDeckOptions,
 } from "./types";
 
 class DeckApi {
@@ -89,6 +91,31 @@ class DeckApi {
 						statusMessage: "Page Not Found",
 					});
 				},
+			},
+		);
+	}
+
+	deleteDeck({ deckId, token }: DeleteDeckOptions) {
+		return useFetch<SuccessResponse, ErrorResponse>(
+			computed(() => `${this.BASE_URL}/${deckId.value}`),
+			{
+				method: "DELETE",
+				headers: { Authorization: token.value || "" },
+				immediate: false,
+				watch: false,
+			},
+		);
+	}
+
+	updateDeck({ deckId, token, state }: UpdateDeckOptions) {
+		return useFetch<SuccessResponse, ErrorResponse>(
+			computed(() => `${this.BASE_URL}/${deckId.value}`),
+			{
+				method: "PATCH",
+				headers: { Authorization: token.value || "" },
+				body: state,
+				immediate: false,
+				watch: false,
 			},
 		);
 	}

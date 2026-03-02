@@ -1,5 +1,6 @@
-import type { ErrorResponse } from "~/shared/types";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import type { UserStats } from "../user";
+import type { SaveAnswersOptions } from "./types";
 
 class StudyApi {
 	private readonly BASE_URL = "/api/study";
@@ -10,6 +11,19 @@ class StudyApi {
 			method: "GET",
 			headers: { Authorization: token.value || "" },
 		});
+	}
+
+	saveAnswers({ deckId, token, cardsToSave }: SaveAnswersOptions) {
+		return useFetch<SuccessResponse, ErrorResponse>(
+			`${this.BASE_URL}/save-answers/${deckId}`,
+			{
+				method: "POST",
+				headers: { Authorization: token.value || "" },
+				body: { answers: cardsToSave },
+				immediate: false,
+				watch: false,
+			},
+		);
 	}
 }
 

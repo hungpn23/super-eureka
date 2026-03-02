@@ -55,5 +55,18 @@ export function useDeckToasts() {
 				title: "Failed to restart progess.",
 			});
 		},
+		deleteDeckSuccess: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.SUCCESS,
+				title: "Deck deleted successfully.",
+				description: undefined,
+			});
+		},
+		deleteDeckFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to delete deck.",
+			});
+		},
 	};
 }

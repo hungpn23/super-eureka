@@ -1,132 +1,130 @@
-import type { Card, FlashcardSession } from "~/features/card";
-import type { ErrorResponse } from "~/shared/types";
+import type { FlashcardSession } from "~/features/card";
+import { api as studyApi, useStudyToasts } from "~/features/study";
 import { getCards } from "~/shared/utils";
+import { DEFAULT_FLASHCARD_SESSION } from "../constants";
 import { shuffleArray, updateCard } from "../utils";
 
 export const useFlashcardSession = () => {
 	const { token } = useAuth();
+	const toast = useStudyToasts();
 	const store = useDeckStore();
 
-	const isSavingCards = useState("is-saving-cards", () => false);
-
-	const session = reactive<FlashcardSession>({
-		currentCard: null,
-		cardsToSave: [],
-		savedCards: [],
-		studyQueue: [],
-		retryQueue: [],
-		totalCards: 0,
-		knownCount: 0,
-		skippedCount: 0,
-	});
-
+	const flashcardSession = reactive<FlashcardSession>(
+		DEFAULT_FLASHCARD_SESSION,
+	);
 	const cards = computed(() =>
 		getCards(store.deck?.cards || [], store.isIgnoreDate),
 	);
+	const studyProgress = computed(
+		() => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
+	);
 
-	const progress = computed(() => {
-		if (!session.totalCards) return 0;
-		return (session.knownCount / session.totalCards) * 100;
+	const {
+		status,
+		pending: isSavingAnswers,
+		execute: saveAnswers,
+	} = studyApi.saveAnswers({
+		deckId: store.deckId,
+		token,
+		cardsToSave: flashcardSession.cardsToSave,
 	});
 
-	// Initialize session
-	watchImmediate(cards, (newCards) => {
-		if (newCards && newCards.length > 0) resetSession(newCards);
+	watch(
+		() => flashcardSession.currentCard?.id,
+		() => {
+			flashcardSession.isCardFlipped = false;
+		},
+	);
+
+	watchImmediate(cards, () => {
+		if (cards.value && cards.value.length > 0) {
+			Object.assign(flashcardSession, DEFAULT_FLASHCARD_SESSION);
+			flashcardSession.studyQueue = cards.value;
+			flashcardSession.totalCards = flashcardSession.studyQueue.length;
+			flashcardSession.currentCard = flashcardSession.studyQueue.shift();
+		}
 	});
 
-	// Auto-save
 	watchDebounced(
-		() => session.cardsToSave,
-		async () => await saveCards(),
+		() => flashcardSession.cardsToSave,
+		async () => await handleSaveAnswers(),
 		{ debounce: 1000, deep: true },
 	);
 
-	function resetSession(cards: Card[]) {
-		session.knownCount = 0;
-		session.skippedCount = 0;
-		session.savedCards = [];
-		session.cardsToSave = [];
-		session.retryQueue = [];
-		session.studyQueue = cards;
-		session.totalCards = session.studyQueue.length;
-		session.currentCard = session.studyQueue.shift();
-	}
+	const handleFlipCard = useThrottleFn(() => {
+		flashcardSession.isCardFlipped = !flashcardSession.isCardFlipped;
+	}, 300);
 
-	async function handleAnswer(isCorrect: boolean) {
-		if (!session.currentCard) return;
+	const handleAnswer = useThrottleFn(async (isCorrect: boolean) => {
+		if (!flashcardSession.currentCard) return;
 
-		isSavingCards.value = true;
+		isSavingAnswers.value = true;
 
-		const updated = updateCard(session.currentCard, isCorrect);
+		const updated = updateCard(flashcardSession.currentCard, isCorrect);
 
 		if (isCorrect) {
-			session.knownCount++;
+			flashcardSession.knownCount++;
 		} else {
-			session.skippedCount++;
-			session.retryQueue.push(updated);
+			flashcardSession.skippedCount++;
+			flashcardSession.retryQueue.push(updated);
 		}
 
 		// Update cardsToSave queue for saving
-		const index = session.cardsToSave.findIndex((a) => a.id === updated.id);
+		const index = flashcardSession.cardsToSave.findIndex(
+			(a) => a.id === updated.id,
+		);
 		if (index !== -1) {
-			session.cardsToSave[index] = updated;
+			flashcardSession.cardsToSave[index] = updated;
 		} else {
-			session.cardsToSave.push(updated);
+			flashcardSession.cardsToSave.push(updated);
 		}
 
 		// Pick next card
-		if (!session.studyQueue.length) {
-			if (!session.retryQueue.length) {
+		if (!flashcardSession.studyQueue.length) {
+			if (!flashcardSession.retryQueue.length) {
 				if (store.isIgnoreDate)
-					await Promise.all([saveCards(), store.fetchDeck()]);
+					await Promise.all([handleSaveAnswers(), store.fetchDeck()]);
 
-				session.currentCard = undefined;
+				flashcardSession.currentCard = undefined;
 				return;
 			}
 
-			session.studyQueue = session.retryQueue;
-			session.retryQueue = [];
+			flashcardSession.studyQueue = flashcardSession.retryQueue;
+			flashcardSession.retryQueue = [];
 		}
 
-		session.currentCard = session.studyQueue.shift();
+		flashcardSession.currentCard = flashcardSession.studyQueue.shift();
+	}, 300);
+
+	function handleShuffleCards() {
+		if (!flashcardSession.currentCard) return;
+
+		flashcardSession.studyQueue = shuffleArray(flashcardSession.studyQueue);
+		flashcardSession.retryQueue = shuffleArray(flashcardSession.retryQueue);
+
+		flashcardSession.studyQueue.push(flashcardSession.currentCard);
+		flashcardSession.currentCard = flashcardSession.studyQueue.shift();
 	}
 
-	async function saveCards() {
-		const cardsToSave = [...session.cardsToSave];
-		if (cardsToSave.length === 0) return;
+	async function handleSaveAnswers() {
+		await saveAnswers();
 
-		$fetch(`/api/study/save-answer/${store.deckId}`, {
-			method: "POST",
-			headers: { Authorization: token.value || "" },
-			body: { answers: cardsToSave },
-		})
-			.then(() => {
-				session.savedCards = cardsToSave; // trigger watcher in consumer
-				session.cardsToSave = [];
-			})
-			.catch((err: ErrorResponse) =>
-				console.error("Save cardsToSave fail!", err.data),
-			)
-			.finally(() => {
-				isSavingCards.value = false;
-			});
-	}
+		if (status.value === "success") {
+			flashcardSession.savedCards = flashcardSession.cardsToSave;
+			flashcardSession.cardsToSave = [];
+		}
 
-	function shuffleCards() {
-		if (!session.currentCard) return;
-
-		session.studyQueue = shuffleArray(session.studyQueue);
-		session.retryQueue = shuffleArray(session.retryQueue);
-
-		session.studyQueue.push(session.currentCard);
-		session.currentCard = session.studyQueue.shift();
+		if (status.value === "error") {
+			toast.saveAnswersFailed();
+		}
 	}
 
 	return {
-		isSavingCards,
-		session,
-		progress,
+		isSavingAnswers,
+		flashcardSession,
+		studyProgress,
+		handleFlipCard,
 		handleAnswer,
-		shuffleCards,
+		handleShuffleCards,
 	};
 };

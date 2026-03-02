@@ -5,6 +5,7 @@ export type QuestionType = "multiple_choices" | "written";
 export type QuestionDirection = "term_to_def" | "def_to_term" | "both";
 export type PreviewCard = Pick<Card, "term" | "definition">;
 export type CardToSave = Pick<Card, "id" | "streak" | "reviewDate">;
+export type CardToSync = Pick<Card, "id" | "reviewDate">;
 
 export type Card = {
 	id: UUID;

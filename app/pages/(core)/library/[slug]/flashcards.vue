@@ -7,7 +7,12 @@ import { ShortcutKey } from "~/shared/enums";
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
 
-const { session, progress, handleAnswer, shuffleCards } = useFlashcardSession();
+const {
+	session,
+	studyProgress: progress,
+	handleAnswer,
+	shuffleCards,
+} = useFlashcardSession();
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
 const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);

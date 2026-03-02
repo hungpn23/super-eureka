@@ -1,41 +1,44 @@
 <script setup lang="ts">
-import type {
-	DropdownMenuItem,
-	FormErrorEvent,
-	FormSubmitEvent,
-} from "@nuxt/ui";
+import type { DropdownMenuItem } from "@nuxt/ui";
 import { formatDistanceToNowStrict } from "date-fns";
-import type { UpdateCardSchema } from "~/features/card";
 import {
-	type GetDeckResponse,
-	getCardStatus,
 	UPDATE_DECK_SCHEMA,
-	type UpdateDeckSchema,
+	useDeckDelete,
+	useDeckEdit,
 	useFlashcardSession,
 } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
-import type { ErrorResponse, UUID } from "~/shared/types";
 
-const toast = useToast();
-const { token, data: user } = useAuth();
+const { data: user } = useAuth();
 const store = useDeckStore();
 
-const { isSavingCards, session, progress, handleAnswer, shuffleCards } =
-	useFlashcardSession();
+const {
+	isSavingAnswers,
+	flashcardSession,
+	studyProgress,
+	handleFlipCard,
+	handleAnswer,
+	handleShuffleCards,
+} = useFlashcardSession();
 
-const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
+const { isDeleting, handleDeleteDeck } = useDeckDelete();
 
-const updateDeckFormRef = useTemplateRef("update-deck-form");
+const {
+	formErrorMsg,
+	isEditing,
+	isSavingChanges,
+	state,
+	syncSavedCards,
+	onSubmit,
+	onSubmitError,
+	startEditing,
+	cancelEditing,
+	addCardFirst,
+	addCardLast,
+	removeCard,
+} = useDeckEdit();
 
-const isFlipped = ref(false);
-const formErrorMsg = ref("");
-const isEditing = ref(false);
-const isSavingChanges = ref(false);
-
-const state = reactive<Partial<UpdateDeckSchema>>({});
-
-const settingOptions = computed<DropdownMenuItem[][]>(() => [
+const settings = computed<DropdownMenuItem[][]>(() => [
 	[
 		{
 			label: "Restart progress",
@@ -63,7 +66,8 @@ const settingOptions = computed<DropdownMenuItem[][]>(() => [
 			label: "Delete deck",
 			icon: "i-lucide-trash-2",
 			color: "error",
-			onSelect: onDelete,
+			disabled: isDeleting.value,
+			onSelect: handleDeleteDeck,
 		},
 	],
 ]);
@@ -91,174 +95,15 @@ const studyOptions = computed(() => [
 	},
 ]);
 
-watchImmediate(
-	() => store.deck,
-	(newDeck) => resetFormState(newDeck),
-);
-
-// Update form state when auto-save happens in useDeck
 watch(
-	() => session.savedCards,
-	(newCards) => {
-		if (!newCards.length) return;
-
-		const map = new Map(newCards.map((a) => [a.id, a]));
-
-		if (state.cards?.length) {
-			for (const c of state.cards) {
-				const answer = map.get(c.id);
-
-				if (answer) {
-					Object.assign(c, {
-						...answer,
-						status: getCardStatus(answer.reviewDate),
-					});
-				}
-			}
-		}
-	},
+	() => flashcardSession.savedCards,
+	() => syncSavedCards(flashcardSession.savedCards),
 );
-
-watch(
-	() => session.currentCard,
-	() => {
-		isFlipped.value = false;
-	},
-);
-
-async function onDelete() {
-	$fetch(`/api/decks/${store.deckId}`, {
-		method: "DELETE",
-		headers: { Authorization: token.value || "" },
-	})
-		.then(() => {
-			navigateTo(`/library`);
-		})
-		.catch((error: ErrorResponse) => {
-			toast.add({
-				title: "Error deleting deck",
-				description: JSON.stringify(error.data?.message || "Unknown error"),
-				color: "error",
-			});
-		});
-}
-
-async function onSubmit(
-	event: FormSubmitEvent<{
-		name: string;
-		description: string;
-		cards: UpdateCardSchema[];
-	}>,
-) {
-	if (isSavingChanges.value) return;
-	isSavingChanges.value = true;
-
-	$fetch(`/api/decks/${store.deckId}`, {
-		method: "PATCH",
-		headers: { Authorization: token.value || "" },
-		body: event.data,
-	})
-		.then(async () => {
-			isEditing.value = false;
-			await store.fetchDeck();
-
-			toast.add({
-				title: "Changes saved successfully.",
-				color: "success",
-			});
-		})
-		.catch((error: ErrorResponse) => {
-			toast.add({
-				title: "Error saving changes",
-				description: JSON.stringify(error.data?.message || "Unknown error"),
-				color: "error",
-			});
-
-			return;
-		})
-		.finally(() => {
-			formErrorMsg.value = "";
-			isSavingChanges.value = false;
-		});
-}
-
-async function onSubmitError(event: FormErrorEvent) {
-	const formError = event.errors.find((e) => e.name === "");
-
-	formErrorMsg.value = formError
-		? formError.message
-		: "Please fill in all required fields.";
-}
-
-function startEditing() {
-	isEditing.value = true;
-}
-
-function cancelEditing() {
-	resetFormState(store.deck);
-	isEditing.value = false;
-	updateDeckFormRef.value?.clear();
-	formErrorMsg.value = "";
-
-	toast.add({
-		title: "Editing canceled successfully.",
-		color: "success",
-	});
-}
-
-function resetFormState(deck?: GetDeckResponse) {
-	if (deck) {
-		state.name = deck.name;
-		state.description = deck.description || "";
-		state.cards = structuredClone(deck.cards);
-	}
-}
-
-function addCardFirst() {
-	state.cards?.unshift({
-		id: crypto.randomUUID() as UUID,
-		term: "",
-		definition: "",
-		streak: 0,
-		reviewDate: undefined,
-		status: "new",
-	});
-
-	toast.add({
-		title: "Added first successfully.",
-		color: "success",
-	});
-}
-
-function addCardLast() {
-	state.cards?.push({
-		id: crypto.randomUUID() as UUID,
-		term: "",
-		definition: "",
-		streak: 0,
-		reviewDate: undefined,
-		status: "new",
-	});
-
-	toast.add({
-		title: "Added last successfully.",
-		color: "success",
-	});
-}
-
-function removeCard(cardId?: UUID) {
-	state.cards = state.cards?.filter((c) => c.id !== cardId);
-}
-
-function toggleFlip() {
-	if (!session.currentCard) return;
-	isFlipped.value = !isFlipped.value;
-}
 
 defineShortcuts({
-	[ShortcutKey.FLASHCARD_FLIP_CARD]: throttledToggleFlip,
-	[ShortcutKey.NEXT_CARD]: () => throttledHandleAnswer(true),
-	[ShortcutKey.PREV_CARD]: () => throttledHandleAnswer(false),
+	[ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
+	[ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
+	[ShortcutKey.PREV_CARD]: () => handleAnswer(false),
 });
 </script>
 
@@ -276,7 +121,6 @@ defineShortcuts({
       />
 
       <UForm
-        ref="update-deck-form"
         :schema="UPDATE_DECK_SCHEMA"
         :state="state"
         @submit="onSubmit"
@@ -340,14 +184,14 @@ defineShortcuts({
 
               <!-- Flashcard Study -->
               <div
-                v-if="session.currentCard"
+                v-if="flashcardSession.currentCard"
                 class="flex w-full flex-col gap-2"
               >
                 <!-- Status bar -->
                 <div class="flex place-content-between">
                   <div class="flex place-items-center gap-2">
                     <UBadge
-                      :label="session.skippedCount"
+                      :label="flashcardSession.skippedCount"
                       class="rounded-full px-2"
                       variant="subtle"
                       color="error"
@@ -357,14 +201,14 @@ defineShortcuts({
                   </div>
 
                   <div>
-                    {{ `${session.knownCount} / ${session.totalCards}` }}
+                    {{ `${flashcardSession.knownCount} / ${flashcardSession.totalCards}` }}
                   </div>
 
                   <div class="flex place-items-center gap-2">
                     <span class="text-success text-sm">Known</span>
 
                     <UBadge
-                      :label="session.knownCount"
+                      :label="flashcardSession.knownCount"
                       class="rounded-full px-2"
                       variant="subtle"
                       color="success"
@@ -379,7 +223,7 @@ defineShortcuts({
                   }"
                   class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
                   variant="subtle"
-                  @click="throttledToggleFlip"
+                  @click="handleFlipCard"
                 >
                   <div
                     class="flex w-full place-content-between place-items-center"
@@ -394,30 +238,30 @@ defineShortcuts({
                       />
 
                       <span>{{
-                        !isFlipped
-                          ? `Term (${session.currentCard.termLanguage})`
-                          : `Definition (${session.currentCard.definitionLanguage})`
+                        !flashcardSession.isCardFlipped
+                          ? `Term (${flashcardSession.currentCard.termLanguage})`
+                          : `Definition (${flashcardSession.currentCard.definitionLanguage})`
                       }}</span>
                     </span>
 
-                    <CardStatusBadge :card="session.currentCard" />
+                    <CardStatusBadge :card="flashcardSession.currentCard" />
                   </div>
 
                   <div
-                    v-if="isFlipped"
+                    v-if="flashcardSession.isCardFlipped"
                     class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
                   >
                     <div class="flex flex-col place-content-evenly gap-2">
                       <div class="text-xl font-medium sm:text-2xl">
-                        {{ session.currentCard.definition }}
+                        {{ flashcardSession.currentCard.definition }}
                       </div>
 
-                      <div v-if="session.currentCard.examples.length">
+                      <div v-if="flashcardSession.currentCard.examples.length">
                         <p class="text-sm font-medium">Examples:</p>
 
                         <ul class="list-disc pl-4">
                           <li
-                            v-for="(example, i) in session.currentCard.examples"
+                            v-for="(example, i) in flashcardSession.currentCard.examples"
                             :key="i"
                           >
                             <em>
@@ -439,16 +283,16 @@ defineShortcuts({
                   <div v-else class="flex flex-col place-items-center sm:px-4">
                     <div class="space-x-2">
                       <span class="text-2xl font-medium sm:text-3xl">
-                        {{ session.currentCard.term }}
+                        {{ flashcardSession.currentCard.term }}
                       </span>
 
-                      <span v-if="session.currentCard.partOfSpeech">
-                        ({{ session.currentCard.partOfSpeech }})
+                      <span v-if="flashcardSession.currentCard.partOfSpeech">
+                        ({{ flashcardSession.currentCard.partOfSpeech }})
                       </span>
                     </div>
 
-                    <em v-if="session.currentCard.pronunciation">
-                      {{ session.currentCard.pronunciation }}
+                    <em v-if="flashcardSession.currentCard.pronunciation">
+                      {{ flashcardSession.currentCard.pronunciation }}
                     </em>
                   </div>
 
@@ -456,7 +300,7 @@ defineShortcuts({
 
                   <template #header>
                     <UProgress
-                      :model-value="progress"
+                      :model-value="studyProgress"
                       :ui="{ base: 'bg-inherit' }"
                       size="sm"
                     />
@@ -511,7 +355,7 @@ defineShortcuts({
                         variant="subtle"
                         color="error"
                         class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-                        @click="throttledHandleAnswer(false)"
+                        @click="handleAnswer(false)"
                       />
                     </UTooltip>
 
@@ -527,7 +371,7 @@ defineShortcuts({
                         variant="subtle"
                         color="success"
                         class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-                        @click="throttledHandleAnswer(true)"
+                        @click="handleAnswer(true)"
                       />
                     </UTooltip>
                   </div>
@@ -541,10 +385,10 @@ defineShortcuts({
                       icon="i-lucide-shuffle"
                       variant="ghost"
                       size="lg"
-                      @click="shuffleCards"
+                      @click="handleShuffleCards"
                     />
 
-                    <UDropdownMenu :items="settingOptions">
+                    <UDropdownMenu :items="settings">
                       <UButton
                         class="h-fit cursor-pointer"
                         color="neutral"
@@ -574,7 +418,7 @@ defineShortcuts({
 
                 <span v-if="!isEditing" class="inline-flex">
                   <UIcon
-                    v-if="!isSavingCards"
+                    v-if="!isSavingAnswers"
                     class="text-success size-6"
                     name="i-lucide-check"
                   />
@@ -596,7 +440,7 @@ defineShortcuts({
                   color="neutral"
                   variant="outline"
                   :disabled="isSavingChanges"
-                  @click="cancelEditing"
+                  @click="cancelEditing()"
                 />
 
                 <UButton
@@ -733,7 +577,7 @@ defineShortcuts({
                 color="neutral"
                 variant="outline"
                 :disabled="isSavingChanges"
-                @click="cancelEditing"
+                @click="cancelEditing()"
               />
 
               <UButton

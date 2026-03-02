@@ -1,5 +1,6 @@
 import * as v from "valibot";
 import {
+	type FlashcardSession,
 	type QuestionDirection,
 	type QuestionType,
 	UPDATE_CARD_SCHEMA,
@@ -22,6 +23,17 @@ export const UPDATE_DECK_SCHEMA = v.object({
 });
 
 export const LANGUAGE_CODES = ["en", "vi"] as const;
+
+export const DEFAULT_FLASHCARD_SESSION: FlashcardSession = {
+	cardsToSave: [],
+	savedCards: [],
+	studyQueue: [],
+	retryQueue: [],
+	totalCards: 0,
+	knownCount: 0,
+	skippedCount: 0,
+	isCardFlipped: false,
+};
 
 export const QUESTION_DIRECTION_ITEMS = [
 	{
