@@ -1,33 +1,43 @@
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import type { CardToSync } from "~/features/card";
-import type { ErrorResponse, UUID } from "~/shared/types";
+import type { UUID } from "~/shared/types";
+import { api } from "../api";
 import type { GetDeckResponse, UpdateDeckSchema } from "../types";
 import { getCardStatus } from "../utils/common.util";
+import { useDeckToasts } from "./useDeckToasts";
 
 export function useDeckEdit() {
 	const { token } = useAuth();
-	const toast = useToast();
+	const toast = useDeckToasts();
 	const store = useDeckStore();
 
-	const formErrorMsg = ref("");
-	const isEditing = ref(false);
-	const isSavingChanges = ref(false);
+	const isEditing = refManualReset(false);
+	const updateFormErrorMessage = refManualReset("");
 
 	const updateState = reactive<Partial<UpdateDeckSchema>>({});
 
-	function resetFormState(deck?: GetDeckResponse) {
-		if (deck) {
-			updateState.name = deck.name;
-			updateState.description = deck.description || "";
-			updateState.cards = structuredClone(deck.cards);
-		}
-	}
+	const {
+		status,
+		pending: isUpdating,
+		execute: updateDeck,
+	} = api.updateDeck({
+		deckId: store.deckId,
+		token,
+		body: updateState,
+	});
 
-	// Sync form state when deck changes
 	watchImmediate(
 		() => store.deck,
 		(newDeck) => resetFormState(newDeck),
 	);
+
+	function resetFormState(deck?: GetDeckResponse) {
+		if (!deck) return;
+
+		updateState.name = deck.name;
+		updateState.description = deck.description || "";
+		updateState.cards = structuredClone(deck.cards);
+	}
 
 	// Update form state when auto-save happens
 	function syncSavedCards(cards: CardToSync[]) {
@@ -49,43 +59,27 @@ export function useDeckEdit() {
 		}
 	}
 
-	async function onSubmit(event: FormSubmitEvent<UpdateDeckSchema>) {
-		if (isSavingChanges.value) return;
-		isSavingChanges.value = true;
+	async function handleUpdateSubmit(event: FormSubmitEvent<UpdateDeckSchema>) {
+		Object.assign(updateState, event.data);
+		await updateDeck();
 
-		$fetch(`/api/decks/${store.deckId}`, {
-			method: "PATCH",
-			headers: { Authorization: token.value || "" },
-			body: event.data,
-		})
-			.then(async () => {
-				isEditing.value = false;
-				await store.fetchDeck();
+		if (status.value === "success") {
+			isEditing.reset();
+			await store.fetchDeck();
+			toast.updateDeckSuccess();
+		}
 
-				toast.add({
-					title: "Changes saved successfully.",
-					color: "success",
-				});
-			})
-			.catch((error: ErrorResponse) => {
-				toast.add({
-					title: "Error saving changes",
-					description: JSON.stringify(error.data?.message || "Unknown error"),
-					color: "error",
-				});
+		if (status.value === "error") {
+			toast.updateDeckFailed();
+		}
 
-				return;
-			})
-			.finally(() => {
-				formErrorMsg.value = "";
-				isSavingChanges.value = false;
-			});
+		updateFormErrorMessage.reset();
 	}
 
-	async function onSubmitError(event: FormErrorEvent) {
+	async function handleUpdateError(event: FormErrorEvent) {
 		const formError = event.errors.find((e) => e.name === "");
 
-		formErrorMsg.value = formError
+		updateFormErrorMessage.value = formError
 			? formError.message
 			: "Please fill in all required fields.";
 	}
@@ -96,16 +90,11 @@ export function useDeckEdit() {
 
 	function handleCancelEditing() {
 		resetFormState(store.deck);
-		isEditing.value = false;
-		formErrorMsg.value = "";
-
-		toast.add({
-			title: "Editing canceled successfully.",
-			color: "success",
-		});
+		isEditing.reset();
+		updateFormErrorMessage.reset();
 	}
 
-	function addCardFirst() {
+	function handleUnshiftCard() {
 		updateState.cards?.unshift({
 			id: crypto.randomUUID() as UUID,
 			term: "",
@@ -114,14 +103,9 @@ export function useDeckEdit() {
 			reviewDate: undefined,
 			status: "new",
 		});
-
-		toast.add({
-			title: "Added first successfully.",
-			color: "success",
-		});
 	}
 
-	function addCardLast() {
+	function handlePushCard() {
 		updateState.cards?.push({
 			id: crypto.randomUUID() as UUID,
 			term: "",
@@ -130,32 +114,24 @@ export function useDeckEdit() {
 			reviewDate: undefined,
 			status: "new",
 		});
-
-		toast.add({
-			title: "Added last successfully.",
-			color: "success",
-		});
 	}
 
-	function removeCard(cardId?: UUID) {
+	function handleRemoveCard(cardId?: UUID) {
 		updateState.cards = updateState.cards?.filter((c) => c.id !== cardId);
 	}
 
 	return {
-		// Refs
-		formErrorMsg,
+		updateFormErrorMessage,
 		isEditing,
-		isSavingChanges,
+		isUpdating,
 		updateState,
-
-		// Functions
 		syncSavedCards,
-		onSubmit,
-		onSubmitError,
+		handleUpdateSubmit,
+		handleUpdateError,
 		handleStartEditing,
 		handleCancelEditing,
-		addCardFirst,
-		addCardLast,
-		removeCard,
+		handleUnshiftCard,
+		handlePushCard,
+		handleRemoveCard,
 	};
 }

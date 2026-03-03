@@ -107,13 +107,13 @@ class DeckApi {
 		);
 	}
 
-	updateDeck({ deckId, token, state }: UpdateDeckOptions) {
+	updateDeck({ deckId, token, body }: UpdateDeckOptions) {
 		return useFetch<SuccessResponse, ErrorResponse>(
 			computed(() => `${this.BASE_URL}/${deckId.value}`),
 			{
 				method: "PATCH",
 				headers: { Authorization: token.value || "" },
-				body: state,
+				body,
 				immediate: false,
 				watch: false,
 			},

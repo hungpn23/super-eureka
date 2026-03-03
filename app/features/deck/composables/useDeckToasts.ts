@@ -68,5 +68,18 @@ export function useDeckToasts() {
 				title: "Failed to delete deck.",
 			});
 		},
+		updateDeckSuccess: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.SUCCESS,
+				title: "Deck updated successfully.",
+				description: undefined,
+			});
+		},
+		updateDeckFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to update deck.",
+			});
+		},
 	};
 }

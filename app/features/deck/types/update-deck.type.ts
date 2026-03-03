@@ -5,7 +5,7 @@ import type { UPDATE_DECK_SCHEMA } from "../constants";
 export type UpdateDeckSchema = v.InferOutput<typeof UPDATE_DECK_SCHEMA>;
 
 export type UpdateDeckOptions = {
-	deckId: Ref<UUID | null>;
+	deckId: UUID | null;
 	token: Ref<string | null>;
-	state: Partial<UpdateDeckSchema>;
+	body: Partial<UpdateDeckSchema>;
 };

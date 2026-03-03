@@ -24,18 +24,18 @@ const {
 const { isDeleting, handleDeleteDeck } = useDeckDelete();
 
 const {
-	formErrorMsg,
+	updateFormErrorMessage,
 	isEditing,
-	isSavingChanges,
+	isUpdating,
 	updateState,
 	syncSavedCards,
-	onSubmit,
-	onSubmitError,
+	handleUpdateSubmit,
+	handleUpdateError,
 	handleStartEditing,
 	handleCancelEditing,
-	addCardFirst,
-	addCardLast,
-	removeCard,
+	handleUnshiftCard,
+	handlePushCard,
+	handleRemoveCard,
 } = useDeckEdit();
 
 const settings = computed<DropdownMenuItem[][]>(() => [
@@ -123,8 +123,8 @@ defineShortcuts({
       <UForm
         :schema="UPDATE_DECK_SCHEMA"
         :state="updateState"
-        @submit="onSubmit"
-        @error="onSubmitError"
+        @submit="handleUpdateSubmit"
+        @error="handleUpdateError"
       >
         <UPageHeader :ui="{ title: 'flex-1' }" class="py-0 pb-8">
           <!-- Title and Description -->
@@ -439,13 +439,14 @@ defineShortcuts({
                   icon="i-lucide-x"
                   color="neutral"
                   variant="outline"
-                  :disabled="isSavingChanges"
+                  :disabled="isUpdating"
                   @click="handleCancelEditing()"
                 />
 
                 <UButton
-                  :loading="isSavingChanges"
-                  :label="isSavingChanges ? 'Saving...' : 'Save Changes'"
+                  :loading="isUpdating"
+                  :disabled="isUpdating"
+                  :label="isUpdating ? 'Saving...' : 'Save Changes'"
                   class="cursor-pointer"
                   icon="i-lucide-save"
                   loading-icon="i-lucide-loader-circle"
@@ -455,23 +456,23 @@ defineShortcuts({
             </div>
 
             <UAlert
-              v-if="formErrorMsg"
+              v-if="updateFormErrorMessage"
               icon="i-lucide-alert-triangle"
               color="error"
               variant="soft"
               title="Validation Error"
-              :description="formErrorMsg"
+              :description="updateFormErrorMessage"
             />
 
             <UButton
               v-if="isEditing"
-              :disabled="isSavingChanges"
+              :disabled="isUpdating"
               class="cursor-pointer place-self-center px-4"
               label="Add a card"
               icon="i-lucide-plus"
               variant="subtle"
               size="xl"
-              @click="addCardFirst"
+              @click="handleUnshiftCard"
             />
 
             <TransitionGroup name="list" appear>
@@ -493,7 +494,7 @@ defineShortcuts({
                     icon="i-lucide-trash-2"
                     color="error"
                     variant="ghost"
-                    @click="removeCard(c.id)"
+                    @click="handleRemoveCard(c.id)"
                   />
 
                   <span
@@ -560,13 +561,13 @@ defineShortcuts({
 
             <UButton
               v-if="isEditing"
-              :disabled="isSavingChanges"
+              :disabled="isUpdating"
               class="cursor-pointer place-self-center px-4"
               label="Add a card"
               icon="i-lucide-plus"
               variant="subtle"
               size="xl"
-              @click="addCardLast"
+              @click="handlePushCard"
             />
 
             <div v-if="isEditing" class="flex gap-2 place-self-end">
@@ -576,13 +577,13 @@ defineShortcuts({
                 icon="i-lucide-x"
                 color="neutral"
                 variant="outline"
-                :disabled="isSavingChanges"
+                :disabled="isUpdating"
                 @click="handleCancelEditing()"
               />
 
               <UButton
-                :loading="isSavingChanges"
-                :label="isSavingChanges ? 'Saving...' : 'Save Changes'"
+                :loading="isUpdating"
+                :label="isUpdating ? 'Saving...' : 'Save Changes'"
                 class="cursor-pointer"
                 color="primary"
                 icon="i-lucide-save"
