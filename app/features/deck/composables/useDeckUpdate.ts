@@ -6,7 +6,7 @@ import type { GetDeckResponse, UpdateDeckSchema } from "../types";
 import { getCardStatus } from "../utils/common.util";
 import { useDeckToasts } from "./useDeckToasts";
 
-export function useDeckEdit() {
+export function useDeckUpdate() {
 	const { token } = useAuth();
 	const toast = useDeckToasts();
 	const store = useDeckStore();

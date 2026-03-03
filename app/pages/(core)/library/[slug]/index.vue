@@ -4,7 +4,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import {
 	UPDATE_DECK_SCHEMA,
 	useDeckDelete,
-	useDeckEdit,
+	useDeckUpdate,
 	useFlashcardSession,
 } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
@@ -36,7 +36,7 @@ const {
 	handleUnshiftCard,
 	handlePushCard,
 	handleRemoveCard,
-} = useDeckEdit();
+} = useDeckUpdate();
 
 const settings = computed<DropdownMenuItem[][]>(() => [
 	[
