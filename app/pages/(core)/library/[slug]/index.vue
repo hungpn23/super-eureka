@@ -27,12 +27,12 @@ const {
 	formErrorMsg,
 	isEditing,
 	isSavingChanges,
-	state,
+	updateState,
 	syncSavedCards,
 	onSubmit,
 	onSubmitError,
-	startEditing,
-	cancelEditing,
+	handleStartEditing,
+	handleCancelEditing,
 	addCardFirst,
 	addCardLast,
 	removeCard,
@@ -58,7 +58,7 @@ const settings = computed<DropdownMenuItem[][]>(() => [
 			label: "Edit deck",
 			icon: "i-lucide-pencil-line",
 			disabled: isEditing.value,
-			onSelect: startEditing,
+			onSelect: handleStartEditing,
 		},
 	],
 	[
@@ -122,7 +122,7 @@ defineShortcuts({
 
       <UForm
         :schema="UPDATE_DECK_SCHEMA"
-        :state="state"
+        :state="updateState"
         @submit="onSubmit"
         @error="onSubmitError"
       >
@@ -131,7 +131,7 @@ defineShortcuts({
           <template #title>
             <UFormField name="name">
               <UInput
-                v-model="state.name"
+                v-model="updateState.name"
                 :disabled="!isEditing"
                 :ui="{
                   base: `${!isEditing ? 'p-0' : ''} bg-elevated/50 text-lg font-semibold text-pretty sm:text-xl disabled:opacity-100 disabled:cursor-default`,
@@ -148,7 +148,7 @@ defineShortcuts({
               name="description"
             >
               <UTextarea
-                v-model="state.description"
+                v-model="updateState.description"
                 :rows="1"
                 :maxrows="10"
                 :disabled="!isEditing"
@@ -414,7 +414,7 @@ defineShortcuts({
               <h2
                 class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
               >
-                Cards ({{ state.cards?.length || 0 }})
+                Cards ({{ updateState.cards?.length || 0 }})
 
                 <span v-if="!isEditing" class="inline-flex">
                   <UIcon
@@ -440,7 +440,7 @@ defineShortcuts({
                   color="neutral"
                   variant="outline"
                   :disabled="isSavingChanges"
-                  @click="cancelEditing()"
+                  @click="handleCancelEditing()"
                 />
 
                 <UButton
@@ -476,7 +476,7 @@ defineShortcuts({
 
             <TransitionGroup name="list" appear>
               <UCard
-                v-for="(c, index) in state.cards"
+                v-for="(c, index) in updateState.cards"
                 :key="c.id"
                 :ui="{ body: `${!isEditing ? 'px-2 sm:px-4' : ''}` }"
                 class="bg-elevated"
@@ -577,7 +577,7 @@ defineShortcuts({
                 color="neutral"
                 variant="outline"
                 :disabled="isSavingChanges"
-                @click="cancelEditing()"
+                @click="handleCancelEditing()"
               />
 
               <UButton

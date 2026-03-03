@@ -5,21 +5,21 @@ import type { GetDeckResponse, UpdateDeckSchema } from "../types";
 import { getCardStatus } from "../utils/common.util";
 
 export function useDeckEdit() {
-	const toast = useToast();
 	const { token } = useAuth();
+	const toast = useToast();
 	const store = useDeckStore();
 
 	const formErrorMsg = ref("");
 	const isEditing = ref(false);
 	const isSavingChanges = ref(false);
 
-	const state = reactive<Partial<UpdateDeckSchema>>({});
+	const updateState = reactive<Partial<UpdateDeckSchema>>({});
 
 	function resetFormState(deck?: GetDeckResponse) {
 		if (deck) {
-			state.name = deck.name;
-			state.description = deck.description || "";
-			state.cards = structuredClone(deck.cards);
+			updateState.name = deck.name;
+			updateState.description = deck.description || "";
+			updateState.cards = structuredClone(deck.cards);
 		}
 	}
 
@@ -35,8 +35,8 @@ export function useDeckEdit() {
 
 		const map = new Map(cards.map((a) => [a.id, a]));
 
-		if (state.cards?.length) {
-			for (const c of state.cards) {
+		if (updateState.cards?.length) {
+			for (const c of updateState.cards) {
 				const answer = map.get(c.id);
 
 				if (answer) {
@@ -90,11 +90,11 @@ export function useDeckEdit() {
 			: "Please fill in all required fields.";
 	}
 
-	function startEditing() {
+	function handleStartEditing() {
 		isEditing.value = true;
 	}
 
-	function cancelEditing() {
+	function handleCancelEditing() {
 		resetFormState(store.deck);
 		isEditing.value = false;
 		formErrorMsg.value = "";
@@ -106,7 +106,7 @@ export function useDeckEdit() {
 	}
 
 	function addCardFirst() {
-		state.cards?.unshift({
+		updateState.cards?.unshift({
 			id: crypto.randomUUID() as UUID,
 			term: "",
 			definition: "",
@@ -122,7 +122,7 @@ export function useDeckEdit() {
 	}
 
 	function addCardLast() {
-		state.cards?.push({
+		updateState.cards?.push({
 			id: crypto.randomUUID() as UUID,
 			term: "",
 			definition: "",
@@ -138,7 +138,7 @@ export function useDeckEdit() {
 	}
 
 	function removeCard(cardId?: UUID) {
-		state.cards = state.cards?.filter((c) => c.id !== cardId);
+		updateState.cards = updateState.cards?.filter((c) => c.id !== cardId);
 	}
 
 	return {
@@ -146,14 +146,14 @@ export function useDeckEdit() {
 		formErrorMsg,
 		isEditing,
 		isSavingChanges,
-		state,
+		updateState,
 
 		// Functions
 		syncSavedCards,
 		onSubmit,
 		onSubmitError,
-		startEditing,
-		cancelEditing,
+		handleStartEditing,
+		handleCancelEditing,
 		addCardFirst,
 		addCardLast,
 		removeCard,
