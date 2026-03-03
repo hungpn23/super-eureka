@@ -8,16 +8,12 @@ const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
 
 const {
-	session,
-	studyProgress: progress,
+	flashcardSession,
+	studyProgress,
+	handleFlipCard,
 	handleAnswer,
-	shuffleCards,
+	handleShuffleCards,
 } = useFlashcardSession();
-
-const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
-
-const isFlipped = ref(false);
 
 const settingOptions = computed<DropdownMenuItem[]>(() => [
 	[
@@ -32,29 +28,16 @@ const settingOptions = computed<DropdownMenuItem[]>(() => [
 			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
 			type: "checkbox",
 			checked: store.isIgnoreDate,
-			onUpdateChecked: (checked: boolean) =>
-				store.handleCheckIgnoreDate(checked),
+			onUpdateChecked: (c: boolean) => store.handleCheckIgnoreDate(c),
 			onSelect: (e: Event) => e.preventDefault(),
 		},
 	],
 ]);
 
-watch(
-	() => session.currentCard,
-	() => {
-		isFlipped.value = false;
-	},
-);
-
-function toggleFlip() {
-	if (!session.currentCard) return;
-	isFlipped.value = !isFlipped.value;
-}
-
 defineShortcuts({
-	[ShortcutKey.FLASHCARD_FLIP_CARD]: throttledToggleFlip,
-	[ShortcutKey.NEXT_CARD]: () => throttledHandleAnswer(true),
-	[ShortcutKey.PREV_CARD]: () => throttledHandleAnswer(false),
+	[ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
+	[ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
+	[ShortcutKey.PREV_CARD]: () => handleAnswer(false),
 });
 </script>
 
@@ -80,7 +63,7 @@ defineShortcuts({
       />
     </div>
 
-    <div v-if="session.currentCard" class="flex w-full flex-col gap-2">
+    <div v-if="flashcardSession.currentCard" class="flex w-full flex-col gap-2">
       <h1
         v-if="store.deck?.name"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
@@ -91,7 +74,7 @@ defineShortcuts({
       <div class="flex place-content-between">
         <div class="flex place-items-center gap-2">
           <UBadge
-            :label="session.skippedCount"
+            :label="flashcardSession.skippedCount"
             class="rounded-full px-2"
             variant="subtle"
             color="error"
@@ -101,14 +84,14 @@ defineShortcuts({
         </div>
 
         <div>
-          {{ `${session.knownCount} / ${session.totalCards}` }}
+          {{ `${flashcardSession.knownCount} / ${flashcardSession.totalCards}` }}
         </div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success text-sm">Known</span>
 
           <UBadge
-            :label="session.knownCount"
+            :label="flashcardSession.knownCount"
             class="rounded-full px-2"
             variant="subtle"
             color="success"
@@ -123,11 +106,11 @@ defineShortcuts({
         }"
         class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
         variant="subtle"
-        @click="throttledToggleFlip"
+        @click="handleFlipCard"
       >
         <template #header>
           <UProgress
-            :model-value="progress"
+            :model-value="studyProgress"
             :ui="{ base: 'bg-inherit' }"
             size="sm"
           />
@@ -146,31 +129,31 @@ defineShortcuts({
 
               <span>
                 {{
-                  !isFlipped
-                    ? `Term (${session.currentCard.termLanguage})`
-                    : `Definition (${session.currentCard.definitionLanguage})`
+                  !flashcardSession.isCardFlipped
+                    ? `Term (${flashcardSession.currentCard.termLanguage})`
+                    : `Definition (${flashcardSession.currentCard.definitionLanguage})`
                 }}
               </span>
             </span>
 
-            <CardStatusBadge :card="session.currentCard" />
+            <CardStatusBadge :card="flashcardSession.currentCard" />
           </div>
 
           <div
-            v-if="isFlipped"
+            v-if="flashcardSession.isCardFlipped"
             class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
           >
             <div class="flex flex-col place-content-evenly gap-2">
               <div class="text-xl font-medium sm:text-2xl">
-                {{ session.currentCard.definition }}
+                {{ flashcardSession.currentCard.definition }}
               </div>
 
-              <div v-if="session.currentCard.examples.length">
+              <div v-if="flashcardSession.currentCard.examples.length">
                 <p class="text-sm font-medium">Examples:</p>
 
                 <ul class="list-disc pl-4">
                   <li
-                    v-for="(example, i) in session.currentCard.examples"
+                    v-for="(example, i) in flashcardSession.currentCard.examples"
                     :key="i"
                   >
                     <em>
@@ -192,16 +175,16 @@ defineShortcuts({
           <div v-else class="flex flex-col place-items-center sm:px-4">
             <div class="space-x-2">
               <span class="text-2xl font-medium sm:text-3xl">
-                {{ session.currentCard.term }}
+                {{ flashcardSession.currentCard.term }}
               </span>
 
-              <span v-if="session.currentCard.partOfSpeech">
-                ({{ session.currentCard.partOfSpeech }})
+              <span v-if="flashcardSession.currentCard.partOfSpeech">
+                ({{ flashcardSession.currentCard.partOfSpeech }})
               </span>
             </div>
 
-            <em v-if="session.currentCard.pronunciation">
-              {{ session.currentCard.pronunciation }}
+            <em v-if="flashcardSession.currentCard.pronunciation">
+              {{ flashcardSession.currentCard.pronunciation }}
             </em>
           </div>
 
@@ -223,7 +206,7 @@ defineShortcuts({
               variant="subtle"
               color="error"
               class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              @click="throttledHandleAnswer(false)"
+              @click="handleAnswer(false)"
             />
           </UTooltip>
 
@@ -235,7 +218,7 @@ defineShortcuts({
               variant="subtle"
               color="success"
               class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              @click="throttledHandleAnswer(true)"
+              @click="handleAnswer(true)"
             />
           </UTooltip>
         </div>
@@ -247,7 +230,7 @@ defineShortcuts({
             icon="i-lucide-shuffle"
             variant="ghost"
             size="lg"
-            @click="shuffleCards"
+            @click="handleShuffleCards"
           />
 
           <UDropdownMenu :items="settingOptions">

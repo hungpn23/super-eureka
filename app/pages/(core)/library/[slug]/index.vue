@@ -11,6 +11,7 @@ import { ShortcutKey } from "~/shared/enums";
 
 const { data: user } = useAuth();
 const store = useDeckStore();
+const { isDeleting, handleDeleteDeck } = useDeckDelete();
 
 const {
 	isSavingAnswers,
@@ -20,8 +21,6 @@ const {
 	handleAnswer,
 	handleShuffleCards,
 } = useFlashcardSession();
-
-const { isDeleting, handleDeleteDeck } = useDeckDelete();
 
 const {
 	updateFormErrorMessage,
