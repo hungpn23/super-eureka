@@ -45,11 +45,10 @@ export const useFlashcardSession = () => {
 		}
 	});
 
-	watchDebounced(
-		() => flashcardSession.cardsToSave,
-		async () => await handleSaveAnswers(),
-		{ debounce: 1000, deep: true },
-	);
+	watchDebounced(() => flashcardSession.cardsToSave, handleSaveAnswers, {
+		debounce: 1000,
+		deep: true,
+	});
 
 	const handleFlipCard = useThrottleFn(() => {
 		flashcardSession.isCardFlipped = !flashcardSession.isCardFlipped;
@@ -57,8 +56,6 @@ export const useFlashcardSession = () => {
 
 	const handleAnswer = useThrottleFn(async (isCorrect: boolean) => {
 		if (!flashcardSession.currentCard) return;
-
-		isSavingAnswers.value = true;
 
 		const updated = updateCard(flashcardSession.currentCard, isCorrect);
 
@@ -107,7 +104,9 @@ export const useFlashcardSession = () => {
 	}
 
 	async function handleSaveAnswers() {
-		await saveAnswers();
+		if (flashcardSession.cardsToSave.length > 0) {
+			await saveAnswers();
+		}
 
 		if (status.value === "success") {
 			flashcardSession.savedCards = flashcardSession.cardsToSave;

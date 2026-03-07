@@ -28,10 +28,8 @@ export const useDeckStore = defineStore("deck", () => {
 
 	watchImmediate(
 		() => route.name,
-		async (routeName) => {
-			const routeNameStr = routeName?.toString() || "";
-
-			if (routeNameStr.includes("library-slug")) {
+		async () => {
+			if (route.name?.toString().includes("library-slug")) {
 				deckId.value = route.query.deckId as UUID;
 				slug.value = route.params.slug as string;
 
