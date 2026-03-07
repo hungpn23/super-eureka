@@ -13,7 +13,7 @@ import { focusInput, getCards } from "~/shared/utils";
 
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
-const questionRefs = useTemplateRef("questions");
+const questionRefs = useTemplateRef("questionCards");
 
 const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
 
@@ -255,7 +255,7 @@ onMounted(() => {
       <UCard
         v-for="(q, qIndex) in session.questions"
         :key="qIndex"
-        ref="questions"
+        ref="questionCards"
         :ui="{
           header: 'p-0 sm:px-0',
           body: `flex-1 w-full flex flex-col gap-4 p-2`,

@@ -24,7 +24,7 @@ const store = useDeckStore();
 const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
 const throttledNextQuestion = useThrottleFn(nextQuestion, 500);
 
-const userWrittenAnswerRef = useTemplateRef("user-written-answer");
+const userWrittenAnswerRef = useTemplateRef("userWrittenAnswerInput");
 
 const isSettingOpen = ref(false);
 
@@ -469,7 +469,7 @@ defineShortcuts({
             <!-- Written Answer -->
             <div v-else class="flex w-full flex-col gap-2">
               <UInput
-                ref="user-written-answer"
+                ref="userWrittenAnswerInput"
                 v-model="state.userAnswer"
                 :ui="{
                   base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,

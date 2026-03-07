@@ -20,7 +20,7 @@ const { token, data: user } = useAuth();
 const { page, limit, filter, search, filterItems, searchQuery } =
 	useDeckSearch();
 
-const searchRef = useTemplateRef("search");
+const searchRef = useTemplateRef("searchInput");
 
 const deckId = ref<UUID | null>(null);
 
@@ -65,7 +65,7 @@ defineShortcuts({
 
     <div class="flex w-full place-content-between gap-2">
       <UInput
-        ref="search"
+        ref="searchInput"
         v-model="search"
         class="sm:basis-1/2"
         icon="i-lucide-search"

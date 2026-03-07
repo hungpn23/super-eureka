@@ -24,8 +24,8 @@ import { focusInput, getVisibilityIcon } from "~/shared/utils";
 const toast = useCreateDeckToasts();
 const { token } = useAuth();
 
-const passcodeRef = useTemplateRef("passcode");
-const definitionRefs = useTemplateRef("definition");
+const passcodeRef = useTemplateRef("passcodeInput");
+const definitionRefs = useTemplateRef("definitionInput");
 
 const isVisibilityModalOpen = ref(false);
 const formErrorMsg = ref("");
@@ -288,7 +288,7 @@ async function onValidationError(event: FormErrorEvent) {
 
                 <UFormField class="flex-1" :name="`cards.${cIndex}.definition`">
                   <UTextarea
-                    ref="definition"
+                    ref="definitionInput"
                     v-model="card.definition"
                     :rows="1"
                     :maxrows="10"
@@ -401,7 +401,7 @@ async function onValidationError(event: FormErrorEvent) {
             required
           >
             <UInput
-              ref="passcode"
+              ref="passcodeInput"
               v-model="createState.passcode"
               @keydown.enter="isVisibilityModalOpen = false"
               @vue:mounted="focusInput(passcodeRef?.inputRef);"

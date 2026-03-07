@@ -14,7 +14,7 @@ import { focusInput, getVisibilityIcon } from "~/shared/utils";
 const toast = useDeckToasts();
 const studyToast = useStudyToasts();
 const { token, data: user } = useAuth();
-const searchRef = useTemplateRef("search");
+const searchRef = useTemplateRef("searchInput");
 const { page, limit, filter, search, filterItems, searchQuery } =
 	useDeckSearch();
 
@@ -155,7 +155,7 @@ defineShortcuts({
           class="flex w-full basis-2/3 place-content-end gap-2 place-self-end sm:gap-4"
         >
           <UInput
-            ref="search"
+            ref="searchInput"
             v-model="search"
             class="flex-1"
             icon="i-lucide-search"
