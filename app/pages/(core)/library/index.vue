@@ -73,7 +73,9 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonLibraryPage v-if="status === 'idle' || status === 'pending'" />
+  <ClientOnly v-if="status === 'idle' || status === 'pending'">
+    <SkeletonLibraryPage />
+  </ClientOnly>
 
   <UContainer v-else>
     <UPageHeader

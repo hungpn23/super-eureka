@@ -10,6 +10,10 @@ export const useDeckStore = defineStore("deck", () => {
 	const deckId = ref<UUID | null>(null);
 	const slug = ref<string>("");
 
+	const isFetchingDeck = computed(
+		() => status.value === "idle" || status.value === "pending",
+	);
+
 	const {
 		data: restartData,
 		error: restartError,
@@ -58,11 +62,9 @@ export const useDeckStore = defineStore("deck", () => {
 	}
 
 	return {
-		deck: computed(() => deck.value),
-		isFetchingDeck: computed(
-			() => status.value === "idle" || status.value === "pending",
-		),
-		isIgnoreDate: computed(() => isIgnoreDate.value),
+		deck,
+		isFetchingDeck,
+		isIgnoreDate,
 		deckId,
 		slug,
 		fetchDeck,

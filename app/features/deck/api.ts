@@ -97,7 +97,7 @@ class DeckApi {
 
 	deleteDeck({ deckId, token }: DeleteDeckOptions) {
 		return useFetch<SuccessResponse, ErrorResponse>(
-			computed(() => `${this.BASE_URL}/${deckId.value}`),
+			`${this.BASE_URL}/${deckId}`,
 			{
 				method: "DELETE",
 				headers: { Authorization: token.value || "" },
@@ -109,7 +109,7 @@ class DeckApi {
 
 	updateDeck({ deckId, token, body }: UpdateDeckOptions) {
 		return useFetch<SuccessResponse, ErrorResponse>(
-			computed(() => `${this.BASE_URL}/${deckId.value}`),
+			`${this.BASE_URL}/${deckId}`,
 			{
 				method: "PATCH",
 				headers: { Authorization: token.value || "" },
