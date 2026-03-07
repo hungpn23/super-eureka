@@ -18,7 +18,6 @@ export type LearnQuestion = Pick<
 };
 
 export type LearnSession = {
-	isSavingAnswers: boolean;
 	correctCount: number;
 	incorrectCount: number;
 	cardsToSave: CardToSave[];

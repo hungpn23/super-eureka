@@ -1,8 +1,7 @@
 import type { FlashcardSession } from "~/features/card";
 import { api as studyApi, useStudyToasts } from "~/features/study";
 import { getCards } from "~/shared/utils";
-import { DEFAULT_FLASHCARD_SESSION } from "../constants";
-import { shuffleArray, updateCard } from "../utils";
+import { getDefaultFlashcardSession, shuffleArray, updateCard } from "../utils";
 
 export const useFlashcardSession = () => {
 	const { token } = useAuth();
@@ -10,7 +9,7 @@ export const useFlashcardSession = () => {
 	const store = useDeckStore();
 
 	const flashcardSession = reactive<FlashcardSession>(
-		DEFAULT_FLASHCARD_SESSION,
+		getDefaultFlashcardSession(),
 	);
 	const cards = computed(() =>
 		getCards(store.deck?.cards || [], store.isIgnoreDate),
@@ -38,7 +37,7 @@ export const useFlashcardSession = () => {
 
 	watchImmediate(cards, () => {
 		if (cards.value && cards.value.length > 0) {
-			Object.assign(flashcardSession, DEFAULT_FLASHCARD_SESSION);
+			Object.assign(flashcardSession, getDefaultFlashcardSession());
 			flashcardSession.studyQueue = cards.value;
 			flashcardSession.totalCards = flashcardSession.studyQueue.length;
 			flashcardSession.currentCard = flashcardSession.studyQueue.shift();
@@ -104,9 +103,8 @@ export const useFlashcardSession = () => {
 	}
 
 	async function handleSaveAnswers() {
-		if (flashcardSession.cardsToSave.length > 0) {
-			await saveAnswers();
-		}
+		if (!flashcardSession.cardsToSave.length) return;
+		await saveAnswers();
 
 		if (status.value === "success") {
 			flashcardSession.savedCards = flashcardSession.cardsToSave;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
+import { pick } from "lodash";
 import type {
 	LearnQuestion,
 	LearnQuestionState,
@@ -8,71 +9,65 @@ import type {
 } from "~/features/card";
 import {
 	generateQuestions,
+	getDefaultLearnQuestionState,
+	getDefaultLearnSession,
+	getDefaultLearnSetting,
 	QUESTION_DIRECTION_ITEMS,
 	QUESTION_TYPE_ITEMS,
 	updateCard,
 } from "~/features/deck";
+import { api, useStudyToasts } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
-import type { ErrorResponse } from "~/shared/types";
 import { focusInput, getCards } from "~/shared/utils";
 
 const { token } = useAuth();
-const toast = useToast();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
+const toast = useStudyToasts();
 const store = useDeckStore();
 
-const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
-const throttledNextQuestion = useThrottleFn(nextQuestion, 500);
-
 const userWrittenAnswerRef = useTemplateRef("userWrittenAnswerInput");
+const isSettingModalOpen = refManualReset(false);
+const snapshotSetting = refManualReset("");
 
-const isSettingOpen = ref(false);
+const session = reactive<LearnSession>(getDefaultLearnSession());
+const questionState = reactive<LearnQuestionState>(
+	getDefaultLearnQuestionState(),
+);
+const setting = reactive<LearnSetting>(getDefaultLearnSetting());
 
-const session = reactive<LearnSession>({
-	currentQuestion: undefined,
-	cardsToSave: [],
-	studyQueue: [],
-	retryQueue: [],
-	totalQuestions: 0,
-	correctCount: 0,
-	incorrectCount: 0,
-	isSavingAnswers: false,
-});
-
-const state = reactive<LearnQuestionState>({
-	userAnswer: "",
-	userChoiceIndex: -1,
-	isInReview: false,
-	isCorrect: undefined,
-	hintUsedCount: 0,
-});
-
-const setting = reactive<LearnSetting>({
-	showCorrectAnswer: true,
-	types: ["written", "multiple_choices"],
-	direction: "term_to_def",
-});
-let snapshotSetting = "";
-
-const isIncorrect = computed(() => state.isCorrect === false);
-
+const isIncorrect = computed(() => questionState.isCorrect === false);
 const progress = computed(() => {
 	if (!session.totalQuestions) return 0;
 	return (session.correctCount / session.totalQuestions) * 100;
+});
+
+const {
+	status,
+	pending: isSavingAnswers,
+	execute: saveAnswers,
+} = api.saveAnswers({
+	deckId: store.deckId,
+	token,
+	cardsToSave: session.cardsToSave,
 });
 
 watch(
 	() => store.deck?.cards,
 	(newCards) => {
 		if (newCards && newCards.length > 0) {
-			isSettingOpen.value = false;
+			isSettingModalOpen.reset();
 			resetQuestionState();
 
-			session.isSavingAnswers = false;
-			session.correctCount = 0;
-			session.incorrectCount = 0;
-			session.cardsToSave = [];
-			session.retryQueue = [];
+			Object.assign(
+				session,
+				pick(
+					getDefaultLearnSession(),
+					"correctCount",
+					"incorrectCount",
+					"cardsToSave",
+					"retryQueue",
+				),
+			);
 
 			session.studyQueue = generateQuestions<LearnQuestion>({
 				cards: getCards(newCards, store.isIgnoreDate),
@@ -86,56 +81,50 @@ watch(
 	},
 );
 
-watchDeep(
-	() => setting.types,
-	(newTypes) => {
-		if (!newTypes.length) setting.types = ["multiple_choices"];
+watch(
+	() => setting.types.length,
+	() => {
+		if (!setting.types.length) setting.types = ["multiple_choices"];
 	},
 );
 
-watchDebounced(() => session.cardsToSave, saveAnswers, {
+watchDebounced(() => session.cardsToSave, handleSaveAnswers, {
 	debounce: 1000,
 	deep: true,
 });
 
-function submitAnswer(userAnswer: number | string) {
+const submitAnswer = useThrottleFn((userAnswer: number | string) => {
 	const q = session.currentQuestion;
-	if (!q || state.isInReview) return;
+	if (!q || questionState.isInReview) return;
 
 	if (q.type === "multiple_choices" && typeof userAnswer === "number") {
-		state.userChoiceIndex = userAnswer;
-		state.isCorrect = userAnswer === q.correctChoiceIndex;
-	} else if (q.type === "written" && typeof userAnswer === "string") {
+		questionState.userChoiceIndex = userAnswer;
+		questionState.isCorrect = userAnswer === q.correctChoiceIndex;
+	}
+
+	if (q.type === "written" && typeof userAnswer === "string") {
 		const inputRef = userWrittenAnswerRef.value?.inputRef;
 		if (inputRef) inputRef.blur();
 
-		state.isCorrect =
+		questionState.isCorrect =
 			userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
-	} else {
-		return;
 	}
 
-	state.isInReview = true;
+	questionState.isInReview = true;
 
-	if (state.isCorrect) {
+	if (questionState.isCorrect) {
 		session.correctCount++;
-
-		setTimeout(() => {
-			throttledNextQuestion(true, q);
-		}, 500);
+		setTimeout(() => nextQuestion(true, q), 500);
 	} else {
 		session.incorrectCount++;
-
 		if (setting.showCorrectAnswer) return;
 
-		throttledNextQuestion(false, q);
+		setTimeout(() => nextQuestion(false, q), 500);
 	}
-}
+}, 500);
 
 function nextQuestion(isCorrect?: boolean, q?: LearnQuestion) {
 	if (!q || isCorrect === undefined) return;
-
-	session.isSavingAnswers = true;
 
 	const updated = updateCard(q, isCorrect);
 
@@ -164,55 +153,40 @@ function nextQuestion(isCorrect?: boolean, q?: LearnQuestion) {
 }
 
 function resetQuestionState() {
-	state.isCorrect = undefined;
-	state.isInReview = false;
-	state.userAnswer = "";
-	state.userChoiceIndex = -1;
-	state.hintUsedCount = 0;
+	Object.assign(questionState, getDefaultLearnQuestionState());
 
 	focusInput(userWrittenAnswerRef.value?.inputRef);
 }
 
-async function saveAnswers() {
-	const answersToSave = [...session.cardsToSave];
-	if (answersToSave.length === 0) return;
+async function handleSaveAnswers() {
+	if (!session.cardsToSave.length) return;
+	await saveAnswers();
 
-	$fetch(`/api/study/save-answer/${store.deckId}`, {
-		method: "POST",
-		headers: { Authorization: token.value || "" },
-		body: { answers: answersToSave },
-	})
-		.then(() => {
-			session.cardsToSave = [];
-		})
-		.catch((error: ErrorResponse) =>
-			toast.add({
-				title: "Save answers fail!",
-				description: error.data?.message || "Please try again later.",
-				color: "error",
-			}),
-		)
-		.finally(() => {
-			session.isSavingAnswers = false;
-		});
+	if (status.value === "success") {
+		session.cardsToSave = [];
+	}
+
+	if (status.value === "error") {
+		toast.saveAnswersFailed();
+	}
 }
 
-async function onSettingClosed() {
-	if (JSON.stringify(setting) === snapshotSetting) return;
+async function handleCloseSettingModal() {
+	if (JSON.stringify(setting) === snapshotSetting.value) return;
 
-	snapshotSetting = "";
+	snapshotSetting.reset();
 	await store.fetchDeck();
 }
 
 // TODO: calculate next review date based on hint used count
 function onGetAHint() {
 	if (session.currentQuestion) {
-		state.userAnswer = session.currentQuestion.correctAnswer.substring(
+		questionState.userAnswer = session.currentQuestion.correctAnswer.substring(
 			0,
-			state.hintUsedCount + 1,
+			questionState.hintUsedCount + 1,
 		);
 
-		state.hintUsedCount++;
+		questionState.hintUsedCount++;
 	}
 
 	focusInput(userWrittenAnswerRef.value?.inputRef);
@@ -221,27 +195,33 @@ function onGetAHint() {
 function handleChoiceShortcut(index: number) {
 	if (
 		isIncorrect.value &&
-		state.isInReview &&
+		questionState.isInReview &&
 		session.currentQuestion?.correctChoiceIndex === index
 	) {
-		throttledNextQuestion(state.isCorrect, session.currentQuestion);
+		nextQuestion(questionState.isCorrect, session.currentQuestion);
 	} else {
-		throttledSubmitAnswer(index);
+		submitAnswer(index);
 	}
+}
+
+function handleSkip() {
+	if (!session.currentQuestion) return;
+
+	submitAnswer(session.currentQuestion.type === "multiple_choices" ? -1 : "");
 }
 
 function getChoiceBtnClass(cIndex: number) {
 	if (!session.currentQuestion) return "";
 
-	const isThisSelected = state.userChoiceIndex === cIndex;
+	const isThisChoiceSelected = questionState.userChoiceIndex === cIndex;
 	const isThisChoiceCorrect =
 		session.currentQuestion.correctChoiceIndex === cIndex;
 
 	const successClass =
 		"border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
 
-	if (state.isInReview) {
-		if (isThisSelected) {
+	if (questionState.isInReview) {
+		if (isThisChoiceSelected) {
 			if (isThisChoiceCorrect) {
 				return successClass;
 			}
@@ -249,7 +229,7 @@ function getChoiceBtnClass(cIndex: number) {
 			return "border-error bg-error/10 text-error";
 		}
 
-		if (isThisChoiceCorrect) {
+		if (isThisChoiceCorrect && setting.showCorrectAnswer) {
 			return `${successClass} border-dashed`;
 		}
 
@@ -258,9 +238,9 @@ function getChoiceBtnClass(cIndex: number) {
 }
 
 function getWrittenInputClass() {
-	if (!state.isInReview) return "";
+	if (!questionState.isInReview) return "";
 
-	if (state.isCorrect) {
+	if (questionState.isCorrect) {
 		return "border-success";
 	}
 
@@ -268,12 +248,12 @@ function getWrittenInputClass() {
 }
 
 function getChoiceDisabledState(cIndex: number) {
-	if (!state.isInReview) return false;
+	if (!questionState.isInReview) return false;
 
 	const q = session.currentQuestion;
 	if (!q) return true;
 
-	const isThisSelected = state.userChoiceIndex === cIndex;
+	const isThisSelected = questionState.userChoiceIndex === cIndex;
 	const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
 
 	if (isThisSelected) {
@@ -287,17 +267,9 @@ function getChoiceDisabledState(cIndex: number) {
 	return true;
 }
 
-function handleSkip() {
-	if (!session.currentQuestion) return;
-
-	throttledSubmitAnswer(
-		session.currentQuestion.type === "multiple_choices" ? -1 : "",
-	);
-}
-
 defineShortcuts({
 	[ShortcutKey.LEARN_NEXT_QUESTION]: () =>
-		throttledNextQuestion(state.isCorrect, session.currentQuestion),
+		nextQuestion(questionState.isCorrect, session.currentQuestion),
 	[ShortcutKey.CHOICE_1]: () => handleChoiceShortcut(0),
 	[ShortcutKey.CHOICE_2]: () => handleChoiceShortcut(1),
 	[ShortcutKey.CHOICE_3]: () => handleChoiceShortcut(2),
@@ -342,7 +314,7 @@ defineShortcuts({
         {{ store.deck?.name }}
 
         <UIcon
-          v-if="!session.isSavingAnswers"
+          v-if="!isSavingAnswers"
           name="i-lucide-check"
           class="text-success ml-2 size-5"
         />
@@ -355,26 +327,28 @@ defineShortcuts({
         </span>
       </h1>
 
-      <div class="flex place-content-between place-items-center">
+      <div class="flex place-content-between">
         <div class="flex place-items-center gap-2">
           <UBadge
             :label="session.incorrectCount"
-            class="h-6 w-6 shrink-0 place-content-center rounded-full px-2"
+            class="rounded-full px-2"
             variant="subtle"
             color="error"
           />
 
-          <span class="text-error sm:text-md text-sm">Incorrect</span>
+          <span class="text-error text-sm">Incorrect</span>
         </div>
 
-        <div>{{ `${session.correctCount} / ${session.totalQuestions}` }}</div>
+        <div>
+          {{ `${session.correctCount} / ${session.totalQuestions}` }}
+        </div>
 
         <div class="flex place-items-center gap-2">
-          <span class="text-success sm:text-md text-sm">Correct</span>
+          <span class="text-success text-sm">Correct</span>
 
           <UBadge
             :label="session.correctCount"
-            class="h-6 w-6 shrink-0 place-content-center rounded-full px-2"
+            class="rounded-full px-2"
             variant="subtle"
             color="success"
           />
@@ -470,15 +444,15 @@ defineShortcuts({
             <div v-else class="flex w-full flex-col gap-2">
               <UInput
                 ref="userWrittenAnswerInput"
-                v-model="state.userAnswer"
+                v-model="questionState.userAnswer"
                 :ui="{
                   base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
                 }"
-                :disabled="state.isInReview"
+                :disabled="questionState.isInReview"
                 variant="outline"
                 color="neutral"
                 autofocus
-                @keydown.enter="throttledSubmitAnswer(state.userAnswer)"
+                @keydown.enter="submitAnswer(questionState.userAnswer)"
               />
 
               <Transition>
@@ -495,7 +469,7 @@ defineShortcuts({
 
             <div class="flex place-content-end place-items-center gap-2">
               <UButton
-                :disabled="state.isInReview"
+                :disabled="questionState.isInReview"
                 class="cursor-pointer place-self-end font-medium"
                 variant="ghost"
                 color="error"
@@ -507,10 +481,10 @@ defineShortcuts({
 
               <UButton
                 v-if="session.currentQuestion.type === 'written'"
-                :disabled="!state.userAnswer"
+                :disabled="!questionState.userAnswer"
                 class="cursor-pointer font-medium"
                 size="lg"
-                @click="throttledSubmitAnswer(state.userAnswer)"
+                @click="submitAnswer(questionState.userAnswer)"
               >
                 Answer
               </UButton>
@@ -526,7 +500,7 @@ defineShortcuts({
 
         <div
           v-if="
-            state.isInReview &&
+            questionState.isInReview &&
             setting.showCorrectAnswer &&
             isIncorrect &&
             smAndLarger
@@ -577,7 +551,7 @@ defineShortcuts({
             variant="ghost"
             color="neutral"
             size="lg"
-            @click="isSettingOpen = true"
+            @click="isSettingModalOpen = true"
           />
         </div>
       </div>
@@ -586,7 +560,7 @@ defineShortcuts({
     <AppEmpty v-else />
 
     <UModal
-      v-model:open="isSettingOpen"
+      v-model:open="isSettingModalOpen"
       :fullscreen="!smAndLarger"
       :ui="{
         content: 'divide-none',
@@ -595,7 +569,7 @@ defineShortcuts({
       }"
       description="Let's customize your learning session"
       @after:enter="snapshotSetting = JSON.stringify(setting)"
-      @after:leave="onSettingClosed"
+      @after:leave="handleCloseSettingModal"
     >
       <template #title>
         <h2 class="text-xl font-semibold sm:text-2xl">Learn settings</h2>
@@ -643,7 +617,7 @@ defineShortcuts({
           label="Apply changes"
           color="neutral"
           size="lg"
-          @click="isSettingOpen = false"
+          @click="isSettingModalOpen = false"
         />
       </template>
     </UModal>
