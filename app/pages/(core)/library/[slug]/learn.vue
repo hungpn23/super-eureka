@@ -123,10 +123,10 @@ const submitAnswer = useThrottleFn((userAnswer: number | string) => {
 	}
 }, 500);
 
-function nextQuestion(isCorrect?: boolean, q?: LearnQuestion) {
-	if (!q || isCorrect === undefined) return;
+function nextQuestion(isCorrect?: boolean, currentQuestion?: LearnQuestion) {
+	if (!currentQuestion || isCorrect === undefined) return;
 
-	const updated = updateCard(q, isCorrect);
+	const updated = updateCard(currentQuestion, isCorrect);
 
 	if (isIncorrect.value) session.retryQueue.push(updated);
 
