@@ -14,10 +14,8 @@ export function checkAnswer(userInput: string, correctAnswer: string) {
 		const result = score === 1 ? "correct" : score >= 0.75 ? "typo" : "wrong";
 		return { mode: "word", score, dist, result };
 	} else {
-		const { score, matchedPairs, userWords, correctWords } = diceCoefficient(
-			user,
-			correct,
-		);
+		const { score, matchedWordPairs, userWords, correctWords } =
+			diceCoefficient(user, correct);
 
 		const result =
 			score === 1
@@ -31,7 +29,7 @@ export function checkAnswer(userInput: string, correctAnswer: string) {
 		return {
 			mode: "sentence",
 			score,
-			matchedPairs,
+			matchedWordPairs,
 			userWords,
 			correctWords,
 			result,

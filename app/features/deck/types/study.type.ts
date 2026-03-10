@@ -1,5 +1,6 @@
 export type MatchedWordPair = {
 	userWord: string;
-	correctWord: string | null;
+	mostSimilarWord: string | null;
 	similarity: number;
+	isMatched: boolean;
 };

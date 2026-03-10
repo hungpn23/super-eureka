@@ -8,6 +8,7 @@ import type {
 	LearnSetting,
 } from "~/features/card";
 import {
+	checkAnswer,
 	generateQuestions,
 	getDefaultLearnQuestionState,
 	getDefaultLearnSession,
@@ -94,32 +95,39 @@ watchDebounced(() => session.cardsToSave, handleSaveAnswers, {
 });
 
 const submitAnswer = useThrottleFn((userAnswer: number | string) => {
-	const q = session.currentQuestion;
-	if (!q || questionState.isInReview) return;
+	const question = session.currentQuestion;
+	if (!question || questionState.isInReview) return;
 
-	if (q.type === "multiple_choices" && typeof userAnswer === "number") {
+	if (question.type === "multiple_choices" && typeof userAnswer === "number") {
 		questionState.userChoiceIndex = userAnswer;
-		questionState.isCorrect = userAnswer === q.correctChoiceIndex;
+		questionState.isCorrect = userAnswer === question.correctChoiceIndex;
 	}
 
-	if (q.type === "written" && typeof userAnswer === "string") {
+	if (question.type === "written" && typeof userAnswer === "string") {
 		const inputRef = userWrittenAnswerRef.value?.inputRef;
 		if (inputRef) inputRef.blur();
 
+		const res = checkAnswer(userAnswer, question.correctAnswer);
+		console.log("🚀 ~ res:", res);
+
+		const { result } = res;
+
 		questionState.isCorrect =
-			userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase(); // TODO: update this
+			result === "correct" || result === "almost" || result === "typo";
+
+		// TODO: finish
 	}
 
 	questionState.isInReview = true;
 
 	if (questionState.isCorrect) {
 		session.correctCount++;
-		setTimeout(() => nextQuestion(true, q), 500);
+		setTimeout(() => nextQuestion(true, question), 500);
 	} else {
 		session.incorrectCount++;
 		if (setting.showCorrectAnswer) return;
 
-		setTimeout(() => nextQuestion(false, q), 500);
+		setTimeout(() => nextQuestion(false, question), 500);
 	}
 }, 500);
 
@@ -210,12 +218,12 @@ function handleSkip() {
 	submitAnswer(session.currentQuestion.type === "multiple_choices" ? -1 : "");
 }
 
-function getChoiceBtnClass(cIndex: number) {
+function getChoiceBtnClass(choiceIndex: number) {
 	if (!session.currentQuestion) return "";
 
-	const isThisChoiceSelected = questionState.userChoiceIndex === cIndex;
+	const isThisChoiceSelected = questionState.userChoiceIndex === choiceIndex;
 	const isThisChoiceCorrect =
-		session.currentQuestion.correctChoiceIndex === cIndex;
+		session.currentQuestion.correctChoiceIndex === choiceIndex;
 
 	const successClass =
 		"border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
@@ -247,14 +255,14 @@ function getWrittenInputClass() {
 	return "border-error";
 }
 
-function getChoiceDisabledState(cIndex: number) {
+function getChoiceDisabledState(choiceIndex: number) {
 	if (!questionState.isInReview) return false;
 
-	const q = session.currentQuestion;
-	if (!q) return true;
+	const question = session.currentQuestion;
+	if (!question) return true;
 
-	const isThisSelected = questionState.userChoiceIndex === cIndex;
-	const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
+	const isThisSelected = questionState.userChoiceIndex === choiceIndex;
+	const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
 
 	if (isThisSelected) {
 		return true;
@@ -421,17 +429,17 @@ defineShortcuts({
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
               <button
-                v-for="(choice, cIndex) in session.currentQuestion.choices"
-                :key="cIndex"
-                :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
-                :disabled="getChoiceDisabledState(cIndex)"
-                @click="handleChoiceShortcut(cIndex)"
+                v-for="(choice, choiceIndex) in session.currentQuestion.choices"
+                :key="choiceIndex"
+                :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(choiceIndex)}`"
+                :disabled="getChoiceDisabledState(choiceIndex)"
+                @click="handleChoiceShortcut(choiceIndex)"
               >
                 <UBadge
                   class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
                   variant="outline"
                 >
-                  {{ cIndex + 1 }}
+                  {{ choiceIndex + 1 }}
                 </UBadge>
 
                 <span class="text-start text-base font-medium sm:text-lg">

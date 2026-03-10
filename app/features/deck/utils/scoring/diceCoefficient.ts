@@ -19,43 +19,46 @@ export function diceCoefficient(
 	const alreadyMatchedIndexes = new Set();
 
 	for (const userWord of userWords) {
-		let bestSimilarity = -1;
-		let bestWord = null;
-		let bestIndex = -1;
+		let highestSimilarity = -1;
+		let mostSimilarWord = null;
+		let bestMatchedIndex = -1;
 
 		correctWords.forEach((correctWord, correctWordIndex) => {
 			if (alreadyMatchedIndexes.has(correctWordIndex)) return;
 
 			const similarity = levenshteinSimilarity(userWord, correctWord);
-			if (similarity > bestSimilarity) {
-				bestSimilarity = similarity;
-				bestWord = correctWord;
-				bestIndex = correctWordIndex;
+			if (similarity > highestSimilarity) {
+				highestSimilarity = similarity;
+				mostSimilarWord = correctWord;
+				bestMatchedIndex = correctWordIndex;
 			}
 		});
 
-		if (bestSimilarity >= correctThreshold) {
-			alreadyMatchedIndexes.add(bestIndex);
+		if (highestSimilarity >= correctThreshold) {
+			alreadyMatchedIndexes.add(bestMatchedIndex);
 
 			matchedWordPairs.push({
 				userWord,
-				correctWord: bestWord,
-				similarity: bestSimilarity,
+				mostSimilarWord,
+				similarity: highestSimilarity,
+				isMatched: true,
 			});
 		} else {
 			matchedWordPairs.push({
 				userWord,
-				correctWord: null,
-				similarity: bestSimilarity,
+				mostSimilarWord: null,
+				similarity: highestSimilarity,
+				isMatched: false,
 			});
 		}
 	}
 
 	const matchedCount = matchedWordPairs.filter(
-		(p) => p.correctWord !== null,
+		(p) => p.mostSimilarWord !== null,
 	).length;
 
 	const score = (2 * matchedCount) / (userWords.length + correctWords.length);
+
 	return {
 		score,
 		matchedWordPairs,
