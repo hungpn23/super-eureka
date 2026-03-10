@@ -19,7 +19,6 @@ const store = useDeckStore();
 const questionRefs = useTemplateRef("questionCards");
 const isSettingModalOpen = ref(false);
 const snapshotSetting = refManualReset("");
-
 const setting = reactive<TestSetting>(getDefaultTestSetting());
 const session = reactive<TestSession>(getDefaultTestSession());
 

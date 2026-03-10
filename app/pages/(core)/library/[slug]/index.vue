@@ -353,7 +353,7 @@ defineShortcuts({
                         size="lg"
                         variant="subtle"
                         color="error"
-                        class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
+                        class="cursor-pointer transition-all hover:scale-103 hover:shadow active:scale-95"
                         @click="handleAnswer(false)"
                       />
                     </UTooltip>
@@ -369,7 +369,7 @@ defineShortcuts({
                         size="lg"
                         variant="subtle"
                         color="success"
-                        class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
+                        class="cursor-pointer transition-all hover:scale-103 hover:shadow active:scale-95"
                         @click="handleAnswer(true)"
                       />
                     </UTooltip>

@@ -50,15 +50,6 @@ export function getDefaultLearnSetting() {
 	} satisfies LearnSetting;
 }
 
-export function getDefaultTestSetting() {
-	return {
-		questionAmount: 0,
-		isIgnoreDate: true,
-		types: ["multiple_choices", "written"],
-		direction: "term_to_def",
-	} satisfies TestSetting;
-}
-
 export function getDefaultTestSession() {
 	return {
 		currentQuestionIndex: 0,
@@ -68,4 +59,13 @@ export function getDefaultTestSession() {
 		questionInput: null,
 		questionElement: null,
 	} satisfies TestSession;
+}
+
+export function getDefaultTestSetting() {
+	return {
+		questionAmount: 0,
+		isIgnoreDate: true,
+		types: ["multiple_choices", "written"],
+		direction: "term_to_def",
+	} satisfies TestSetting;
 }

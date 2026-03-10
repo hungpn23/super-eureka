@@ -141,7 +141,7 @@ defineShortcuts({
           </h2>
 
           <UButton
-            class="cursor-pointer place-self-start transition-all hover:scale-105"
+            class="cursor-pointer place-self-start transition-all"
             label="Add a new deck"
             variant="subtle"
             icon="i-lucide-plus"
@@ -187,7 +187,7 @@ defineShortcuts({
           >
             <UCard
               :ui="{ body: 'space-y-2' }"
-              class="shadow-md transition-all hover:translate-x-3"
+              class="shadow-md transition-all hover:translate-x-2"
               variant="subtle"
               @click="navigate"
             >
