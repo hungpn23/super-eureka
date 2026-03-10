@@ -1,13 +1,12 @@
 import { normalize } from "../common";
+import { diceCoefficient } from "./diceCoefficient";
 import { levenshteinDistance } from "./levenshteinDistance";
 import { levenshteinSimilarity } from "./levenshteinSimilarity";
-import { wordDiceFuzzy } from "./wordDiceFuzzy";
 
 export function checkAnswer(userInput: string, correctAnswer: string) {
 	const user = normalize(userInput);
 	const correct = normalize(correctAnswer);
-	const tokens = user.split(/\s+/).filter(Boolean);
-	const isWord = tokens.length <= 1;
+	const isWord = user.split(/\s+/).filter(Boolean).length <= 1;
 
 	if (isWord) {
 		const score = levenshteinSimilarity(user, correct);
@@ -15,10 +14,11 @@ export function checkAnswer(userInput: string, correctAnswer: string) {
 		const result = score === 1 ? "correct" : score >= 0.75 ? "typo" : "wrong";
 		return { mode: "word", score, dist, result };
 	} else {
-		const { score, matchedPairs, wordsA, wordsB } = wordDiceFuzzy(
+		const { score, matchedPairs, userWords, correctWords } = diceCoefficient(
 			user,
 			correct,
 		);
+
 		const result =
 			score === 1
 				? "correct"
@@ -27,6 +27,14 @@ export function checkAnswer(userInput: string, correctAnswer: string) {
 					: score >= 0.5
 						? "partial"
 						: "wrong";
-		return { mode: "sentence", score, matchedPairs, wordsA, wordsB, result };
+
+		return {
+			mode: "sentence",
+			score,
+			matchedPairs,
+			userWords,
+			correctWords,
+			result,
+		};
 	}
 }

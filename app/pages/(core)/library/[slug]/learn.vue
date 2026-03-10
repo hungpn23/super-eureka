@@ -107,7 +107,7 @@ const submitAnswer = useThrottleFn((userAnswer: number | string) => {
 		if (inputRef) inputRef.blur();
 
 		questionState.isCorrect =
-			userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+			userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase(); // TODO: update this
 	}
 
 	questionState.isInReview = true;
