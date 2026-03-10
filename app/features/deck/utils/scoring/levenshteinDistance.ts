@@ -1,7 +1,4 @@
-export function calculateLevenshteinDistance(
-	userInput: string,
-	correctAnswer: string,
-) {
+export function levenshteinDistance(userInput: string, correctAnswer: string) {
 	const rowCount = userInput.length;
 	const columnCount = correctAnswer.length;
 
@@ -35,5 +32,3 @@ export function calculateLevenshteinDistance(
 
 	return table[rowCount - 1]![columnCount - 1]!;
 }
-
-calculateLevenshteinDistance("cat", "bat");
