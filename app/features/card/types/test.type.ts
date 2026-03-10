@@ -10,12 +10,12 @@ export type TestQuestion = Omit<LearnQuestion, "streak" | "reviewDate"> &
 	}>;
 
 export type TestSession = {
-	index: number;
+	currentQuestionIndex: number;
 	isSubmitted: boolean;
 	questions: TestQuestion[];
 	currentQuestion?: TestQuestion;
-	input: HTMLInputElement | null;
-	element: Element | null;
+	questionInput: HTMLInputElement | null;
+	questionElement: Element | null;
 };
 
 export type TestSetting = {

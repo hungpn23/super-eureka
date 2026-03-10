@@ -3,6 +3,8 @@ import type {
 	LearnQuestionState,
 	LearnSession,
 	LearnSetting,
+	TestSession,
+	TestSetting,
 } from "~/features/card";
 
 export function getDefaultFlashcardSession() {
@@ -46,4 +48,24 @@ export function getDefaultLearnSetting() {
 		types: ["written", "multiple_choices"],
 		direction: "term_to_def",
 	} satisfies LearnSetting;
+}
+
+export function getDefaultTestSetting() {
+	return {
+		questionAmount: 0,
+		isIgnoreDate: true,
+		types: ["multiple_choices", "written"],
+		direction: "term_to_def",
+	} satisfies TestSetting;
+}
+
+export function getDefaultTestSession() {
+	return {
+		currentQuestionIndex: 0,
+		isSubmitted: false,
+		questions: [],
+		currentQuestion: undefined,
+		questionInput: null,
+		questionElement: null,
+	} satisfies TestSession;
 }

@@ -1,3 +1,3 @@
-export * from "./common.util";
+export * from "./common.utils";
 export * from "./generateQuestions";
-export * from "./get-default.util";
+export * from "./get-default.utils";

@@ -6,7 +6,7 @@ import type {
 	QuestionType,
 	TestQuestion,
 } from "~/features/card";
-import { shuffleArray } from "./common.util";
+import { shuffleArray } from "./common.utils";
 
 export const generateQuestions = <
 	T extends LearnQuestion | TestQuestion,

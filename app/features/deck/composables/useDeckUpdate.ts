@@ -3,7 +3,7 @@ import type { CardToSync } from "~/features/card";
 import type { UUID } from "~/shared/types";
 import { api } from "../api";
 import type { GetDeckResponse, UpdateDeckSchema } from "../types";
-import { getCardStatus } from "../utils/common.util";
+import { getCardStatus } from "../utils/common.utils";
 import { useDeckToasts } from "./useDeckToasts";
 
 export function useDeckUpdate() {

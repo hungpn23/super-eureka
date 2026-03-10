@@ -4,6 +4,8 @@ import type { UCard } from "#components";
 import type { TestQuestion, TestSession, TestSetting } from "~/features/card";
 import {
 	generateQuestions,
+	getDefaultTestSession,
+	getDefaultTestSetting,
 	QUESTION_DIRECTION_ITEMS,
 	QUESTION_TYPE_ITEMS,
 	shuffleArray,
@@ -13,38 +15,27 @@ import { focusInput, getCards } from "~/shared/utils";
 
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
+
 const questionRefs = useTemplateRef("questionCards");
+const isSettingModalOpen = ref(false);
+const snapshotSetting = refManualReset("");
 
-const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
+const setting = reactive<TestSetting>(getDefaultTestSetting());
+const session = reactive<TestSession>(getDefaultTestSession());
 
-const isSettingOpen = ref(false);
-
-const setting = reactive<TestSetting>({
-	questionAmount: 0,
-	isIgnoreDate: true,
-	types: ["multiple_choices", "written"],
-	direction: "term_to_def",
-});
-let snapshotSetting = "";
-
-const session = reactive<TestSession>({
-	index: 0,
-	isSubmitted: false,
-	questions: [],
-	currentQuestion: undefined,
-	input: null,
-	element: null,
+watch([() => session.questions, () => session.currentQuestionIndex], () => {
+	session.currentQuestion = session.questions[session.currentQuestionIndex];
 });
 
-watch([() => session.questions, () => session.index], () => {
-	session.currentQuestion = session.questions[session.index];
-});
-
-watch([questionRefs, () => session.index], () => {
-	if (questionRefs.value?.length) {
-		session.element = questionRefs.value[session.index]?.$el as Element;
-	}
-});
+watch(
+	[() => questionRefs.value?.length, () => session.currentQuestionIndex],
+	() => {
+		if (questionRefs.value?.length) {
+			session.questionElement = questionRefs.value[session.currentQuestionIndex]
+				?.$el as Element;
+		}
+	},
+);
 
 watch(
 	[
@@ -54,8 +45,8 @@ watch(
 	],
 	([newCards, newIsIgnoreDate]) => {
 		if (newCards && newCards.length > 0) {
-			session.input = null;
-			session.index = 0;
+			session.questionInput = null;
+			session.currentQuestionIndex = 0;
 			session.isSubmitted = false;
 
 			const filteredCards = getCards(newCards, newIsIgnoreDate);
@@ -77,99 +68,108 @@ watch(
 	},
 );
 
-watch(() => session.index, scrollAndFocus);
+watch(() => session.currentQuestionIndex, scrollAndFocusQuestion);
 
 watch(
-	() => setting.types,
-	() => {
-		if (!setting.types.length) setting.types = ["multiple_choices"];
+	() => setting.types.length,
+	(length) => {
+		if (!length) setting.types = ["multiple_choices"];
 	},
 );
 
-function scrollAndFocus() {
-	if (session.element) {
-		session.element.scrollIntoView({
+const handleChoiceSelected = useThrottleFn(
+	(choiceIndex: number, questionIndex: number, question?: TestQuestion) => {
+		if (!question) return;
+
+		question.userChoiceIndex = choiceIndex;
+		question.isUserAnswerCorrect = choiceIndex === question.correctChoiceIndex;
+		session.currentQuestionIndex = questionIndex;
+		handleChangeQuestion("right");
+	},
+	500,
+);
+
+function scrollAndFocusQuestion() {
+	if (session.questionElement) {
+		session.questionElement.scrollIntoView({
 			behavior: "smooth",
 			block: "center",
 		});
 
-		if (session.input) session.input.blur();
+		const oldInput = session.questionInput;
+		if (oldInput) oldInput.blur();
 
-		const newInput = session.element.querySelector("input");
+		const newInput = session.questionElement.querySelector("input");
 		if (newInput) {
-			session.input = newInput;
+			session.questionInput = newInput;
 			return focusInput(newInput);
 		}
 
-		session.input = null;
+		session.questionInput = null;
 	}
 }
 
 function handleChangeQuestion(dir: "left" | "right") {
 	if (!questionRefs.value?.length) return;
 
-	if (dir === "left" && session.index > 0) {
-		session.index--;
-	} else if (dir === "right" && session.index < questionRefs.value.length - 1) {
-		session.index++;
+	if (dir === "left" && session.currentQuestionIndex > 0) {
+		session.currentQuestionIndex--;
+	}
+
+	if (
+		dir === "right" &&
+		session.currentQuestionIndex < questionRefs.value.length - 1
+	) {
+		session.currentQuestionIndex++;
 	}
 }
 
-async function onSettingClosed() {
-	if (JSON.stringify(setting) === snapshotSetting) {
-		scrollAndFocus();
+async function handleSettingClosed() {
+	if (JSON.stringify(setting) === snapshotSetting.value) {
+		scrollAndFocusQuestion();
 		return;
 	}
 
-	snapshotSetting = "";
+	snapshotSetting.reset();
 	await store.fetchDeck();
-	scrollAndFocus();
+	scrollAndFocusQuestion();
 }
 
-function onChoiceSelected(cIndex: number, qIndex: number, q?: TestQuestion) {
-	if (!q) return;
+function handleWrittenAnswerBlur(question: TestQuestion) {
+	if (!question.userAnswer) return;
 
-	q.userChoiceIndex = cIndex;
-	q.isUserAnswerCorrect = cIndex === q.correctChoiceIndex;
-	session.index = qIndex;
+	question.userAnswer = question.userAnswer.trim();
+	question.isUserAnswerCorrect =
+		question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
+}
+
+function handleDontKnowClicked(question: TestQuestion, questionIndex: number) {
+	if (question.isMarkedAsDontKnow) return;
+
+	question.isMarkedAsDontKnow = true;
+	question.isUserAnswerCorrect = true;
+	session.currentQuestionIndex = questionIndex;
 	handleChangeQuestion("right");
 }
 
-function onWrittenAnswerBlur(q: TestQuestion) {
-	if (!q.userAnswer) return;
-
-	q.userAnswer = q.userAnswer.trim();
-	q.isUserAnswerCorrect =
-		q.userAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
-}
-
-function onDontKnowClicked(q: TestQuestion, qIndex: number) {
-	if (q.isMarkedAsDontKnow) return;
-
-	q.isMarkedAsDontKnow = true;
-	q.isUserAnswerCorrect = true;
-	session.index = qIndex;
-	handleChangeQuestion("right");
-}
-
-function onTestSubmitted() {
+function handleTestSubmitted() {
 	session.isSubmitted = true;
 	window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
-	const isSelected = q.userChoiceIndex === cIndex;
-	const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
+function getChoiceBtnClass(question: TestQuestion, choiceIndex: number) {
+	const isThisChoiceSelected = question.userChoiceIndex === choiceIndex;
+	const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
 
 	if (!session.isSubmitted) {
-		if (isSelected) {
+		if (isThisChoiceSelected) {
 			return "border-primary bg-primary/10 text-primary";
 		}
 
 		return "";
 	}
 
-	if (isSelected) {
+	if (isThisChoiceSelected) {
 		if (isThisChoiceCorrect) {
 			return "border-success bg-success/10 text-success";
 		}
@@ -184,25 +184,36 @@ function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
 	}
 }
 
-function getWrittenInputClass(q: TestQuestion) {
+function getWrittenInputClass(question: TestQuestion) {
 	if (!session.isSubmitted) return "";
-
-	if (q.isUserAnswerCorrect) {
-		return "border-success";
-	}
-
-	return "border-error";
+	return question.isUserAnswerCorrect ? "border-success" : "border-error";
 }
 
 defineShortcuts({
 	[ShortcutKey.CHOICE_1]: () =>
-		throttledOnChoiceSelected(0, session.index, session.currentQuestion),
+		handleChoiceSelected(
+			0,
+			session.currentQuestionIndex,
+			session.currentQuestion,
+		),
 	[ShortcutKey.CHOICE_2]: () =>
-		throttledOnChoiceSelected(1, session.index, session.currentQuestion),
+		handleChoiceSelected(
+			1,
+			session.currentQuestionIndex,
+			session.currentQuestion,
+		),
 	[ShortcutKey.CHOICE_3]: () =>
-		throttledOnChoiceSelected(2, session.index, session.currentQuestion),
+		handleChoiceSelected(
+			2,
+			session.currentQuestionIndex,
+			session.currentQuestion,
+		),
 	[ShortcutKey.CHOICE_4]: () =>
-		throttledOnChoiceSelected(3, session.index, session.currentQuestion),
+		handleChoiceSelected(
+			3,
+			session.currentQuestionIndex,
+			session.currentQuestion,
+		),
 
 	[ShortcutKey.PREV_CARD]: {
 		handler: () => handleChangeQuestion("left"),
@@ -216,7 +227,7 @@ defineShortcuts({
 });
 
 onMounted(() => {
-	isSettingOpen.value = true;
+	isSettingModalOpen.value = true;
 });
 </script>
 
@@ -240,7 +251,7 @@ onMounted(() => {
           variant="ghost"
           color="neutral"
           size="lg"
-          @click="isSettingOpen = true"
+          @click="isSettingModalOpen = true"
         />
       </div>
     </div>
@@ -253,15 +264,15 @@ onMounted(() => {
       </h1>
 
       <UCard
-        v-for="(q, qIndex) in session.questions"
-        :key="qIndex"
+        v-for="(question, questionIndex) in session.questions"
+        :key="questionIndex"
         ref="questionCards"
         :ui="{
           header: 'p-0 sm:px-0',
           body: `flex-1 w-full flex flex-col gap-4 p-2`,
         }"
         class="bg-elevated mb-2 flex min-h-[30dvh] flex-col divide-none shadow-md transition-all sm:mb-4"
-        @click="session.index = qIndex"
+        @click="session.currentQuestionIndex = questionIndex"
       >
         <div class="flex w-full place-content-between place-items-center">
           <span class="flex place-items-center gap-1">
@@ -275,26 +286,26 @@ onMounted(() => {
 
             {{
               setting.direction === 'term_to_def'
-                ? `Term (${q.termLanguage})`
-                : `Definition (${q.definitionLanguage})`
+                ? `Term (${question.termLanguage})`
+                : `Definition (${question.definitionLanguage})`
             }}
           </span>
 
           <UBadge
-            :label="`${qIndex + 1} of ${session.questions.length}`"
+            :label="`${questionIndex + 1} of ${session.questions.length}`"
             variant="soft"
             color="neutral"
           />
         </div>
 
         <p class="text-xl font-medium sm:text-2xl">
-          {{ q.question }}
+          {{ question.question }}
         </p>
 
         <div class="mt-2 flex w-full flex-col gap-2">
           <em class="text-sm font-medium">
             {{
-              q.type === 'multiple_choices'
+              question.type === 'multiple_choices'
                 ? 'Choose an answer'
                 : 'Type your answer'
             }}
@@ -302,21 +313,21 @@ onMounted(() => {
 
           <!-- Multiple Choices Answer -->
           <div
-            v-if="q.type === 'multiple_choices'"
+            v-if="question.type === 'multiple_choices'"
             class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
           >
             <button
-              v-for="(choice, cIndex) in q.choices"
-              :key="cIndex"
-              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none disabled:opacity-70 ${getChoiceBtnClass(q, cIndex)}`"
-              :disabled="session.isSubmitted || q.isMarkedAsDontKnow"
-              @click.stop="throttledOnChoiceSelected(cIndex, qIndex, q)"
+              v-for="(choice, choiceIndex) in question.choices"
+              :key="choiceIndex"
+              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none disabled:opacity-70 ${getChoiceBtnClass(question, choiceIndex)}`"
+              :disabled="session.isSubmitted || question.isMarkedAsDontKnow"
+              @click.stop="handleChoiceSelected(choiceIndex, questionIndex, question)"
             >
               <UBadge
                 class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
                 variant="outline"
               >
-                {{ cIndex + 1 }}
+                {{ choiceIndex + 1 }}
               </UBadge>
 
               <span class="text-start text-base font-medium sm:text-lg">
@@ -328,34 +339,34 @@ onMounted(() => {
           <!-- Written Answer -->
           <div v-else class="flex w-full flex-col gap-2">
             <UInput
-              v-model="q.userAnswer"
+              v-model="question.userAnswer"
               :ui="{
-                base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ring-transparent disabled:opacity-70 ${getWrittenInputClass(q)}`,
+                base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ring-transparent disabled:opacity-70 ${getWrittenInputClass(question)}`,
               }"
-              :disabled="session.isSubmitted || q.isMarkedAsDontKnow"
+              :disabled="session.isSubmitted || question.isMarkedAsDontKnow"
               variant="outline"
               color="neutral"
               @keydown.enter="handleChangeQuestion('right')"
-              @blur="onWrittenAnswerBlur(q)"
-              @click.stop="session.index = qIndex"
+              @blur="handleWrittenAnswerBlur(question)"
+              @click.stop="session.currentQuestionIndex = questionIndex"
             />
 
             <UInput
-              v-if="!q.isUserAnswerCorrect && session.isSubmitted"
+              v-if="!question.isUserAnswerCorrect && session.isSubmitted"
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
               }"
-              :default-value="q.correctAnswer"
+              :default-value="question.correctAnswer"
               disabled
             />
           </div>
 
           <UButton
-            v-if="!q.isMarkedAsDontKnow"
+            v-if="!question.isMarkedAsDontKnow && !session.isSubmitted"
             class="cursor-pointer place-self-end font-medium"
             variant="ghost"
             tabindex="-1"
-            @click.stop="onDontKnowClicked(q, qIndex)"
+            @click.stop="handleDontKnowClicked(question, questionIndex)"
           >
             Mark as "Don't know"
           </UButton>
@@ -368,12 +379,12 @@ onMounted(() => {
         label="Submit Test"
         icon="i-lucide-send-horizontal"
         size="xl"
-        @click="onTestSubmitted"
+        @click="handleTestSubmitted"
       />
     </div>
 
     <UModal
-      v-model:open="isSettingOpen"
+      v-model:open="isSettingModalOpen"
       :fullscreen="!smAndLarger"
       :ui="{
         content: 'divide-none',
@@ -382,7 +393,7 @@ onMounted(() => {
       }"
       description="Let's customize your test"
       @after:enter="snapshotSetting = JSON.stringify(setting)"
-      @after:leave="onSettingClosed"
+      @after:leave="handleSettingClosed"
     >
       <template #title>
         <span class="text-xl font-semibold sm:text-2xl"> Test settings </span>
@@ -440,7 +451,7 @@ onMounted(() => {
           label="Apply"
           color="neutral"
           size="lg"
-          @click="isSettingOpen = false"
+          @click="isSettingModalOpen = false"
         />
       </template>
     </UModal>
