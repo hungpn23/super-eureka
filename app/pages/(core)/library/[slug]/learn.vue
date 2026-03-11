@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
 import { pick } from "lodash";
-import type {
-	LearnQuestion,
-	LearnQuestionState,
-	LearnSession,
-	LearnSetting,
-} from "~/features/card";
 import {
+	QUESTION_DIRECTION_ITEMS,
+	QUESTION_TYPE_ITEMS,
+	updateCard,
+} from "~/features/deck";
+import {
+	api,
 	checkAnswer,
 	generateQuestions,
 	getDefaultLearnQuestionState,
 	getDefaultLearnSession,
 	getDefaultLearnSetting,
-	QUESTION_DIRECTION_ITEMS,
-	QUESTION_TYPE_ITEMS,
-	updateCard,
-} from "~/features/deck";
-import { api, useStudyToasts } from "~/features/study";
+	type LearnQuestion,
+	type LearnQuestionState,
+	type LearnSession,
+	type LearnSetting,
+	useStudyToasts,
+} from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards } from "~/shared/utils";
 

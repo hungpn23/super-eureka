@@ -5,8 +5,8 @@ import {
 	UPDATE_DECK_SCHEMA,
 	useDeckDelete,
 	useDeckUpdate,
-	useFlashcardSession,
 } from "~/features/deck";
+import { useFlashcardStudy } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 
 const { data: user } = useAuth();
@@ -20,7 +20,7 @@ const {
 	handleFlipCard,
 	handleAnswer,
 	handleShuffleCards,
-} = useFlashcardSession();
+} = useFlashcardStudy();
 
 const {
 	updateFormErrorMessage,

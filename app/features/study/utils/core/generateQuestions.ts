@@ -1,12 +1,12 @@
 import { pick } from "lodash";
+import type { Card } from "~/features/card";
+import { shuffleArray } from "~/shared/utils";
 import type {
-	Card,
 	LearnQuestion,
 	QuestionDirection,
 	QuestionType,
 	TestQuestion,
-} from "~/features/card";
-import { shuffleArray } from "../common";
+} from "../../types";
 
 export const generateQuestions = <
 	T extends LearnQuestion | TestQuestion,

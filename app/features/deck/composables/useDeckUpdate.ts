@@ -1,9 +1,8 @@
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
-import type { CardToSync } from "~/features/card";
+import { type CardToSync, getCardStatus } from "~/features/card";
 import type { UUID } from "~/shared/types";
 import { api } from "../api";
 import type { GetDeckResponse, UpdateDeckSchema } from "../types";
-import { getCardStatus } from "../utils";
 import { useDeckToasts } from "./useDeckToasts";
 
 export function useDeckUpdate() {

@@ -5,5 +5,4 @@ export * from "./get-deck.type";
 export * from "./get-shared-deck.type";
 export * from "./restart-deck.type";
 export * from "./search-deck.type";
-export * from "./study.type";
 export * from "./update-deck.type";

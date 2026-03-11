@@ -1,4 +1,2 @@
-export * from "./common";
-export * from "./core";
-export * from "./get-defaults";
-export * from "./scoring";
+export * from "./getDailyQuote";
+export * from "./updateCard";

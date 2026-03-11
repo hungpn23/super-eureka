@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 import { breakpointsTailwind } from "@vueuse/core";
-import { useFlashcardSession } from "~/features/deck";
+import { useFlashcardStudy } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
@@ -13,7 +13,7 @@ const {
 	handleFlipCard,
 	handleAnswer,
 	handleShuffleCards,
-} = useFlashcardSession();
+} = useFlashcardStudy();
 
 const settingOptions = computed<DropdownMenuItem[]>(() => [
 	[

@@ -1,9 +1,5 @@
-import type {
-	Card,
-	CardToSave,
-	QuestionDirection,
-	QuestionType,
-} from "./common.type";
+import type { Card, CardToSave } from "~/features/card";
+import type { QuestionDirection, QuestionType } from "./common.type";
 
 export type LearnQuestion = Pick<
 	Card,

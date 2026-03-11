@@ -78,7 +78,7 @@ vocabify_fe/
 │   │   └── Skeleton/     # Loading skeleton components
 │   ├── composables/      # Vue composables
 │   │   ├── useDeckSearch.ts
-│   │   └── useFlashcardSession.ts
+│   │   └── useFlashcardStudy.ts
 │   ├── layouts/          # Page layouts
 │   │   ├── auth.vue      # Authentication pages layout
 │   │   ├── callback.vue  # OAuth callback layout

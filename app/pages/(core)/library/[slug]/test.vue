@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
 import type { UCard } from "#components";
-import type { TestQuestion, TestSession, TestSetting } from "~/features/card";
+import { QUESTION_DIRECTION_ITEMS, QUESTION_TYPE_ITEMS } from "~/features/deck";
 import {
 	generateQuestions,
 	getDefaultTestSession,
 	getDefaultTestSetting,
-	QUESTION_DIRECTION_ITEMS,
-	QUESTION_TYPE_ITEMS,
-	shuffleArray,
-} from "~/features/deck";
+	type TestQuestion,
+	type TestSession,
+	type TestSetting,
+} from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
-import { focusInput, getCards } from "~/shared/utils";
+import { focusInput, getCards, shuffleArray } from "~/shared/utils";
 
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();

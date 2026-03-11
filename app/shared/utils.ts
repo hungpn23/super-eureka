@@ -24,3 +24,25 @@ export const focusInput = (
 ) => {
 	setTimeout(() => inputRef?.focus(), 300);
 };
+
+export function normalize(text: string) {
+	return text
+		.toLowerCase()
+		.normalize("NFKC")
+		.replace(/[’‘]/g, "'")
+		.replace(/[^\p{L}\p{N}'\s-]/gu, "")
+		.replace(/\s+/g, " ")
+		.replace(/\s-\s/g, "-")
+		.trim();
+}
+
+export const shuffleArray = <T>(array: T[]) => {
+	const arr = [...array];
+
+	for (let i = arr.length - 1; i > 0; i--) {
+		const random = Math.floor(Math.random() * (i + 1));
+		[arr[i], arr[random]] = [arr[random]!, arr[i]!];
+	}
+
+	return arr;
+};

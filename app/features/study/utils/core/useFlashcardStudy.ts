@@ -1,9 +1,10 @@
-import type { FlashcardSession } from "~/features/card";
-import { api as studyApi, useStudyToasts } from "~/features/study";
-import { getCards } from "~/shared/utils";
-import { getDefaultFlashcardSession, shuffleArray, updateCard } from "../utils";
+import { updateCard } from "~/features/deck";
+import { getCards, shuffleArray } from "~/shared/utils";
+import { api } from "../../api";
+import type { FlashcardSession } from "../../types";
+import { getDefaultFlashcardSession, useStudyToasts } from "../common";
 
-export const useFlashcardSession = () => {
+export const useFlashcardStudy = () => {
 	const { token } = useAuth();
 	const toast = useStudyToasts();
 	const store = useDeckStore();
@@ -22,7 +23,7 @@ export const useFlashcardSession = () => {
 		status,
 		pending: isSavingAnswers,
 		execute: saveAnswers,
-	} = studyApi.saveAnswers({
+	} = api.saveAnswers({
 		deckId: store.deckId,
 		token,
 		cardsToSave: flashcardSession.cardsToSave,

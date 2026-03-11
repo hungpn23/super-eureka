@@ -1,4 +1,4 @@
-import { normalize } from "../common";
+import { normalize } from "~/shared/utils";
 import { diceCoefficient } from "./diceCoefficient";
 import { levenshteinDistance } from "./levenshteinDistance";
 import { levenshteinSimilarity } from "./levenshteinSimilarity";
@@ -12,23 +12,24 @@ export function checkAnswer(userInput: string, correctAnswer: string) {
 		const score = levenshteinSimilarity(user, correct);
 		const dist = levenshteinDistance(user, correct);
 		const result = score === 1 ? "correct" : score >= 0.75 ? "typo" : "wrong";
-		return { mode: "word", score, dist, result };
+		return { type: "word", score, dist, result };
 	} else {
-		const { score, matchedWordPairs, userWords, correctWords } =
+		const { score, avgScore, matchedWordPairs, userWords, correctWords } =
 			diceCoefficient(user, correct);
 
 		const result =
-			score === 1
+			score === 1 && avgScore === 1
 				? "correct"
-				: score >= 0.8
+				: score >= 0.8 && avgScore! >= 0.8
 					? "almost"
 					: score >= 0.5
 						? "partial"
 						: "wrong";
 
 		return {
-			mode: "sentence",
+			type: "sentence",
 			score,
+			avgScore,
 			matchedWordPairs,
 			userWords,
 			correctWords,

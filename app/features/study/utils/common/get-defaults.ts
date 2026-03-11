@@ -5,7 +5,7 @@ import type {
 	LearnSetting,
 	TestSession,
 	TestSetting,
-} from "~/features/card";
+} from "../../types";
 
 export function getDefaultFlashcardSession() {
 	return {

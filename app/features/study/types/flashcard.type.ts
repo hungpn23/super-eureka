@@ -1,4 +1,4 @@
-import type { Card, CardToSave } from "./common.type";
+import type { Card, CardToSave } from "~/features/card";
 
 export type FlashcardSession = {
 	currentCard?: Card;

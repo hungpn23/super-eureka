@@ -1,4 +1,5 @@
-import type { MatchedWordPair } from "../../types";
+import { meanBy } from "lodash";
+import type { ScoringWord } from "../../types";
 import { levenshteinSimilarity } from "./levenshteinSimilarity";
 
 /**
@@ -15,13 +16,13 @@ export function diceCoefficient(
 	if (!userWords.length || !correctWords.length)
 		return { score: 0, matchedPairs: [] };
 
-	const matchedWordPairs: MatchedWordPair[] = [];
-	const alreadyMatchedIndexes = new Set();
+	const scoringWords: ScoringWord[] = [];
+	const alreadyMatchedIndexes = new Set<number>();
 
 	for (const userWord of userWords) {
 		let highestSimilarity = -1;
-		let mostSimilarWord = null;
-		let bestMatchedIndex = -1;
+		let mostSimilarWord: string | null = null;
+		let matchedIndex = -1;
 
 		correctWords.forEach((correctWord, correctWordIndex) => {
 			if (alreadyMatchedIndexes.has(correctWordIndex)) return;
@@ -30,38 +31,37 @@ export function diceCoefficient(
 			if (similarity > highestSimilarity) {
 				highestSimilarity = similarity;
 				mostSimilarWord = correctWord;
-				bestMatchedIndex = correctWordIndex;
+				matchedIndex = correctWordIndex;
 			}
 		});
 
 		if (highestSimilarity >= correctThreshold) {
-			alreadyMatchedIndexes.add(bestMatchedIndex);
+			alreadyMatchedIndexes.add(matchedIndex);
 
-			matchedWordPairs.push({
+			scoringWords.push({
 				userWord,
 				mostSimilarWord,
 				similarity: highestSimilarity,
-				isMatched: true,
+				isAccepted: true,
 			});
 		} else {
-			matchedWordPairs.push({
+			scoringWords.push({
 				userWord,
 				mostSimilarWord: null,
 				similarity: highestSimilarity,
-				isMatched: false,
+				isAccepted: false,
 			});
 		}
 	}
 
-	const matchedCount = matchedWordPairs.filter(
-		(p) => p.mostSimilarWord !== null,
-	).length;
-
+	const matchedCount = scoringWords.filter((p) => p.isAccepted).length;
 	const score = (2 * matchedCount) / (userWords.length + correctWords.length);
+	const avgScore = meanBy(scoringWords, "similarity");
 
 	return {
 		score,
-		matchedWordPairs,
+		avgScore,
+		matchedWordPairs: scoringWords,
 		userWords,
 		correctWords,
 	};
