@@ -1,4 +1,11 @@
-export function levenshteinDistance(userInput: string, correctAnswer: string) {
+/**
+ * @description tính edit distance giữa 2 chuỗi (levenshtein distance)
+ * @returns số nguyên >= 0
+ */
+export function getLevenshteinDistance(
+	userInput: string,
+	correctAnswer: string,
+) {
 	const rowCount = userInput.length;
 	const columnCount = correctAnswer.length;
 

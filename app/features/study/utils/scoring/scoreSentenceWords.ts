@@ -1,5 +1,5 @@
 import type { ScoringWord } from "../../types";
-import { levenshteinSimilarity } from "./levenshteinSimilarity";
+import { evaluateSimilarity } from "./evaluateSimilarity";
 
 type ScoreSentenceWordsOptions = {
 	inputSentence: string;
@@ -42,7 +42,7 @@ export function scoreSentenceWords({
 		correctWords.forEach((correctWord, correctWordIndex) => {
 			if (usedCorrectWordIndexes.has(correctWordIndex)) return;
 
-			const similarity = levenshteinSimilarity(inputWord, correctWord);
+			const similarity = evaluateSimilarity(inputWord, correctWord);
 			if (similarity > currentSimilarity) {
 				currentSimilarity = similarity;
 				mostSimilarWord = correctWord;

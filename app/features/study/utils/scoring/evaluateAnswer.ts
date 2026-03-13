@@ -1,6 +1,10 @@
 import { normalize } from "~/shared/utils";
 import type { DiffToken } from "../../types";
-import { checkAnswer } from "./checkAnswer";
+import {
+	type CheckAnswerSentenceReturn,
+	type CheckAnswerWordReturn,
+	checkAnswer,
+} from "./checkAnswer";
 import { getCharacterDifferences } from "./getCharacterDifferences";
 import { getWordDifferences } from "./getWordDifferences";
 import {
@@ -8,13 +12,28 @@ import {
 	resolveWordReplacements,
 } from "./resolveWordReplacements";
 
-export function evaluateAnswer(userInput: string, correctAnswer: string) {
+export type EvaluateAnswerWordReturn = CheckAnswerWordReturn & {
+	diff: DiffToken[] | null;
+};
+
+export type EvaluateAnswerSentenceReturn = CheckAnswerSentenceReturn & {
+	diff: ResolvedToken[] | null;
+};
+
+export type EvaluateAnswerReturn =
+	| EvaluateAnswerWordReturn
+	| EvaluateAnswerSentenceReturn;
+
+export function evaluateAnswer(
+	userInput: string,
+	correctAnswer: string,
+): EvaluateAnswerReturn {
 	// Bước 1: Check answer → lấy score + result
 	const checkResult = checkAnswer(userInput, correctAnswer);
 
 	// Bước 2: Nếu đúng hoàn toàn → không cần diff
 	if (checkResult.result === "correct") {
-		return { ...checkResult, diff: null };
+		return { ...checkResult, diff: null } satisfies EvaluateAnswerReturn;
 	}
 
 	// Bước 3: Tạo diff tokens tuỳ theo type
@@ -27,7 +46,7 @@ export function evaluateAnswer(userInput: string, correctAnswer: string) {
 			normalizedInput,
 			normalizedCorrect,
 		);
-		return { ...checkResult, diff };
+		return { ...checkResult, diff } satisfies EvaluateAnswerWordReturn;
 	} else {
 		// User nhập câu → so sánh từ, rồi resolve replacements
 		const rawWordDiff: DiffToken[] = getWordDifferences(
@@ -35,7 +54,10 @@ export function evaluateAnswer(userInput: string, correctAnswer: string) {
 			normalizedCorrect,
 		);
 		const diff: ResolvedToken[] = resolveWordReplacements(rawWordDiff);
-		return { ...checkResult, diff };
+		if (diff[0]?.type === "word") {
+			console.log(diff[0].charDiff); // error here
+		}
+		return { ...checkResult, diff } satisfies EvaluateAnswerSentenceReturn;
 	}
 }
 

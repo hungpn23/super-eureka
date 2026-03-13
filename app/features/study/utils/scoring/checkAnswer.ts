@@ -1,23 +1,28 @@
 import { normalize } from "~/shared/utils";
 import type { ScoringWord } from "../../types";
-import { levenshteinSimilarity } from "./levenshteinSimilarity";
+import { evaluateSimilarity } from "./evaluateSimilarity";
 import { scoreSentenceWords } from "./scoreSentenceWords";
 
-type CheckAnswerSentenceReturn = CheckAnswerReturn & {
+export type CheckAnswerWordReturn = {
+	type: "word";
+	score: number;
+	result: CheckAnswerResult;
+};
+
+export type CheckAnswerSentenceReturn = {
+	type: "sentence";
+	score: number;
+	result: CheckAnswerResult;
 	scoringWords: ScoringWord[];
 	inputWords: string[];
 	correctWords: string[];
 };
 
-type CheckAnswerReturn = {
-	type: CheckAnswerInputType;
-	score: number;
-	result: CheckAnswerResult;
-};
+export type CheckAnswerReturn =
+	| CheckAnswerWordReturn
+	| CheckAnswerSentenceReturn;
 
-type CheckAnswerResult = "correct" | "typo" | "almost" | "incorrect";
-
-type CheckAnswerInputType = "word" | "sentence";
+export type CheckAnswerResult = "correct" | "typo" | "almost" | "incorrect";
 
 enum ScoringThreshold {
 	CORRECT = 1,
@@ -28,13 +33,13 @@ enum ScoringThreshold {
 export function checkAnswer(
 	userInput: string,
 	correctAnswer: string,
-): CheckAnswerReturn | CheckAnswerSentenceReturn {
+): CheckAnswerReturn {
 	const normalUserInput = normalize(userInput);
 	const normalCorrectAnswer = normalize(correctAnswer);
 
 	const isWord = normalUserInput.split(/\s+/).filter(Boolean).length <= 1;
 	if (isWord) {
-		const score = levenshteinSimilarity(normalUserInput, normalCorrectAnswer);
+		const score = evaluateSimilarity(normalUserInput, normalCorrectAnswer);
 		const result =
 			score === ScoringThreshold.CORRECT
 				? "correct"
@@ -42,7 +47,7 @@ export function checkAnswer(
 					? "typo"
 					: "incorrect";
 
-		return { type: "word", score, result } satisfies CheckAnswerReturn;
+		return { type: "word", score, result } satisfies CheckAnswerWordReturn;
 	} else {
 		const { score, scoringWords, inputWords, correctWords } =
 			scoreSentenceWords({

@@ -10,8 +10,8 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { DiffToken } from "../../types";
+import { evaluateSimilarity } from "./evaluateSimilarity";
 import { getCharacterDifferences } from "./getCharacterDifferences";
-import { levenshteinSimilarity } from "./levenshteinSimilarity";
 
 export type ResolvedToken =
 	| DiffToken
@@ -57,7 +57,7 @@ export function resolveWordReplacements(
 		insertTokens.forEach((_, insertIndex) => {
 			if (usedInsertIndexes.has(insertIndex)) return;
 
-			const newSimilarity = levenshteinSimilarity(
+			const newSimilarity = evaluateSimilarity(
 				deleteToken.value,
 				insertTokens[insertIndex]!.value,
 			);

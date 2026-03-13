@@ -2,7 +2,10 @@
  * @description Build a Longest Common Subsequence (LCS) table for two token arrays.
  * Works for both character-level and word-level diffing.
  */
-export function buildLCSTable(inputTokens: string[], correctTokens: string[]) {
+export function buildLCSTable(
+	inputTokens: string[],
+	correctTokens: string[],
+): number[][] {
 	const table: number[][] = Array.from(
 		{ length: inputTokens.length + 1 },
 		() => new Array(correctTokens.length + 1).fill(0),
