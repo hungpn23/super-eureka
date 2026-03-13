@@ -8,7 +8,7 @@ import {
 } from "~/features/deck";
 import {
 	api,
-	checkAnswer,
+	evaluateAnswer,
 	generateQuestions,
 	getDefaultLearnQuestionState,
 	getDefaultLearnSession,
@@ -108,7 +108,7 @@ const submitAnswer = useThrottleFn((userAnswer: number | string) => {
 		const inputRef = userWrittenAnswerRef.value?.inputRef;
 		if (inputRef) inputRef.blur();
 
-		const res = checkAnswer(userAnswer, question.correctAnswer);
+		const res = evaluateAnswer(userAnswer, question.correctAnswer);
 		console.log("🚀 ~ res:", res);
 
 		const { result } = res;
@@ -116,7 +116,7 @@ const submitAnswer = useThrottleFn((userAnswer: number | string) => {
 		questionState.isCorrect =
 			result === "correct" || result === "almost" || result === "typo";
 
-		// TODO: finish
+		// TODO: finish this
 	}
 
 	questionState.isInReview = true;

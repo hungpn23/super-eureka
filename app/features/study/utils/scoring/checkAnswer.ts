@@ -1,39 +1,69 @@
 import { normalize } from "~/shared/utils";
-import { diceCoefficient } from "./diceCoefficient";
-import { levenshteinDistance } from "./levenshteinDistance";
+import type { ScoringWord } from "../../types";
 import { levenshteinSimilarity } from "./levenshteinSimilarity";
+import { scoreSentenceWords } from "./scoreSentenceWords";
 
-export function checkAnswer(userInput: string, correctAnswer: string) {
-	const user = normalize(userInput);
-	const correct = normalize(correctAnswer);
-	const isWord = user.split(/\s+/).filter(Boolean).length <= 1;
+type CheckAnswerSentenceReturn = CheckAnswerReturn & {
+	scoringWords: ScoringWord[];
+	inputWords: string[];
+	correctWords: string[];
+};
 
+type CheckAnswerReturn = {
+	type: CheckAnswerInputType;
+	score: number;
+	result: CheckAnswerResult;
+};
+
+type CheckAnswerResult = "correct" | "typo" | "almost" | "incorrect";
+
+type CheckAnswerInputType = "word" | "sentence";
+
+enum ScoringThreshold {
+	CORRECT = 1,
+	TYPO = 0.75,
+	ALMOST = 0.75,
+}
+
+export function checkAnswer(
+	userInput: string,
+	correctAnswer: string,
+): CheckAnswerReturn | CheckAnswerSentenceReturn {
+	const normalUserInput = normalize(userInput);
+	const normalCorrectAnswer = normalize(correctAnswer);
+
+	const isWord = normalUserInput.split(/\s+/).filter(Boolean).length <= 1;
 	if (isWord) {
-		const score = levenshteinSimilarity(user, correct);
-		const dist = levenshteinDistance(user, correct);
-		const result = score === 1 ? "correct" : score >= 0.75 ? "typo" : "wrong";
-		return { type: "word", score, dist, result };
+		const score = levenshteinSimilarity(normalUserInput, normalCorrectAnswer);
+		const result =
+			score === ScoringThreshold.CORRECT
+				? "correct"
+				: score >= ScoringThreshold.TYPO
+					? "typo"
+					: "incorrect";
+
+		return { type: "word", score, result } satisfies CheckAnswerReturn;
 	} else {
-		const { score, avgScore, matchedWordPairs, userWords, correctWords } =
-			diceCoefficient(user, correct);
+		const { score, scoringWords, inputWords, correctWords } =
+			scoreSentenceWords({
+				inputSentence: normalUserInput,
+				correctSentence: normalCorrectAnswer,
+			});
 
 		const result =
-			score === 1 && avgScore === 1
+			score === ScoringThreshold.CORRECT
 				? "correct"
-				: score >= 0.8 && avgScore! >= 0.8
+				: score >= ScoringThreshold.ALMOST
 					? "almost"
-					: score >= 0.5
-						? "partial"
-						: "wrong";
+					: "incorrect";
 
 		return {
 			type: "sentence",
 			score,
-			avgScore,
-			matchedWordPairs,
-			userWords,
+			scoringWords,
+			inputWords,
 			correctWords,
 			result,
-		};
+		} satisfies CheckAnswerSentenceReturn;
 	}
 }

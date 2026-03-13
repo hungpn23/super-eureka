@@ -1,16 +1,16 @@
 /**
- * @description build a Longest Common Subsequence table
+ * @description Build a Longest Common Subsequence (LCS) table for two token arrays.
+ * Works for both character-level and word-level diffing.
  */
-export function buildLCSTable(firstString: string, secondString: string) {
-	// init dp table
-	const table: number[][] = Array.from({ length: firstString.length + 1 }, () =>
-		new Array(secondString.length + 1).fill(0),
+export function buildLCSTable(inputTokens: string[], correctTokens: string[]) {
+	const table: number[][] = Array.from(
+		{ length: inputTokens.length + 1 },
+		() => new Array(correctTokens.length + 1).fill(0),
 	);
 
-	for (let i = 1; i <= firstString.length; i++) {
-		for (let j = 1; j <= secondString.length; j++) {
-			// check if last character of each sub string match
-			const isMatch = firstString[i - 1] === secondString[j - 1];
+	for (let i = 1; i <= inputTokens.length; i++) {
+		for (let j = 1; j <= correctTokens.length; j++) {
+			const isMatch = inputTokens[i - 1] === correctTokens[j - 1];
 
 			table[i]![j]! = isMatch
 				? table[i - 1]![j - 1]! + 1
