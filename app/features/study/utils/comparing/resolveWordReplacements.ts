@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { DiffToken } from "../../types";
-import { evaluateSimilarity } from "./evaluateSimilarity";
+import { evaluateSimilarity } from "../scoring/evaluateSimilarity";
 import { getCharacterDifferences } from "./getCharacterDifferences";
 
 export type ResolvedToken =
