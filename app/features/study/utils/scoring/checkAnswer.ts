@@ -1,7 +1,8 @@
-import { normalize } from "~/shared/utils";
-import type { ScoringWord } from "../../types";
-import { evaluateSimilarity } from "./evaluateSimilarity";
-import { scoreSentenceWords } from "./scoreSentenceWords";
+import {
+	evaluateSentenceSimilarity,
+	type WordInSentenceSimilarity,
+} from "./evaluateSentenceSimilarity";
+import { evaluateWordSimilarity } from "./evaluateWordSimilarity";
 
 export type CheckAnswerWordReturn = {
 	type: "word";
@@ -13,9 +14,7 @@ export type CheckAnswerSentenceReturn = {
 	type: "sentence";
 	score: number;
 	result: CheckAnswerResult;
-	scoringWords: ScoringWord[];
-	inputWords: string[];
-	correctWords: string[];
+	scoringWords: WordInSentenceSimilarity[];
 };
 
 export type CheckAnswerReturn =
@@ -34,40 +33,42 @@ export function checkAnswer(
 	userInput: string,
 	correctAnswer: string,
 ): CheckAnswerReturn {
-	const normalUserInput = normalize(userInput);
-	const normalCorrectAnswer = normalize(correctAnswer);
+	const isWord = userInput.split(/\s+/).filter(Boolean).length <= 1;
 
-	const isWord = normalUserInput.split(/\s+/).filter(Boolean).length <= 1;
 	if (isWord) {
-		const score = evaluateSimilarity(normalUserInput, normalCorrectAnswer);
-		const result =
-			score === ScoringThreshold.CORRECT
-				? "correct"
-				: score >= ScoringThreshold.TYPO
-					? "typo"
-					: "incorrect";
+		const similarity = evaluateWordSimilarity(userInput, correctAnswer);
 
-		return { type: "word", score, result } satisfies CheckAnswerWordReturn;
+		let result: CheckAnswerResult;
+		if (similarity.score === ScoringThreshold.CORRECT) {
+			similarity.status = "correct";
+		} else if (similarity.score >= ScoringThreshold.TYPO) {
+			similarity.status = "typo";
+		} else {
+			similarity.status = "incorrect";
+		}
+
+		return {
+			type: "word",
+			score: similarity.score,
+			result: similarity.status,
+		} satisfies CheckAnswerWordReturn;
 	} else {
-		const { score, scoringWords, inputWords, correctWords } =
-			scoreSentenceWords({
-				inputSentence: normalUserInput,
-				correctSentence: normalCorrectAnswer,
-			});
+		const { score, wordSimilarities: scoringWords } =
+			evaluateSentenceSimilarity(userInput, correctAnswer);
 
-		const result =
-			score === ScoringThreshold.CORRECT
-				? "correct"
-				: score >= ScoringThreshold.ALMOST
-					? "almost"
-					: "incorrect";
+		let result: CheckAnswerResult;
+		if (score === ScoringThreshold.CORRECT) {
+			result = "correct";
+		} else if (score >= ScoringThreshold.ALMOST) {
+			result = "almost";
+		} else {
+			result = "incorrect";
+		}
 
 		return {
 			type: "sentence",
 			score,
 			scoringWords,
-			inputWords,
-			correctWords,
 			result,
 		} satisfies CheckAnswerSentenceReturn;
 	}

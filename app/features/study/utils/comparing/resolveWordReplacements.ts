@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { DiffToken } from "../../types";
-import { evaluateSimilarity } from "../scoring/evaluateSimilarity";
+import { evaluateWordSimilarity } from "../scoring/evaluateWordSimilarity";
 import { getCharacterDifferences } from "./getCharacterDifferences";
 
 export type ResolvedToken =
@@ -57,7 +57,7 @@ export function resolveWordReplacements(
 		insertTokens.forEach((_, insertIndex) => {
 			if (usedInsertIndexes.has(insertIndex)) return;
 
-			const newSimilarity = evaluateSimilarity(
+			const newSimilarity = evaluateWordSimilarity(
 				deleteToken.value,
 				insertTokens[insertIndex]!.value,
 			);
