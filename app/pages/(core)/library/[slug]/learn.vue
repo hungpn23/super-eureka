@@ -131,7 +131,11 @@ function evaluateUserAnswer(userAnswer: number | string) {
     questionState.answerTokenDiffs =
       result.status === "correct"
         ? []
-        : getWrittenAnswerDiffs(result, userAnswer, question.correctAnswer);
+        : getWrittenAnswerDiffs(
+            result.type,
+            userAnswer,
+            question.correctAnswer,
+          );
   }
 
   if (questionState.answerStatus === "correct") {

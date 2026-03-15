@@ -15,84 +15,83 @@ import { getCharacterDifferences } from "./getCharacterDifferences";
 
 const REPLACE_THRESHOLD = 0.3;
 
-export function resolveWordDiffs(
-	rawTokens: WordDiff[],
-): WordDiff[] {
-	if (!rawTokens.length || rawTokens.some((token) => token.type !== "word")) {
-		return [];
-	}
+export function resolveWordDiffs(wordDiffs: WordDiff[]): WordDiff[] {
+  if (!wordDiffs.length || wordDiffs.some((token) => token.type !== "word")) {
+    return [];
+  }
 
-	const tokenWithIndexes = rawTokens.map((token, index) => ({
-		...token,
-		originalIndex: index,
-	}));
+  const wordDiffWithIndexes = wordDiffs.map((token, index) => ({
+    ...token,
+    originalIndex: index,
+  }));
 
-	const deleteTokens = tokenWithIndexes.filter(
-		(item) => item.operation === "delete",
-	);
+  const deleteTokens = wordDiffWithIndexes.filter(
+    (item) => item.operation === "delete",
+  );
 
-	const insertTokens = tokenWithIndexes.filter(
-		(item) => item.operation === "insert",
-	);
+  const insertTokens = wordDiffWithIndexes.filter(
+    (item) => item.operation === "insert",
+  );
 
-	// Ghép cặp delete ↔ insert tốt nhất (best-match, không nhìn liền kề)
-	const usedInsertIndexes = new Set<number>();
-	const replacements = new Map<number, WordDiff>(); // rawIndex → resolved diff
+  // Ghép cặp delete ↔ insert tốt nhất (best-match, không nhìn liền kề)
+  const usedInsertIndexes = new Set<number>();
+  const replacements = new Map<number, WordDiff>(); // rawIndex → resolved diff
 
-	for (const deleteToken of deleteTokens) {
-		let currentSimilarity = -1;
-		let currentInsertTokenIndex = -1;
+  for (const deleteToken of deleteTokens) {
+    let currentSimilarity = -1;
+    let currentInsertTokenIndex = -1;
 
-		insertTokens.forEach((_, insertIndex) => {
-			if (usedInsertIndexes.has(insertIndex)) return;
+    insertTokens.forEach((_, insertIndex) => {
+      if (usedInsertIndexes.has(insertIndex)) return;
 
-			const newSimilarity = evaluateWordSimilarity(
-				deleteToken.value,
-				insertTokens[insertIndex]!.value,
-			).score;
+      const newSimilarity = evaluateWordSimilarity(
+        deleteToken.value,
+        insertTokens[insertIndex]!.value,
+      ).score;
 
-			if (newSimilarity > currentSimilarity) {
-				currentSimilarity = newSimilarity;
-				currentInsertTokenIndex = insertIndex;
-			}
-		});
+      if (newSimilarity > currentSimilarity) {
+        currentSimilarity = newSimilarity;
+        currentInsertTokenIndex = insertIndex;
+      }
+    });
 
-		if (
-			currentSimilarity >= REPLACE_THRESHOLD &&
-			currentInsertTokenIndex >= 0
-		) {
-			usedInsertIndexes.add(currentInsertTokenIndex);
-			const insertToken = insertTokens[currentInsertTokenIndex]!;
+    if (
+      currentSimilarity >= REPLACE_THRESHOLD &&
+      currentInsertTokenIndex >= 0
+    ) {
+      usedInsertIndexes.add(currentInsertTokenIndex);
+      const insertToken = insertTokens[currentInsertTokenIndex]!;
 
-			replacements.set(deleteToken.originalIndex, {
-				type: "word",
-				value: deleteToken.value,
-				operation: "delete",
-				charDiff: getCharacterDifferences(deleteToken.value, insertToken.value),
-			});
-		}
-	}
+      replacements.set(deleteToken.originalIndex, {
+        type: "word",
+        value: deleteToken.value,
+        operation: "delete",
+        charDiff: getCharacterDifferences(deleteToken.value, insertToken.value),
+      });
+    }
+  }
 
-	// Xây kết quả theo thứ tự raw, thay delete bằng diff có charDiff nếu có cặp
-	const result: WordDiff[] = [];
-	const usedInsertRawIndexes = new Set(
-		[...usedInsertIndexes].map((item) => insertTokens[item]!.originalIndex),
-	);
+  // Xây kết quả theo thứ tự raw, thay delete bằng diff có charDiff nếu có cặp
+  const result: WordDiff[] = [];
+  const usedInsertRawIndexes = new Set(
+    [...usedInsertIndexes].map((item) => insertTokens[item]!.originalIndex),
+  );
 
-	for (let i = 0; i < rawTokens.length; i++) {
-		const token = rawTokens[i]!;
+  for (let i = 0; i < wordDiffs.length; i++) {
+    const token = wordDiffs[i]!;
 
-		if (token.operation === "keep") {
-			result.push(token);
-		} else if (token.operation === "delete") {
-			result.push(replacements.has(i) ? replacements.get(i)! : token);
-		} else if (token.operation === "insert") {
-			// insert gốc: bỏ qua nếu đã được ghép, giữ lại nếu chưa
-			if (!usedInsertRawIndexes.has(i)) {
-				result.push(token);
-			}
-		}
-	}
+    if (token.operation === "keep") {
+      result.push(token);
+    } else if (token.operation === "delete") {
+      result.push(replacements.has(i) ? replacements.get(i)! : token);
+    } else if (token.operation === "insert") {
+      // insert gốc: bỏ qua nếu đã được ghép, giữ lại nếu chưa
+      if (!usedInsertRawIndexes.has(i)) {
+        result.push(token);
+      }
+    }
+  }
 
-	return result;
+  console.log("🚀 ~ resolveWordDiffs ~ result:", result);
+  return result;
 }
