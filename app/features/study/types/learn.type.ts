@@ -26,10 +26,12 @@ export type LearnSession = {
 export type LearnQuestionState = {
 	userAnswer: string;
 	userChoiceIndex: number;
-	isInReview: boolean;
-	isCorrect?: boolean;
+	isDisplayingReviewScreen: boolean;
 	hintUsedCount: number;
+	answerStatus?: LearnAnswerStatus;
 };
+
+export type LearnAnswerStatus = "correct" | "typo" | "almost" | "incorrect";
 
 export type LearnSetting = {
 	showCorrectAnswer: boolean;

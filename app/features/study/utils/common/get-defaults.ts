@@ -36,9 +36,9 @@ export function getDefaultLearnQuestionState() {
 	return {
 		userAnswer: "",
 		userChoiceIndex: -1,
-		isInReview: false,
-		isCorrect: undefined,
+		isDisplayingReviewScreen: false,
 		hintUsedCount: 0,
+		answerStatus: undefined,
 	} satisfies LearnQuestionState;
 }
 

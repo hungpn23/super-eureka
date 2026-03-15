@@ -8,6 +8,7 @@ import {
 } from "~/features/deck";
 import {
 	api,
+	checkAnswer,
 	generateQuestions,
 	getDefaultLearnQuestionState,
 	getDefaultLearnSession,
@@ -20,6 +21,9 @@ import {
 } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards } from "~/shared/utils";
+
+const NEXT_QUESTION_DELAY = 500;
+const SUBMIT_ANSWER_THROTTLE = 1000;
 
 const { token } = useAuth();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
@@ -36,7 +40,6 @@ const questionState = reactive<LearnQuestionState>(
 );
 const setting = reactive<LearnSetting>(getDefaultLearnSetting());
 
-const isIncorrect = computed(() => questionState.isCorrect === false);
 const progress = computed(() => {
 	if (!session.totalQuestions) return 0;
 	return (session.correctCount / session.totalQuestions) * 100;
@@ -94,56 +97,68 @@ watchDebounced(() => session.cardsToSave, handleSaveAnswers, {
 	deep: true,
 });
 
-const submitAnswer = useThrottleFn((userAnswer: number | string) => {
+const evaluateUserAnswer = useThrottleFn((userAnswer: number | string) => {
 	const question = session.currentQuestion;
-	if (!question || questionState.isInReview) return;
+	if (!question || questionState.isDisplayingReviewScreen) return;
 
 	if (question.type === "multiple_choices" && typeof userAnswer === "number") {
 		questionState.userChoiceIndex = userAnswer;
-		questionState.isCorrect = userAnswer === question.correctChoiceIndex;
+
+		if (userAnswer === question.correctChoiceIndex) {
+			questionState.answerStatus = "correct";
+		} else {
+			questionState.answerStatus = "incorrect";
+		}
 	}
 
 	if (question.type === "written" && typeof userAnswer === "string") {
 		const inputRef = userWrittenAnswerRef.value?.inputRef;
 		if (inputRef) inputRef.blur();
 
-		const res = evaluateAnswer(userAnswer, question.correctAnswer);
+		const res = checkAnswer(userAnswer, question.correctAnswer);
 		console.log("🚀 ~ res:", res);
 
-		const { result } = res;
-
-		questionState.isCorrect =
-			result === "correct" || result === "almost" || result === "typo";
-
-		// TODO: finish this
+		questionState.answerStatus = res.status;
 	}
 
-	questionState.isInReview = true;
-
-	if (questionState.isCorrect) {
+	if (questionState.answerStatus === "correct") {
 		session.correctCount++;
-		setTimeout(() => nextQuestion(true, question), 500);
+	} else if (
+		questionState.answerStatus === "almost" ||
+		questionState.answerStatus === "typo"
+	) {
+		session.correctCount++;
 	} else {
 		session.incorrectCount++;
-		if (setting.showCorrectAnswer) return;
-
-		setTimeout(() => nextQuestion(false, question), 500);
 	}
-}, 500);
 
-function nextQuestion(isCorrect?: boolean, currentQuestion?: LearnQuestion) {
-	if (!currentQuestion || isCorrect === undefined) return;
+	questionState.isDisplayingReviewScreen = true;
 
-	const updated = updateCard(currentQuestion, isCorrect);
+	if (questionState.answerStatus !== "correct" && setting.showCorrectAnswer) {
+		return;
+	}
 
-	if (isIncorrect.value) session.retryQueue.push(updated);
+	setTimeout(() => nextQuestion(), NEXT_QUESTION_DELAY);
+}, SUBMIT_ANSWER_THROTTLE);
+
+function nextQuestion() {
+	if (!session.currentQuestion || !questionState.answerStatus) return;
+
+	const updatedCard = updateCard(
+		session.currentQuestion,
+		questionState.answerStatus,
+	);
+
+	if (questionState.answerStatus === "incorrect") {
+		session.retryQueue.push(updatedCard);
+	}
 
 	// trigger saveAnswers in watchDebounced
-	const index = session.cardsToSave.findIndex((a) => a.id === updated.id);
+	const index = session.cardsToSave.findIndex((a) => a.id === updatedCard.id);
 	if (index !== -1) {
-		session.cardsToSave[index] = updated;
+		session.cardsToSave[index] = updatedCard;
 	} else {
-		session.cardsToSave.push(updated);
+		session.cardsToSave.push(updatedCard);
 	}
 
 	if (!session.studyQueue.length) {
@@ -202,20 +217,22 @@ function onGetAHint() {
 
 function handleChoiceShortcut(index: number) {
 	if (
-		isIncorrect.value &&
-		questionState.isInReview &&
+		questionState.answerStatus === "incorrect" &&
+		questionState.isDisplayingReviewScreen &&
 		session.currentQuestion?.correctChoiceIndex === index
 	) {
-		nextQuestion(questionState.isCorrect, session.currentQuestion);
+		nextQuestion();
 	} else {
-		submitAnswer(index);
+		evaluateUserAnswer(index);
 	}
 }
 
 function handleSkip() {
 	if (!session.currentQuestion) return;
 
-	submitAnswer(session.currentQuestion.type === "multiple_choices" ? -1 : "");
+	evaluateUserAnswer(
+		session.currentQuestion.type === "multiple_choices" ? -1 : "",
+	);
 }
 
 function getChoiceBtnClass(choiceIndex: number) {
@@ -228,7 +245,7 @@ function getChoiceBtnClass(choiceIndex: number) {
 	const successClass =
 		"border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
 
-	if (questionState.isInReview) {
+	if (questionState.isDisplayingReviewScreen) {
 		if (isThisChoiceSelected) {
 			if (isThisChoiceCorrect) {
 				return successClass;
@@ -246,9 +263,16 @@ function getChoiceBtnClass(choiceIndex: number) {
 }
 
 function getWrittenInputClass() {
-	if (!questionState.isInReview) return "";
+	if (!questionState.isDisplayingReviewScreen) return "";
 
-	if (questionState.isCorrect) {
+	if (
+		questionState.answerStatus === "typo" ||
+		questionState.answerStatus === "almost"
+	) {
+		return "border-warning";
+	}
+
+	if (questionState.answerStatus === "correct") {
 		return "border-success";
 	}
 
@@ -256,7 +280,7 @@ function getWrittenInputClass() {
 }
 
 function getChoiceDisabledState(choiceIndex: number) {
-	if (!questionState.isInReview) return false;
+	if (!questionState.isDisplayingReviewScreen) return false;
 
 	const question = session.currentQuestion;
 	if (!question) return true;
@@ -276,8 +300,7 @@ function getChoiceDisabledState(choiceIndex: number) {
 }
 
 defineShortcuts({
-	[ShortcutKey.LEARN_NEXT_QUESTION]: () =>
-		nextQuestion(questionState.isCorrect, session.currentQuestion),
+	[ShortcutKey.LEARN_NEXT_QUESTION]: () => nextQuestion(),
 	[ShortcutKey.CHOICE_1]: () => handleChoiceShortcut(0),
 	[ShortcutKey.CHOICE_2]: () => handleChoiceShortcut(1),
 	[ShortcutKey.CHOICE_3]: () => handleChoiceShortcut(2),
@@ -456,16 +479,16 @@ defineShortcuts({
                 :ui="{
                   base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
                 }"
-                :disabled="questionState.isInReview"
+                :disabled="questionState.isDisplayingReviewScreen"
                 variant="outline"
                 color="neutral"
                 autofocus
-                @keydown.enter="submitAnswer(questionState.userAnswer)"
+                @keydown.enter="evaluateUserAnswer(questionState.userAnswer)"
               />
 
               <Transition>
                 <UInput
-                  v-if="isIncorrect && setting.showCorrectAnswer"
+                  v-if="questionState.answerStatus === 'incorrect' && setting.showCorrectAnswer"
                   :ui="{
                     base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
                   }"
@@ -477,7 +500,7 @@ defineShortcuts({
 
             <div class="flex place-content-end place-items-center gap-2">
               <UButton
-                :disabled="questionState.isInReview"
+                :disabled="questionState.isDisplayingReviewScreen"
                 class="cursor-pointer place-self-end font-medium"
                 variant="ghost"
                 color="error"
@@ -492,7 +515,7 @@ defineShortcuts({
                 :disabled="!questionState.userAnswer"
                 class="cursor-pointer font-medium"
                 size="lg"
-                @click="submitAnswer(questionState.userAnswer)"
+                @click="evaluateUserAnswer(questionState.userAnswer)"
               >
                 Answer
               </UButton>
@@ -508,9 +531,9 @@ defineShortcuts({
 
         <div
           v-if="
-            questionState.isInReview &&
+            questionState.isDisplayingReviewScreen &&
+            questionState.answerStatus === 'incorrect' &&
             setting.showCorrectAnswer &&
-            isIncorrect &&
             smAndLarger
           "
           class="place-self-center font-semibold"

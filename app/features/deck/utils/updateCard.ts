@@ -1,14 +1,15 @@
 import { addDays, isAfter } from "date-fns";
-import type { Card, LearnQuestion } from "~/features/card";
+import type { Card } from "~/features/card";
+import type { LearnAnswerStatus } from "~/features/study";
 
-export const updateCard = <T extends Card | LearnQuestion>(
-	q: T,
-	isCorrect: boolean,
+export const updateCard = <T extends Pick<Card, "streak" | "reviewDate">>(
+	card: T,
+	status: LearnAnswerStatus,
 ) => {
-	const { streak, reviewDate, ...rest } = q;
+	const { streak, reviewDate, ...rest } = card;
 	const now = new Date();
 
-	if (!isCorrect) {
+	if (status === "incorrect") {
 		return {
 			...rest,
 			streak: 0,
@@ -18,11 +19,11 @@ export const updateCard = <T extends Card | LearnQuestion>(
 
 	const newStreak = streak + 1;
 
-	const gap = 2 ** (newStreak - 1);
+	const dayGap = 2 ** (newStreak - 1);
 
 	const baseDate = reviewDate ? new Date(reviewDate) : now;
 
-	const nextDate = addDays(baseDate, gap);
+	const nextDate = addDays(baseDate, dayGap);
 
 	const maxDate = addDays(now, 30);
 
