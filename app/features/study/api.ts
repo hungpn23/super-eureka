@@ -1,6 +1,12 @@
-import type { ErrorResponse, SuccessResponse } from "~/shared/types";
+import type { ErrorResponse, SuccessResponse, UUID } from "~/shared/types";
+import type { CardToSave } from "../card";
 import type { UserStats } from "../user";
-import type { SaveAnswersOptions } from "./types";
+
+export type SaveAnswersOptions = {
+	deckId: UUID | null;
+	token: Ref<string | null>;
+	cardsToSave: CardToSave[];
+};
 
 class StudyApi {
 	private readonly BASE_URL = "/api/study";

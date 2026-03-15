@@ -12,25 +12,25 @@ export type WordSimilarityStatus = "correct" | "typo" | "incorrect";
  * @returns score: số thực [0...1], status: đánh giá mức độ tương đồng (WordSimilarityStatus)
  */
 export function evaluateWordSimilarity(
-	userInput: string,
-	correctAnswer: string,
+	inputWord: string,
+	correctWord: string,
 ): WordSimilarity {
-	if (userInput === correctAnswer) {
+	if (inputWord === correctWord) {
 		return {
 			score: 1,
 			status: "correct",
 		};
 	}
 
-	if (!userInput.length || !correctAnswer.length) {
+	if (!inputWord.length || !correctWord.length) {
 		return {
 			score: 0,
 			status: "incorrect",
 		};
 	}
 
-	const distance = getLevenshteinDistance(userInput, correctAnswer);
-	const score = 1 - distance / Math.max(userInput.length, correctAnswer.length);
+	const distance = getLevenshteinDistance(inputWord, correctWord);
+	const score = 1 - distance / Math.max(inputWord.length, correctWord.length);
 
 	let status: WordSimilarityStatus;
 

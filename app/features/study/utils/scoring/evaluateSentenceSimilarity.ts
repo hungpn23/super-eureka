@@ -1,4 +1,4 @@
-import { DEFAULT_WORD_SIMILARITY_THRESHOLD } from "../../constants";
+import { SIMILARITY_THRESHOLD } from "../../constants";
 import {
 	evaluateWordSimilarity,
 	type WordSimilarity,
@@ -7,7 +7,8 @@ import {
 
 export type SentenceSimilarity = {
 	score: number;
-	wordSimilarities: WordInSentenceSimilarity[];
+	status: SentenceSimilarityStatus;
+	similarities: WordInSentenceSimilarity[];
 };
 
 export type WordInSentenceSimilarity = WordSimilarity & {
@@ -15,21 +16,35 @@ export type WordInSentenceSimilarity = WordSimilarity & {
 	mostSimilarWord: string | null;
 };
 
+export type SentenceSimilarityStatus = "correct" | "almost" | "incorrect";
+
+export type EvaluateSentenceSimilarityOptions = {
+	inputSentence: string;
+	correctSentence: string;
+	sentenceSimilarityThreshold?: number;
+	wordSimilarityThreshold?: number;
+};
+
 /**
  * @description tính toán mức độ tương đồng giữa 2 câu
  * @returns score: số thực [0...1], detail: chi tiết điểm số từng từ kèm đánh giá (WordInSentenceSimilarity)
  */
 export function evaluateSentenceSimilarity(
-	input: string,
-	correct: string,
-	wordSimilarityThreshold: number = DEFAULT_WORD_SIMILARITY_THRESHOLD,
+	options: EvaluateSentenceSimilarityOptions,
 ): SentenceSimilarity {
-	const inputWords = input.split(/\s+/).filter(Boolean);
-	const correctWords = correct.split(/\s+/).filter(Boolean);
-	const wordSimilarities: WordInSentenceSimilarity[] = [];
+	const {
+		inputSentence,
+		correctSentence,
+		sentenceSimilarityThreshold = SIMILARITY_THRESHOLD.SENTENCE,
+		wordSimilarityThreshold = SIMILARITY_THRESHOLD.WORD,
+	} = options;
+
+	const inputWords = inputSentence.split(/\s+/).filter(Boolean);
+	const correctWords = correctSentence.split(/\s+/).filter(Boolean);
+	const similarities: WordInSentenceSimilarity[] = [];
 
 	if (!inputWords.length || !correctWords.length)
-		return { score: 0, wordSimilarities };
+		return { score: 0, status: "incorrect", similarities: [] };
 
 	const matchedCorrectWordIndexes = new Set<number>();
 
@@ -54,7 +69,7 @@ export function evaluateSentenceSimilarity(
 		if (bestSimilarityScore === 1) {
 			matchedCorrectWordIndexes.add(mostSimilarWordIndex);
 
-			wordSimilarities.push({
+			similarities.push({
 				inputWord,
 				mostSimilarWord,
 				score: bestSimilarityScore,
@@ -63,14 +78,14 @@ export function evaluateSentenceSimilarity(
 		} else if (bestSimilarityScore >= wordSimilarityThreshold) {
 			matchedCorrectWordIndexes.add(mostSimilarWordIndex);
 
-			wordSimilarities.push({
+			similarities.push({
 				inputWord,
 				mostSimilarWord,
 				score: bestSimilarityScore,
 				status: bestSimilarityStatus,
 			});
 		} else {
-			wordSimilarities.push({
+			similarities.push({
 				inputWord,
 				mostSimilarWord: null,
 				score: bestSimilarityScore,
@@ -79,14 +94,20 @@ export function evaluateSentenceSimilarity(
 		}
 	}
 
-	const matchedCount = wordSimilarities.filter(
+	const matchedCount = similarities.filter(
 		(similarity) => similarity.status !== "incorrect",
 	).length;
 
 	const score = (2 * matchedCount) / (inputWords.length + correctWords.length); // use dice's coefficient algorithm
 
+	let status: SentenceSimilarityStatus;
+	if (score === 1) status = "correct";
+	else if (score >= sentenceSimilarityThreshold) status = "almost";
+	else status = "incorrect";
+
 	return {
 		score,
-		wordSimilarities,
+		status,
+		similarities,
 	};
 }

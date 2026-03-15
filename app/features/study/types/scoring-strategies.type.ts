@@ -1,4 +1,3 @@
-export type SentenceEvaluationResult = "correct" | "almost" | "incorrect";
 export type EditOperation = "keep" | "delete" | "insert";
 export type DiffTokenType = "character" | "word";
 

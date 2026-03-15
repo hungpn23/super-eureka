@@ -8,7 +8,6 @@ import {
 } from "~/features/deck";
 import {
 	api,
-	evaluateAnswer,
 	generateQuestions,
 	getDefaultLearnQuestionState,
 	getDefaultLearnSession,
