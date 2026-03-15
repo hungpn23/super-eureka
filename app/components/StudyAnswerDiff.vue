@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {
   CharDiff,
-  EditOperation,
+  CharOperation,
   TokenDiff,
   WordDiff,
 } from "~/features/study";
@@ -27,7 +27,7 @@ function isCharDiffToken(token: TokenDiff): token is CharDiff {
   return token.type === "character";
 }
 
-function getCharDiffClass(op: EditOperation) {
+function getCharDiffClass(op: CharOperation) {
   if (op === "insert") return "text-success underline-offset-2 underline";
   if (op === "delete") return "text-error line-through";
   return "";
