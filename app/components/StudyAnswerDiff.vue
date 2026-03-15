@@ -27,9 +27,17 @@ function isCharDiffToken(token: TokenDiff): token is CharDiff {
   return token.type === "character";
 }
 
-function getTokenDiffClass(op: EditOperation) {
+function getCharDiffClass(op: EditOperation) {
   if (op === "insert") return "text-success underline-offset-2 underline";
   if (op === "delete") return "text-error line-through";
+  return "";
+}
+
+function getWordDiffClass(token: WordDiff) {
+  if (token.operation === "insert")
+    return "text-success underline-offset-2 underline";
+  if (token.operation === "delete" && !token.charDiff?.length)
+    return "text-error line-through";
   return "";
 }
 </script>
@@ -43,23 +51,23 @@ function getTokenDiffClass(op: EditOperation) {
       v-if="isCharacterMode"
       v-for="(charToken, charIndex) in characterTokens"
       :key="charIndex"
-      :class="getTokenDiffClass(charToken.operation)"
+      :class="getCharDiffClass(charToken.operation)"
     >
       {{ charToken.value }}
     </span>
 
     <span v-else v-for="(wordToken, wordIndex) in wordTokens" :key="wordIndex">
-      {{ wordIndex > 0 ? " " : "" }}
+      <span v-if="wordIndex > 0" v-text="' '" />
 
       <span
         class="inline-flex place-items-center"
-        :class="getTokenDiffClass(wordToken.operation)"
+        :class="getWordDiffClass(wordToken)"
       >
         <span v-if="wordToken.charDiff?.length">
           <span
             v-for="(charToken, charIndex) in wordToken.charDiff"
             :key="charIndex"
-            :class="getTokenDiffClass(charToken.operation)"
+            :class="getCharDiffClass(charToken.operation)"
           >
             {{ charToken.value }}
           </span>
