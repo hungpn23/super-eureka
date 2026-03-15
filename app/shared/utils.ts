@@ -22,7 +22,7 @@ export const getCards = (cards: Card[], isIgnoreDate: boolean): Card[] => {
 export const focusInput = (
 	inputRef?: HTMLInputElement | HTMLTextAreaElement | null,
 ) => {
-	setTimeout(() => inputRef?.focus(), 300);
+	setTimeout(() => inputRef?.focus(), 1);
 };
 
 export function normalize(text: string) {

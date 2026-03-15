@@ -1,3 +1,4 @@
+import type { WrittenAnswerType } from "../../types";
 import {
 	evaluateSentenceSimilarity,
 	type SentenceSimilarityStatus,
@@ -8,25 +9,27 @@ import {
 	type WordSimilarityStatus,
 } from "./evaluateWordSimilarity";
 
-export type CheckAnswerResult = CheckWordResult | CheckSentenceResult;
+export type EvaluateWrittenAnswerResult =
+	| EvaluateWordResult
+	| EvaluateSentenceResult;
 
-export type CheckWordResult = {
-	type: "word";
+export type EvaluateWordResult = {
+	type: Extract<WrittenAnswerType, "word">;
 	score: number;
 	status: WordSimilarityStatus;
 };
 
-export type CheckSentenceResult = {
-	type: "sentence";
+export type EvaluateSentenceResult = {
+	type: Extract<WrittenAnswerType, "sentence">;
 	score: number;
 	status: SentenceSimilarityStatus;
 	similarities: WordInSentenceSimilarity[];
 };
 
-export function checkAnswer(
+export function evaluateWrittenAnswer(
 	userInput: string,
 	correctAnswer: string,
-): CheckAnswerResult {
+): EvaluateWrittenAnswerResult {
 	const isWord = userInput.split(/\s+/).filter(Boolean).length <= 1;
 
 	if (isWord) {
@@ -36,13 +39,9 @@ export function checkAnswer(
 			type: "word",
 			score,
 			status,
-		} satisfies CheckWordResult;
+		} satisfies EvaluateWordResult;
 	} else {
-		const {
-			score,
-			status,
-			similarities: wordSimilarities,
-		} = evaluateSentenceSimilarity({
+		const { score, status, similarities } = evaluateSentenceSimilarity({
 			inputSentence: userInput,
 			correctSentence: correctAnswer,
 		});
@@ -51,7 +50,7 @@ export function checkAnswer(
 			type: "sentence",
 			score,
 			status,
-			similarities: wordSimilarities,
-		} satisfies CheckSentenceResult;
+			similarities,
+		} satisfies EvaluateSentenceResult;
 	}
 }

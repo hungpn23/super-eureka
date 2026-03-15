@@ -12,13 +12,13 @@
 //   school → keep
 // ─────────────────────────────────────────────────────────────
 
-import type { DiffToken } from "../../types";
+import type { WordDiff } from "../../types";
 import { getTokenDifferences } from "./getTokenDifferences";
 
 export function getWordDifferences(
 	inputSentence: string,
 	correctSentence: string,
-): DiffToken[] {
+): WordDiff[] {
 	return getTokenDifferences(
 		inputSentence.split(/\s+/).filter(Boolean),
 		correctSentence.split(/\s+/).filter(Boolean),

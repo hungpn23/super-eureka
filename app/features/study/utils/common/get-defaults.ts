@@ -39,13 +39,14 @@ export function getDefaultLearnQuestionState() {
 		isDisplayingReviewScreen: false,
 		hintUsedCount: 0,
 		answerStatus: undefined,
+		answerTokenDiffs: [],
 	} satisfies LearnQuestionState;
 }
 
 export function getDefaultLearnSetting() {
 	return {
 		showCorrectAnswer: true,
-		types: ["written", "multiple_choices"],
+		types: ["written"],
 		direction: "term_to_def",
 	} satisfies LearnSetting;
 }

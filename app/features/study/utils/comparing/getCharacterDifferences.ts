@@ -16,13 +16,13 @@
 //   z → delete   ← thừa "z"
 // ─────────────────────────────────────────────────────────────
 
-import type { DiffToken } from "../../types";
+import type { CharDiff } from "../../types";
 import { getTokenDifferences } from "./getTokenDifferences";
 
 export function getCharacterDifferences(
 	inputWord: string,
 	correctWord: string,
-): DiffToken[] {
+): CharDiff[] {
 	return getTokenDifferences(
 		inputWord.split(""),
 		correctWord.split(""),

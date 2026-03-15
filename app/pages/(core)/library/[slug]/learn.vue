@@ -2,28 +2,28 @@
 import { breakpointsTailwind } from "@vueuse/core";
 import { pick } from "lodash";
 import {
-	QUESTION_DIRECTION_ITEMS,
-	QUESTION_TYPE_ITEMS,
-	updateCard,
+  QUESTION_DIRECTION_ITEMS,
+  QUESTION_TYPE_ITEMS,
+  updateCard,
 } from "~/features/deck";
 import {
-	api,
-	checkAnswer,
-	generateQuestions,
-	getDefaultLearnQuestionState,
-	getDefaultLearnSession,
-	getDefaultLearnSetting,
-	type LearnQuestion,
-	type LearnQuestionState,
-	type LearnSession,
-	type LearnSetting,
-	useStudyToasts,
+  api,
+  evaluateWrittenAnswer,
+  generateQuestions,
+  getDefaultLearnQuestionState,
+  getDefaultLearnSession,
+  getDefaultLearnSetting,
+  getWrittenAnswerDiffs,
+  type LearnQuestion,
+  type LearnQuestionState,
+  type LearnSession,
+  type LearnSetting,
+  useStudyToasts,
 } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards } from "~/shared/utils";
 
-const NEXT_QUESTION_DELAY = 500;
-const SUBMIT_ANSWER_THROTTLE = 1000;
+const NEXT_QUESTION_DELAY = 750;
 
 const { token } = useAuth();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
@@ -36,286 +36,299 @@ const snapshotSetting = refManualReset("");
 
 const learnSession = reactive<LearnSession>(getDefaultLearnSession());
 const questionState = reactive<LearnQuestionState>(
-	getDefaultLearnQuestionState(),
+  getDefaultLearnQuestionState(),
 );
 const setting = reactive<LearnSetting>(getDefaultLearnSetting());
 
 const progress = computed(() => {
-	if (!learnSession.totalQuestions) return 0;
-	return (learnSession.correctCount / learnSession.totalQuestions) * 100;
+  if (!learnSession.totalQuestions) return 0;
+  return (learnSession.correctCount / learnSession.totalQuestions) * 100;
 });
 
+const shouldShowAnswerDiff = computed(
+  () =>
+    questionState.isDisplayingReviewScreen &&
+    questionState.answerStatus !== undefined &&
+    questionState.answerStatus !== "correct" &&
+    learnSession.currentQuestion?.type === "written",
+);
+
 const {
-	status,
-	pending: isSavingAnswers,
-	execute: saveAnswers,
+  status,
+  pending: isSavingAnswers,
+  execute: saveAnswers,
 } = api.saveAnswers({
-	deckId: store.deckId,
-	token,
-	cardsToSave: learnSession.cardsToSave,
+  deckId: store.deckId,
+  token,
+  cardsToSave: learnSession.cardsToSave,
 });
 
 watch(
-	() => store.deck?.cards,
-	(newCards) => {
-		if (newCards && newCards.length > 0) {
-			isSettingModalOpen.reset();
-			resetQuestionState();
+  () => store.deck?.cards,
+  (newCards) => {
+    if (newCards && newCards.length > 0) {
+      isSettingModalOpen.reset();
+      resetQuestionState();
 
-			Object.assign(
-				learnSession,
-				pick(
-					getDefaultLearnSession(),
-					"correctCount",
-					"incorrectCount",
-					"cardsToSave",
-					"retryQueue",
-				),
-			);
+      Object.assign(
+        learnSession,
+        pick(
+          getDefaultLearnSession(),
+          "correctCount",
+          "incorrectCount",
+          "cardsToSave",
+          "retryQueue",
+        ),
+      );
 
-			learnSession.studyQueue = generateQuestions<LearnQuestion>({
-				cards: getCards(newCards, store.isIgnoreDate),
-				types: setting.types,
-				dir: setting.direction,
-				answerPool: newCards,
-			});
-			learnSession.totalQuestions = learnSession.studyQueue.length;
-			learnSession.currentQuestion = learnSession.studyQueue.shift();
-		}
-	},
+      learnSession.studyQueue = generateQuestions<LearnQuestion>({
+        cards: getCards(newCards, store.isIgnoreDate),
+        types: setting.types,
+        dir: setting.direction,
+        answerPool: newCards,
+      });
+      learnSession.totalQuestions = learnSession.studyQueue.length;
+      learnSession.currentQuestion = learnSession.studyQueue.shift();
+    }
+  },
 );
 
 watch(
-	() => setting.types.length,
-	() => {
-		if (!setting.types.length) setting.types = ["multiple_choices"];
-	},
+  () => setting.types.length,
+  () => {
+    if (!setting.types.length) setting.types = ["multiple_choices"];
+  },
 );
 
 watchDebounced(() => learnSession.cardsToSave, handleSaveAnswers, {
-	debounce: 1000,
-	deep: true,
+  debounce: 1000,
+  deep: true,
 });
 
-const evaluateUserAnswer = useThrottleFn((userAnswer: number | string) => {
-	const question = learnSession.currentQuestion;
-	if (!question || questionState.isDisplayingReviewScreen) return;
+function evaluateUserAnswer(userAnswer: number | string) {
+  const question = learnSession.currentQuestion;
+  if (!question || questionState.isDisplayingReviewScreen) return;
 
-	if (question.type === "multiple_choices" && typeof userAnswer === "number") {
-		questionState.userChoiceIndex = userAnswer;
+  if (question.type === "multiple_choices" && typeof userAnswer === "number") {
+    questionState.userChoiceIndex = userAnswer;
 
-		if (userAnswer === question.correctChoiceIndex) {
-			questionState.answerStatus = "correct";
-		} else {
-			questionState.answerStatus = "incorrect";
-		}
-	}
+    if (userAnswer === question.correctChoiceIndex) {
+      questionState.answerStatus = "correct";
+    } else {
+      questionState.answerStatus = "incorrect";
+    }
 
-	if (question.type === "written" && typeof userAnswer === "string") {
-		const inputRef = userWrittenAnswerRef.value?.inputRef;
-		if (inputRef) inputRef.blur();
+    questionState.answerTokenDiffs = [];
+  }
 
-		const res = checkAnswer(userAnswer, question.correctAnswer);
-		console.log("🚀 ~ res:", res);
+  if (question.type === "written" && typeof userAnswer === "string") {
+    const inputRef = userWrittenAnswerRef.value?.inputRef;
+    if (inputRef) inputRef.blur();
 
-		questionState.answerStatus = res.status;
-	}
+    const result = evaluateWrittenAnswer(userAnswer, question.correctAnswer);
 
-	if (questionState.answerStatus === "correct") {
-		learnSession.correctCount++;
-	} else if (
-		questionState.answerStatus === "almost" ||
-		questionState.answerStatus === "typo"
-	) {
-		learnSession.correctCount++;
-	} else {
-		learnSession.incorrectCount++;
-	}
+    questionState.answerStatus = result.status;
+    questionState.answerTokenDiffs =
+      result.status === "correct"
+        ? []
+        : getWrittenAnswerDiffs(result, userAnswer, question.correctAnswer);
+  }
 
-	questionState.isDisplayingReviewScreen = true;
+  if (questionState.answerStatus === "correct") {
+    learnSession.correctCount++;
+  } else if (
+    questionState.answerStatus === "almost" ||
+    questionState.answerStatus === "typo"
+  ) {
+    learnSession.correctCount++;
+  } else {
+    learnSession.incorrectCount++;
+  }
 
-	if (questionState.answerStatus !== "correct" && setting.showCorrectAnswer) {
-		return;
-	}
+  questionState.isDisplayingReviewScreen = true;
 
-	setTimeout(() => nextQuestion(), NEXT_QUESTION_DELAY);
-}, SUBMIT_ANSWER_THROTTLE);
+  if (questionState.answerStatus !== "correct" && setting.showCorrectAnswer) {
+    return;
+  }
+
+  setTimeout(() => nextQuestion(), NEXT_QUESTION_DELAY);
+}
 
 function nextQuestion() {
-	if (!learnSession.currentQuestion || !questionState.answerStatus) return;
+  if (!learnSession.currentQuestion || !questionState.answerStatus) return;
 
-	const updatedCard = updateCard(
-		learnSession.currentQuestion,
-		questionState.answerStatus,
-	);
+  const updatedCard = updateCard(
+    learnSession.currentQuestion,
+    questionState.answerStatus,
+  );
 
-	if (questionState.answerStatus === "incorrect") {
-		learnSession.retryQueue.push(updatedCard);
-	}
+  if (questionState.answerStatus === "incorrect") {
+    learnSession.retryQueue.push(updatedCard);
+  }
 
-	// trigger saveAnswers in watchDebounced
-	const index = learnSession.cardsToSave.findIndex(
-		(a) => a.id === updatedCard.id,
-	);
-	if (index !== -1) {
-		learnSession.cardsToSave[index] = updatedCard;
-	} else {
-		learnSession.cardsToSave.push(updatedCard);
-	}
+  // trigger saveAnswers in watchDebounced
+  const index = learnSession.cardsToSave.findIndex(
+    (a) => a.id === updatedCard.id,
+  );
+  if (index !== -1) {
+    learnSession.cardsToSave[index] = updatedCard;
+  } else {
+    learnSession.cardsToSave.push(updatedCard);
+  }
 
-	if (!learnSession.studyQueue.length) {
-		if (!learnSession.retryQueue.length) {
-			resetQuestionState();
-			learnSession.currentQuestion = undefined;
-		}
+  if (!learnSession.studyQueue.length) {
+    if (!learnSession.retryQueue.length) {
+      resetQuestionState();
+      learnSession.currentQuestion = undefined;
+    }
 
-		learnSession.studyQueue = learnSession.retryQueue;
-		learnSession.retryQueue = [];
-	}
+    learnSession.studyQueue = learnSession.retryQueue;
+    learnSession.retryQueue = [];
+  }
 
-	resetQuestionState();
-	learnSession.currentQuestion = learnSession.studyQueue.shift();
+  resetQuestionState();
+  learnSession.currentQuestion = learnSession.studyQueue.shift();
 }
 
 function resetQuestionState() {
-	Object.assign(questionState, getDefaultLearnQuestionState());
+  Object.assign(questionState, getDefaultLearnQuestionState());
 
-	focusInput(userWrittenAnswerRef.value?.inputRef);
+  focusInput(userWrittenAnswerRef.value?.inputRef);
 }
 
 async function handleSaveAnswers() {
-	if (!learnSession.cardsToSave.length) return;
-	await saveAnswers();
+  if (!learnSession.cardsToSave.length) return;
+  await saveAnswers();
 
-	if (status.value === "success") {
-		learnSession.cardsToSave = [];
-	}
+  if (status.value === "success") {
+    learnSession.cardsToSave = [];
+  }
 
-	if (status.value === "error") {
-		toast.saveAnswersFailed();
-	}
+  if (status.value === "error") {
+    toast.saveAnswersFailed();
+  }
 }
 
 async function handleCloseSettingModal() {
-	if (JSON.stringify(setting) === snapshotSetting.value) return;
+  if (JSON.stringify(setting) === snapshotSetting.value) return;
 
-	snapshotSetting.reset();
-	await store.fetchDeck();
+  snapshotSetting.reset();
+  await store.fetchDeck();
 }
 
 // TODO: calculate next review date based on hint used count
 function onGetAHint() {
-	if (learnSession.currentQuestion) {
-		questionState.userAnswer =
-			learnSession.currentQuestion.correctAnswer.substring(
-				0,
-				questionState.hintUsedCount + 1,
-			);
+  if (learnSession.currentQuestion) {
+    questionState.userAnswer =
+      learnSession.currentQuestion.correctAnswer.substring(
+        0,
+        questionState.hintUsedCount + 1,
+      );
 
-		questionState.hintUsedCount++;
-	}
+    questionState.hintUsedCount++;
+  }
 
-	focusInput(userWrittenAnswerRef.value?.inputRef);
+  focusInput(userWrittenAnswerRef.value?.inputRef);
 }
 
 function handleChoiceShortcut(index: number) {
-	if (
-		questionState.answerStatus === "incorrect" &&
-		questionState.isDisplayingReviewScreen &&
-		learnSession.currentQuestion?.correctChoiceIndex === index
-	) {
-		nextQuestion();
-	} else {
-		evaluateUserAnswer(index);
-	}
+  if (
+    questionState.answerStatus === "incorrect" &&
+    questionState.isDisplayingReviewScreen &&
+    learnSession.currentQuestion?.correctChoiceIndex === index
+  ) {
+    nextQuestion();
+  } else {
+    evaluateUserAnswer(index);
+  }
 }
 
 function handleSkip() {
-	if (!learnSession.currentQuestion) return;
+  if (!learnSession.currentQuestion) return;
 
-	evaluateUserAnswer(
-		learnSession.currentQuestion.type === "multiple_choices" ? -1 : "",
-	);
+  evaluateUserAnswer(
+    learnSession.currentQuestion.type === "multiple_choices" ? -1 : "",
+  );
 }
 
 function getChoiceBtnClass(choiceIndex: number) {
-	if (!learnSession.currentQuestion) return "";
+  if (!learnSession.currentQuestion) return "";
 
-	const isThisChoiceSelected = questionState.userChoiceIndex === choiceIndex;
-	const isThisChoiceCorrect =
-		learnSession.currentQuestion.correctChoiceIndex === choiceIndex;
+  const isThisChoiceSelected = questionState.userChoiceIndex === choiceIndex;
+  const isThisChoiceCorrect =
+    learnSession.currentQuestion.correctChoiceIndex === choiceIndex;
 
-	const successClass =
-		"border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
+  const successClass =
+    "border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
 
-	if (questionState.isDisplayingReviewScreen) {
-		if (isThisChoiceSelected) {
-			if (isThisChoiceCorrect) {
-				return successClass;
-			}
+  if (questionState.isDisplayingReviewScreen) {
+    if (isThisChoiceSelected) {
+      if (isThisChoiceCorrect) {
+        return successClass;
+      }
 
-			return "border-error bg-error/10 text-error";
-		}
+      return "border-error bg-error/10 text-error";
+    }
 
-		if (isThisChoiceCorrect && setting.showCorrectAnswer) {
-			return `${successClass} border-dashed`;
-		}
+    if (isThisChoiceCorrect && setting.showCorrectAnswer) {
+      return `${successClass} border-dashed`;
+    }
 
-		return "opacity-70";
-	}
+    return "opacity-70";
+  }
 }
 
 function getWrittenInputClass() {
-	if (!questionState.isDisplayingReviewScreen) return "";
+  if (!questionState.isDisplayingReviewScreen) return "";
 
-	if (
-		questionState.answerStatus === "typo" ||
-		questionState.answerStatus === "almost"
-	) {
-		return "border-warning";
-	}
+  if (
+    questionState.answerStatus === "typo" ||
+    questionState.answerStatus === "almost"
+  ) {
+    return "border-warning";
+  }
 
-	if (questionState.answerStatus === "correct") {
-		return "border-success";
-	}
+  if (questionState.answerStatus === "correct") {
+    return "border-success";
+  }
 
-	return "border-error";
+  return "border-error";
 }
 
 function getChoiceDisabledState(choiceIndex: number) {
-	if (!questionState.isDisplayingReviewScreen) return false;
+  if (!questionState.isDisplayingReviewScreen) return false;
 
-	const question = learnSession.currentQuestion;
-	if (!question) return true;
+  const question = learnSession.currentQuestion;
+  if (!question) return true;
 
-	const isThisSelected = questionState.userChoiceIndex === choiceIndex;
-	const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
+  const isThisSelected = questionState.userChoiceIndex === choiceIndex;
+  const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
 
-	if (isThisSelected) {
-		return true;
-	}
+  if (isThisSelected) {
+    return true;
+  }
 
-	if (isThisChoiceCorrect) {
-		return false;
-	}
+  if (isThisChoiceCorrect) {
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 defineShortcuts({
-	[ShortcutKey.LEARN_NEXT_QUESTION]: () => nextQuestion(),
-	[ShortcutKey.CHOICE_1]: () => handleChoiceShortcut(0),
-	[ShortcutKey.CHOICE_2]: () => handleChoiceShortcut(1),
-	[ShortcutKey.CHOICE_3]: () => handleChoiceShortcut(2),
-	[ShortcutKey.CHOICE_4]: () => handleChoiceShortcut(3),
-	[ShortcutKey.GET_A_HINT]: {
-		handler: () => onGetAHint(),
-		usingInput: true,
-	},
-	[ShortcutKey.SKIP]: {
-		handler: () => handleSkip(),
-		usingInput: true,
-	},
+  [ShortcutKey.LEARN_NEXT_QUESTION]: () => nextQuestion(),
+  [ShortcutKey.CHOICE_1]: () => handleChoiceShortcut(0),
+  [ShortcutKey.CHOICE_2]: () => handleChoiceShortcut(1),
+  [ShortcutKey.CHOICE_3]: () => handleChoiceShortcut(2),
+  [ShortcutKey.CHOICE_4]: () => handleChoiceShortcut(3),
+  [ShortcutKey.GET_A_HINT]: {
+    handler: () => onGetAHint(),
+    usingInput: true,
+  },
+  [ShortcutKey.SKIP]: {
+    handler: () => handleSkip(),
+    usingInput: true,
+  },
 });
 </script>
 
@@ -341,7 +354,10 @@ defineShortcuts({
       />
     </div>
 
-    <div v-if="learnSession.currentQuestion" class="mb-8 flex w-full flex-col gap-2">
+    <div
+      v-if="learnSession.currentQuestion"
+      class="mb-8 flex w-full flex-col gap-2"
+    >
       <h1
         class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
       >
@@ -396,7 +412,7 @@ defineShortcuts({
         }"
         class="bg-elevated flex min-h-[50dvh] flex-col divide-none transition-all sm:shadow-md"
         :class="{
-          'bg-inherit p-0 ring-0': !smAndLarger,
+          'bg-inherit p-0 ring-0 rounded-none': !smAndLarger,
         }"
       >
         <template #header>
@@ -418,7 +434,7 @@ defineShortcuts({
               />
 
               {{
-                learnSession.currentQuestion.direction === 'term_to_def'
+                learnSession.currentQuestion.direction === "term_to_def"
                   ? `Term (${learnSession.currentQuestion.termLanguage})`
                   : `Definition (${learnSession.currentQuestion.definitionLanguage})`
               }}
@@ -443,9 +459,9 @@ defineShortcuts({
           <div class="mt-2 flex w-full flex-col gap-2">
             <span class="font-medium">
               {{
-                learnSession.currentQuestion.type === 'multiple_choices'
-                  ? 'Choose an answer'
-                  : 'Type your answer'
+                learnSession.currentQuestion.type === "multiple_choices"
+                  ? "Choose an answer"
+                  : "Type your answer"
               }}
             </span>
 
@@ -455,7 +471,8 @@ defineShortcuts({
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
               <button
-                v-for="(choice, choiceIndex) in learnSession.currentQuestion.choices"
+                v-for="(choice, choiceIndex) in learnSession.currentQuestion
+                  .choices"
                 :key="choiceIndex"
                 :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(choiceIndex)}`"
                 :disabled="getChoiceDisabledState(choiceIndex)"
@@ -490,13 +507,9 @@ defineShortcuts({
               />
 
               <Transition>
-                <UInput
-                  v-if="questionState.answerStatus === 'incorrect' && setting.showCorrectAnswer"
-                  :ui="{
-                    base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
-                  }"
-                  :default-value="learnSession.currentQuestion.correctAnswer"
-                  disabled
+                <StudyAnswerDiff
+                  v-if="shouldShowAnswerDiff"
+                  :tokens="questionState.answerTokenDiffs"
                 />
               </Transition>
             </div>
@@ -535,7 +548,7 @@ defineShortcuts({
         <div
           v-if="
             questionState.isDisplayingReviewScreen &&
-            questionState.answerStatus === 'incorrect' &&
+            questionState.answerStatus !== 'correct' &&
             setting.showCorrectAnswer &&
             smAndLarger
           "
