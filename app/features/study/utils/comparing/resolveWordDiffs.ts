@@ -15,94 +15,104 @@ import { getCharacterDifferences } from "./getCharacterDifferences";
 
 const REPLACE_THRESHOLD = 0.3;
 
-export function resolveWordDiffs(rawWordDiffs: WordDiff[]): WordDiff[] {
-  if (
-    !rawWordDiffs.length ||
-    rawWordDiffs.some((token) => token.type !== "word")
-  ) {
+export function resolveWordDiffs(rawDiffs: WordDiff[]): WordDiff[] {
+  if (!rawDiffs.length || rawDiffs.some((token) => token.type !== "word")) {
     return [];
   }
 
   // 1) Chuẩn bị dữ liệu word-diff có index gốc để dễ thay thế về sau
-  const indexedWordDiffs = rawWordDiffs.map((token, index) => ({
+  const indexedDiffs = rawDiffs.map((token, index) => ({
     ...token,
     originalIndex: index,
   }));
 
-  const deleteWordDiffs = indexedWordDiffs.filter(
+  const deleteDiffs = indexedDiffs.filter(
     (item) => item.operation === "delete",
   );
 
-  const insertWordDiffs = indexedWordDiffs.filter(
+  const insertDiffs = indexedDiffs.filter(
     (item) => item.operation === "insert",
   );
 
-  // 2) Ghép cặp delete ↔ insert theo độ giống nhau để tạo charDiff
-  const usedInsertWordIndexes = new Set<number>();
-  const resolvedWordDiffByIndex = new Map<number, WordDiff>(); // rawIndex → resolved diff
+  // 2) Ghép cặp delete ↔ insert theo độ giống nhau để tạo charDiff (replace)
+  const matchedInsertDiffIndexes = new Set<number>();
+  const matchedDeleteOriginalIndexes = new Set<number>();
+  const replaceByInsertOriginalIndex = new Map<number, WordDiff>(); // insert rawIndex → replace diff
 
-  for (const deleteWordDiff of deleteWordDiffs) {
+  for (const deleteDiff of deleteDiffs) {
     let bestSimilarityScore = -1;
-    let bestInsertWordIndex = -1;
+    let matchedInsertDiffIndex = -1;
 
-    insertWordDiffs.forEach((_, insertIndex) => {
-      if (usedInsertWordIndexes.has(insertIndex)) return;
+    insertDiffs.forEach((_, i) => {
+      if (matchedInsertDiffIndexes.has(i)) return;
 
       const { score } = evaluateWordSimilarity(
-        deleteWordDiff.value,
-        insertWordDiffs[insertIndex]!.value,
+        deleteDiff.value,
+        insertDiffs[i]!.value,
       );
 
       if (score > bestSimilarityScore) {
         bestSimilarityScore = score;
-        bestInsertWordIndex = insertIndex;
+        matchedInsertDiffIndex = i;
       }
     });
 
-    if (bestSimilarityScore >= REPLACE_THRESHOLD && bestInsertWordIndex >= 0) {
-      usedInsertWordIndexes.add(bestInsertWordIndex);
-      const insertWordDiff = insertWordDiffs[bestInsertWordIndex]!;
+    if (
+      bestSimilarityScore >= REPLACE_THRESHOLD &&
+      matchedInsertDiffIndex >= 0
+    ) {
+      matchedInsertDiffIndexes.add(matchedInsertDiffIndex);
+      matchedDeleteOriginalIndexes.add(deleteDiff.originalIndex);
 
-      resolvedWordDiffByIndex.set(deleteWordDiff.originalIndex, {
+      const insertDiff = insertDiffs[matchedInsertDiffIndex]!;
+      replaceByInsertOriginalIndex.set(insertDiff.originalIndex, {
         type: "word",
-        value: deleteWordDiff.value,
-        operation: "delete",
-        charDiff: getCharacterDifferences(
-          deleteWordDiff.value,
-          insertWordDiff.value,
-        ),
+        value: deleteDiff.value,
+        operation: "replace",
+        charDiff: getCharacterDifferences(deleteDiff.value, insertDiff.value),
       });
     }
   }
 
-  // 3) Duyệt theo thứ tự raw để dựng kết quả cuối:
+  // 3) Dựng kết quả theo thứ tự raw, nhưng giữ "câu đúng" ở giữa:
   //    - keep: giữ nguyên
-  //    - delete: thay bằng bản đã gắn charDiff nếu có
-  //    - insert: bỏ qua nếu đã được ghép, giữ lại nếu chưa
-  const resolvedWordDiffs: WordDiff[] = [];
-  const usedInsertRawIndexes = new Set(
-    [...usedInsertWordIndexes].map(
-      (item) => insertWordDiffs[item]!.originalIndex,
-    ),
-  );
+  //    - insert: nếu được ghép thì thay bằng replace, nếu không thì giữ nguyên
+  //    - delete: nếu đã được ghép thì bỏ qua
+  //    - delete chưa ghép: tách thành before/after theo vị trí delete đã ghép đầu tiên
+  const resolvedDiffs: WordDiff[] = [];
+  const leadingDeletes: WordDiff[] = [];
+  const trailingDeletes: WordDiff[] = [];
+  const matchedDeleteIndexes = [...matchedDeleteOriginalIndexes];
+  if (matchedDeleteIndexes.length === 0) {
+    return rawDiffs;
+  }
+  const pivotDeleteIndex = Math.min(...matchedDeleteIndexes);
 
-  for (let i = 0; i < rawWordDiffs.length; i++) {
-    const wordDiff = rawWordDiffs[i]!;
+  // 3.1) Gom delete chưa ghép về hai nhóm: trước/sau pivot
+  for (let i = 0; i < rawDiffs.length; i++) {
+    const diff = rawDiffs[i]!;
+    if (diff.operation !== "delete") continue;
+    if (matchedDeleteOriginalIndexes.has(i)) continue;
 
-    if (wordDiff.operation === "keep") {
-      resolvedWordDiffs.push(wordDiff);
-    } else if (wordDiff.operation === "delete") {
-      resolvedWordDiffs.push(
-        resolvedWordDiffByIndex.has(i)
-          ? resolvedWordDiffByIndex.get(i)!
-          : wordDiff,
-      );
-    } else if (wordDiff.operation === "insert") {
-      if (!usedInsertRawIndexes.has(i)) {
-        resolvedWordDiffs.push(wordDiff);
-      }
+    if (i < pivotDeleteIndex) {
+      leadingDeletes.push(diff);
+    } else {
+      trailingDeletes.push(diff);
     }
   }
 
-  return resolvedWordDiffs;
+  // 3.2) Duyệt raw để dựng phần "câu đúng" (keep + insert/replace)
+  for (let i = 0; i < rawDiffs.length; i++) {
+    const diff = rawDiffs[i]!;
+
+    if (diff.operation === "keep") {
+      resolvedDiffs.push(diff);
+    } else if (diff.operation === "insert") {
+      resolvedDiffs.push(replaceByInsertOriginalIndex.get(i) ?? diff);
+    } else if (diff.operation === "replace") {
+      resolvedDiffs.push(diff);
+    }
+  }
+
+  return [...leadingDeletes, ...resolvedDiffs, ...trailingDeletes];
 }
