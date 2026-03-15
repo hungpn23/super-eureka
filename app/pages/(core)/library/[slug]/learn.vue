@@ -34,15 +34,15 @@ const userWrittenAnswerRef = useTemplateRef("userWrittenAnswerInput");
 const isSettingModalOpen = refManualReset(false);
 const snapshotSetting = refManualReset("");
 
-const session = reactive<LearnSession>(getDefaultLearnSession());
+const learnSession = reactive<LearnSession>(getDefaultLearnSession());
 const questionState = reactive<LearnQuestionState>(
 	getDefaultLearnQuestionState(),
 );
 const setting = reactive<LearnSetting>(getDefaultLearnSetting());
 
 const progress = computed(() => {
-	if (!session.totalQuestions) return 0;
-	return (session.correctCount / session.totalQuestions) * 100;
+	if (!learnSession.totalQuestions) return 0;
+	return (learnSession.correctCount / learnSession.totalQuestions) * 100;
 });
 
 const {
@@ -52,7 +52,7 @@ const {
 } = api.saveAnswers({
 	deckId: store.deckId,
 	token,
-	cardsToSave: session.cardsToSave,
+	cardsToSave: learnSession.cardsToSave,
 });
 
 watch(
@@ -63,7 +63,7 @@ watch(
 			resetQuestionState();
 
 			Object.assign(
-				session,
+				learnSession,
 				pick(
 					getDefaultLearnSession(),
 					"correctCount",
@@ -73,14 +73,14 @@ watch(
 				),
 			);
 
-			session.studyQueue = generateQuestions<LearnQuestion>({
+			learnSession.studyQueue = generateQuestions<LearnQuestion>({
 				cards: getCards(newCards, store.isIgnoreDate),
 				types: setting.types,
 				dir: setting.direction,
 				answerPool: newCards,
 			});
-			session.totalQuestions = session.studyQueue.length;
-			session.currentQuestion = session.studyQueue.shift();
+			learnSession.totalQuestions = learnSession.studyQueue.length;
+			learnSession.currentQuestion = learnSession.studyQueue.shift();
 		}
 	},
 );
@@ -92,13 +92,13 @@ watch(
 	},
 );
 
-watchDebounced(() => session.cardsToSave, handleSaveAnswers, {
+watchDebounced(() => learnSession.cardsToSave, handleSaveAnswers, {
 	debounce: 1000,
 	deep: true,
 });
 
 const evaluateUserAnswer = useThrottleFn((userAnswer: number | string) => {
-	const question = session.currentQuestion;
+	const question = learnSession.currentQuestion;
 	if (!question || questionState.isDisplayingReviewScreen) return;
 
 	if (question.type === "multiple_choices" && typeof userAnswer === "number") {
@@ -122,14 +122,14 @@ const evaluateUserAnswer = useThrottleFn((userAnswer: number | string) => {
 	}
 
 	if (questionState.answerStatus === "correct") {
-		session.correctCount++;
+		learnSession.correctCount++;
 	} else if (
 		questionState.answerStatus === "almost" ||
 		questionState.answerStatus === "typo"
 	) {
-		session.correctCount++;
+		learnSession.correctCount++;
 	} else {
-		session.incorrectCount++;
+		learnSession.incorrectCount++;
 	}
 
 	questionState.isDisplayingReviewScreen = true;
@@ -142,37 +142,39 @@ const evaluateUserAnswer = useThrottleFn((userAnswer: number | string) => {
 }, SUBMIT_ANSWER_THROTTLE);
 
 function nextQuestion() {
-	if (!session.currentQuestion || !questionState.answerStatus) return;
+	if (!learnSession.currentQuestion || !questionState.answerStatus) return;
 
 	const updatedCard = updateCard(
-		session.currentQuestion,
+		learnSession.currentQuestion,
 		questionState.answerStatus,
 	);
 
 	if (questionState.answerStatus === "incorrect") {
-		session.retryQueue.push(updatedCard);
+		learnSession.retryQueue.push(updatedCard);
 	}
 
 	// trigger saveAnswers in watchDebounced
-	const index = session.cardsToSave.findIndex((a) => a.id === updatedCard.id);
+	const index = learnSession.cardsToSave.findIndex(
+		(a) => a.id === updatedCard.id,
+	);
 	if (index !== -1) {
-		session.cardsToSave[index] = updatedCard;
+		learnSession.cardsToSave[index] = updatedCard;
 	} else {
-		session.cardsToSave.push(updatedCard);
+		learnSession.cardsToSave.push(updatedCard);
 	}
 
-	if (!session.studyQueue.length) {
-		if (!session.retryQueue.length) {
+	if (!learnSession.studyQueue.length) {
+		if (!learnSession.retryQueue.length) {
 			resetQuestionState();
-			session.currentQuestion = undefined;
+			learnSession.currentQuestion = undefined;
 		}
 
-		session.studyQueue = session.retryQueue;
-		session.retryQueue = [];
+		learnSession.studyQueue = learnSession.retryQueue;
+		learnSession.retryQueue = [];
 	}
 
 	resetQuestionState();
-	session.currentQuestion = session.studyQueue.shift();
+	learnSession.currentQuestion = learnSession.studyQueue.shift();
 }
 
 function resetQuestionState() {
@@ -182,11 +184,11 @@ function resetQuestionState() {
 }
 
 async function handleSaveAnswers() {
-	if (!session.cardsToSave.length) return;
+	if (!learnSession.cardsToSave.length) return;
 	await saveAnswers();
 
 	if (status.value === "success") {
-		session.cardsToSave = [];
+		learnSession.cardsToSave = [];
 	}
 
 	if (status.value === "error") {
@@ -203,11 +205,12 @@ async function handleCloseSettingModal() {
 
 // TODO: calculate next review date based on hint used count
 function onGetAHint() {
-	if (session.currentQuestion) {
-		questionState.userAnswer = session.currentQuestion.correctAnswer.substring(
-			0,
-			questionState.hintUsedCount + 1,
-		);
+	if (learnSession.currentQuestion) {
+		questionState.userAnswer =
+			learnSession.currentQuestion.correctAnswer.substring(
+				0,
+				questionState.hintUsedCount + 1,
+			);
 
 		questionState.hintUsedCount++;
 	}
@@ -219,7 +222,7 @@ function handleChoiceShortcut(index: number) {
 	if (
 		questionState.answerStatus === "incorrect" &&
 		questionState.isDisplayingReviewScreen &&
-		session.currentQuestion?.correctChoiceIndex === index
+		learnSession.currentQuestion?.correctChoiceIndex === index
 	) {
 		nextQuestion();
 	} else {
@@ -228,19 +231,19 @@ function handleChoiceShortcut(index: number) {
 }
 
 function handleSkip() {
-	if (!session.currentQuestion) return;
+	if (!learnSession.currentQuestion) return;
 
 	evaluateUserAnswer(
-		session.currentQuestion.type === "multiple_choices" ? -1 : "",
+		learnSession.currentQuestion.type === "multiple_choices" ? -1 : "",
 	);
 }
 
 function getChoiceBtnClass(choiceIndex: number) {
-	if (!session.currentQuestion) return "";
+	if (!learnSession.currentQuestion) return "";
 
 	const isThisChoiceSelected = questionState.userChoiceIndex === choiceIndex;
 	const isThisChoiceCorrect =
-		session.currentQuestion.correctChoiceIndex === choiceIndex;
+		learnSession.currentQuestion.correctChoiceIndex === choiceIndex;
 
 	const successClass =
 		"border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
@@ -282,7 +285,7 @@ function getWrittenInputClass() {
 function getChoiceDisabledState(choiceIndex: number) {
 	if (!questionState.isDisplayingReviewScreen) return false;
 
-	const question = session.currentQuestion;
+	const question = learnSession.currentQuestion;
 	if (!question) return true;
 
 	const isThisSelected = questionState.userChoiceIndex === choiceIndex;
@@ -338,7 +341,7 @@ defineShortcuts({
       />
     </div>
 
-    <div v-if="session.currentQuestion" class="mb-8 flex w-full flex-col gap-2">
+    <div v-if="learnSession.currentQuestion" class="mb-8 flex w-full flex-col gap-2">
       <h1
         class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
       >
@@ -361,7 +364,7 @@ defineShortcuts({
       <div class="flex place-content-between">
         <div class="flex place-items-center gap-2">
           <UBadge
-            :label="session.incorrectCount"
+            :label="learnSession.incorrectCount"
             class="rounded-full px-2"
             variant="subtle"
             color="error"
@@ -371,14 +374,14 @@ defineShortcuts({
         </div>
 
         <div>
-          {{ `${session.correctCount} / ${session.totalQuestions}` }}
+          {{ `${learnSession.correctCount} / ${learnSession.totalQuestions}` }}
         </div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success text-sm">Correct</span>
 
           <UBadge
-            :label="session.correctCount"
+            :label="learnSession.correctCount"
             class="rounded-full px-2"
             variant="subtle"
             color="success"
@@ -415,14 +418,14 @@ defineShortcuts({
               />
 
               {{
-                session.currentQuestion.direction === 'term_to_def'
-                  ? `Term (${session.currentQuestion.termLanguage})`
-                  : `Definition (${session.currentQuestion.definitionLanguage})`
+                learnSession.currentQuestion.direction === 'term_to_def'
+                  ? `Term (${learnSession.currentQuestion.termLanguage})`
+                  : `Definition (${learnSession.currentQuestion.definitionLanguage})`
               }}
             </span>
 
             <UButton
-              v-if="session.currentQuestion.type === 'written'"
+              v-if="learnSession.currentQuestion.type === 'written'"
               :variant="smAndLarger ? 'soft' : 'ghost'"
               class="mr-0 cursor-pointer"
               icon="i-lucide-lightbulb"
@@ -434,13 +437,13 @@ defineShortcuts({
           </div>
 
           <div class="text-xl font-medium sm:text-2xl">
-            {{ session.currentQuestion.question }}
+            {{ learnSession.currentQuestion.question }}
           </div>
 
           <div class="mt-2 flex w-full flex-col gap-2">
             <span class="font-medium">
               {{
-                session.currentQuestion.type === 'multiple_choices'
+                learnSession.currentQuestion.type === 'multiple_choices'
                   ? 'Choose an answer'
                   : 'Type your answer'
               }}
@@ -448,11 +451,11 @@ defineShortcuts({
 
             <!-- Multiple Choices Answer -->
             <div
-              v-if="session.currentQuestion.type === 'multiple_choices'"
+              v-if="learnSession.currentQuestion.type === 'multiple_choices'"
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
               <button
-                v-for="(choice, choiceIndex) in session.currentQuestion.choices"
+                v-for="(choice, choiceIndex) in learnSession.currentQuestion.choices"
                 :key="choiceIndex"
                 :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(choiceIndex)}`"
                 :disabled="getChoiceDisabledState(choiceIndex)"
@@ -492,7 +495,7 @@ defineShortcuts({
                   :ui="{
                     base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
                   }"
-                  :default-value="session.currentQuestion.correctAnswer"
+                  :default-value="learnSession.currentQuestion.correctAnswer"
                   disabled
                 />
               </Transition>
@@ -511,7 +514,7 @@ defineShortcuts({
               </UButton>
 
               <UButton
-                v-if="session.currentQuestion.type === 'written'"
+                v-if="learnSession.currentQuestion.type === 'written'"
                 :disabled="!questionState.userAnswer"
                 class="cursor-pointer font-medium"
                 size="lg"
@@ -543,10 +546,10 @@ defineShortcuts({
 
           or
           <UKbd
-            v-if="session.currentQuestion.correctChoiceIndex > -1"
+            v-if="learnSession.currentQuestion.correctChoiceIndex > -1"
             size="lg"
           >
-            {{ session.currentQuestion.correctChoiceIndex + 1 }}
+            {{ learnSession.currentQuestion.correctChoiceIndex + 1 }}
           </UKbd>
           to continue.
         </div>
