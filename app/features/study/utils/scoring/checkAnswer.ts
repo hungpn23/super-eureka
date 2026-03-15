@@ -1,33 +1,33 @@
+import { DEFAULT_WORD_SIMILARITY_THRESHOLD } from "../../constants";
 import {
 	evaluateSentenceSimilarity,
 	type WordInSentenceSimilarity,
 } from "./evaluateSentenceSimilarity";
-import { evaluateWordSimilarity } from "./evaluateWordSimilarity";
+import {
+	evaluateWordSimilarity,
+	type WordSimilarityStatus,
+} from "./evaluateWordSimilarity";
 
 export type CheckAnswerWordReturn = {
 	type: "word";
 	score: number;
-	result: CheckAnswerResult;
+	status: WordSimilarityStatus;
 };
+
+export type SentenceSimilarityStatus = "correct" | "almost" | "incorrect";
 
 export type CheckAnswerSentenceReturn = {
 	type: "sentence";
 	score: number;
-	result: CheckAnswerResult;
-	scoringWords: WordInSentenceSimilarity[];
+	status: SentenceSimilarityStatus;
+	wordSimilarities: WordInSentenceSimilarity[];
 };
 
 export type CheckAnswerReturn =
 	| CheckAnswerWordReturn
 	| CheckAnswerSentenceReturn;
 
-export type CheckAnswerResult = "correct" | "typo" | "almost" | "incorrect";
-
-enum ScoringThreshold {
-	CORRECT = 1,
-	TYPO = 0.75,
-	ALMOST = 0.75,
-}
+const SENTENCE_SIMILARITY_THRESHOLD = DEFAULT_WORD_SIMILARITY_THRESHOLD;
 
 export function checkAnswer(
 	userInput: string,
@@ -38,38 +38,29 @@ export function checkAnswer(
 	if (isWord) {
 		const similarity = evaluateWordSimilarity(userInput, correctAnswer);
 
-		let result: CheckAnswerResult;
-		if (similarity.score === ScoringThreshold.CORRECT) {
-			similarity.status = "correct";
-		} else if (similarity.score >= ScoringThreshold.TYPO) {
-			similarity.status = "typo";
-		} else {
-			similarity.status = "incorrect";
-		}
-
 		return {
 			type: "word",
 			score: similarity.score,
-			result: similarity.status,
+			status: similarity.status,
 		} satisfies CheckAnswerWordReturn;
 	} else {
-		const { score, wordSimilarities: scoringWords } =
+		const { score, wordSimilarities } =
 			evaluateSentenceSimilarity(userInput, correctAnswer);
 
-		let result: CheckAnswerResult;
-		if (score === ScoringThreshold.CORRECT) {
-			result = "correct";
-		} else if (score >= ScoringThreshold.ALMOST) {
-			result = "almost";
+		let status: SentenceSimilarityStatus;
+		if (score === 1) {
+			status = "correct";
+		} else if (score >= SENTENCE_SIMILARITY_THRESHOLD) {
+			status = "almost";
 		} else {
-			result = "incorrect";
+			status = "incorrect";
 		}
 
 		return {
 			type: "sentence",
 			score,
-			scoringWords,
-			result,
+			wordSimilarities,
+			status,
 		} satisfies CheckAnswerSentenceReturn;
 	}
 }
