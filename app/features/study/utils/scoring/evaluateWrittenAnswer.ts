@@ -1,4 +1,3 @@
-import type { WrittenAnswerType } from "../../types";
 import {
 	evaluateSentenceSimilarity,
 	type SentenceSimilarityStatus,
@@ -8,6 +7,8 @@ import {
 	evaluateWordSimilarity,
 	type WordSimilarityStatus,
 } from "./evaluateWordSimilarity";
+
+type WrittenAnswerType = "word" | "sentence";
 
 export type EvaluateWrittenAnswerResult =
 	| EvaluateWordResult

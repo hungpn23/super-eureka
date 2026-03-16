@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
+import { diffChars } from "diff";
 import { pick } from "lodash";
 import {
   QUESTION_DIRECTION_ITEMS,
@@ -8,18 +9,17 @@ import {
 } from "~/features/deck";
 import {
   api,
-  evaluateWrittenAnswer,
   generateQuestions,
   getDefaultLearnQuestionState,
   getDefaultLearnSession,
   getDefaultLearnSetting,
-  getWrittenAnswerDiffs,
   type LearnQuestion,
   type LearnQuestionState,
   type LearnSession,
   type LearnSetting,
   useStudyToasts,
 } from "~/features/study";
+import { evaluateWrittenAnswer } from "~/features/study/utils/scoring/evaluateWrittenAnswer";
 import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards } from "~/shared/utils";
 
@@ -118,7 +118,7 @@ function evaluateUserAnswer(userAnswer: number | string) {
       questionState.answerStatus = "incorrect";
     }
 
-    questionState.answerTokenDiffs = [];
+    questionState.answerDiffs = [];
   }
 
   if (question.type === "written" && typeof userAnswer === "string") {
@@ -128,14 +128,14 @@ function evaluateUserAnswer(userAnswer: number | string) {
     const result = evaluateWrittenAnswer(userAnswer, question.correctAnswer);
 
     questionState.answerStatus = result.status;
-    questionState.answerTokenDiffs =
+    questionState.answerDiffs =
       result.status === "correct"
         ? []
-        : getWrittenAnswerDiffs(
-            result.type,
-            userAnswer,
-            question.correctAnswer,
-          );
+        : diffChars(userAnswer, question.correctAnswer);
+    console.log(
+      "🚀 ~ evaluateUserAnswer ~ questionState.answerDiffs:",
+      questionState.answerDiffs,
+    );
   }
 
   if (questionState.answerStatus === "correct") {
@@ -511,9 +511,9 @@ defineShortcuts({
               />
 
               <Transition>
-                <StudyAnswerDiff
+                <StudyAnswerDiffV2
                   v-if="shouldShowAnswerDiff"
-                  :tokens="questionState.answerTokenDiffs"
+                  :diffs="questionState.answerDiffs"
                 />
               </Transition>
             </div>

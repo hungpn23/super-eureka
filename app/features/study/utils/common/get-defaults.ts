@@ -39,7 +39,7 @@ export function getDefaultLearnQuestionState() {
 		isDisplayingReviewScreen: false,
 		hintUsedCount: 0,
 		answerStatus: undefined,
-		answerTokenDiffs: [],
+		answerDiffs: [],
 	} satisfies LearnQuestionState;
 }
 

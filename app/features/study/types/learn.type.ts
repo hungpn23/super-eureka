@@ -1,6 +1,6 @@
+import type { Change } from "diff";
 import type { Card, CardToSave } from "~/features/card";
 import type { QuestionDirection, QuestionType } from "./common.type";
-import type { TokenDiff } from "./comparing.type";
 
 export type LearnQuestion = Pick<
 	Card,
@@ -29,7 +29,7 @@ export type LearnQuestionState = {
 	userChoiceIndex: number;
 	isDisplayingReviewScreen: boolean;
 	hintUsedCount: number;
-	answerTokenDiffs: TokenDiff[];
+	answerDiffs: Change[];
 	answerStatus?: LearnAnswerStatus;
 };
 

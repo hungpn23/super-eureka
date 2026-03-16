@@ -24,6 +24,7 @@
 		"@sidebase/nuxt-auth": "1.1.0",
 		"@vueuse/nuxt": "^14.2.0",
 		"date-fns": "^4.1.0",
+		"diff": "^8.0.3",
 		"lodash": "^4.17.23",
 		"next-auth": "4.21.1",
 		"nuxt": "^4.3.0",
