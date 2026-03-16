@@ -17,7 +17,7 @@ function getDiffClass(diff: Change) {
 <template>
   <div
     v-if="diffs.length"
-    class="rounded-md border-2 border-dashed border-success bg-success/5 px-3 py-2 text-lg sm:text-xl whitespace-pre-wrap"
+    class="rounded-md border-2 border-dashed border-success bg-success/5 px-3 py-2 text-lg sm:text-xl"
   >
     <span v-for="(diff, i) in diffs" :key="i" :class="getDiffClass(diff)">
       {{ diff.value }}

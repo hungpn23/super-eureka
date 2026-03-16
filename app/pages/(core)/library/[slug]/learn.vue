@@ -132,10 +132,6 @@ function evaluateUserAnswer(userAnswer: number | string) {
       result.status === "correct"
         ? []
         : diffChars(userAnswer, question.correctAnswer);
-    console.log(
-      "🚀 ~ evaluateUserAnswer ~ questionState.answerDiffs:",
-      questionState.answerDiffs,
-    );
   }
 
   if (questionState.answerStatus === "correct") {
@@ -511,7 +507,7 @@ defineShortcuts({
               />
 
               <Transition>
-                <StudyAnswerDiffV2
+                <StudyAnswerDiff
                   v-if="shouldShowAnswerDiff"
                   :diffs="questionState.answerDiffs"
                 />
