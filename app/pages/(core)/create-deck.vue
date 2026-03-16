@@ -1,22 +1,22 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
-	api,
-	CARD_SEPARATOR_ITEMS,
-	CONTENT_SEPARATOR_ITEMS,
-	CREATE_DECK_SCHEMA,
-	type CreateDeckSchema,
-	DEFINITION_LANGUAGE_ITEMS,
-	FormId,
-	getNewCard,
-	getVisibilityDesc,
-	getVisibilityLabel,
-	IMPORT_CARD_SCHEMA,
-	TERM_LANGUAGE_ITEMS,
-	useCardSuggestion,
-	useCardsImport,
-	useCreateDeckToasts,
-	VISIBILITY_ITEMS,
+  api,
+  CARD_SEPARATOR_ITEMS,
+  CONTENT_SEPARATOR_ITEMS,
+  CREATE_DECK_SCHEMA,
+  type CreateDeckSchema,
+  DEFINITION_LANGUAGE_ITEMS,
+  FormId,
+  getNewCard,
+  getVisibilityDesc,
+  getVisibilityLabel,
+  IMPORT_CARD_SCHEMA,
+  TERM_LANGUAGE_ITEMS,
+  useCardSuggestion,
+  useCardsImport,
+  useCreateDeckToasts,
+  VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import { Visibility } from "~/features/deck";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
@@ -31,59 +31,62 @@ const isVisibilityModalOpen = ref(false);
 const formErrorMsg = ref("");
 
 const createState = reactive<CreateDeckSchema>({
-	name: "",
-	description: "",
-	visibility: Visibility.PUBLIC,
-	cards: [getNewCard(), getNewCard(), getNewCard(), getNewCard()],
+  name: "",
+  description: "",
+  visibility: Visibility.PUBLIC,
+  cards: [getNewCard(), getNewCard(), getNewCard(), getNewCard()],
 });
 
 const {
-	isImportModalOpen,
-	importState,
-	contentSeparatorPreview,
-	cardSeparatorPreview,
-	parsedCards,
-	onImportSubmit,
+  isImportModalOpen,
+  importState,
+  contentSeparatorPreview,
+  cardSeparatorPreview,
+  parsedCards,
+  onImportSubmit,
 } = useCardsImport(createState);
 
 const {
-	suggestion,
-	debouncedGetCardSuggestion,
-	isSuggestingThisCard,
-	hasSuggestion,
-	applySuggestion,
-	isWord,
+  suggestion,
+  debouncedGetCardSuggestion,
+  isSuggestingThisCard,
+  hasSuggestion,
+  applySuggestion,
+  isWord,
 } = useCardSuggestion(definitionRefs);
 
 const {
-	execute: createDeck,
-	pending: isCreating,
-	data,
-	error,
+  execute: createDeck,
+  pending: isCreating,
+  data: newDeck,
+  error,
 } = api.createDeck({ data: createState, token });
 
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
-	formErrorMsg.value = "";
+  formErrorMsg.value = "";
 
-	Object.assign(createState, event.data);
-	await createDeck();
+  Object.assign(createState, event.data);
+  await createDeck();
 
-	if (data.value?.slug) {
-		navigateTo(`/library/${data.value.slug}`);
-		toast.createDeckSuccess();
-	}
+  const newDeckSlug = newDeck.value?.slug;
+  const newDeckId = newDeck.value?.id;
 
-	if (error.value) {
-		toast.createDeckFailed();
-	}
+  if (newDeckSlug && newDeckId) {
+    navigateTo(`/library/${newDeckSlug}?deckId=${newDeckId}`);
+    toast.createDeckSuccess();
+  }
+
+  if (error.value) {
+    toast.createDeckFailed();
+  }
 }
 
 async function onValidationError(event: FormErrorEvent) {
-	const cardError = event.errors.find((e) => e.name === "input");
+  const cardError = event.errors.find((e) => e.name === "input");
 
-	formErrorMsg.value = cardError
-		? cardError.message
-		: "Please fill in all required fields.";
+  formErrorMsg.value = cardError
+    ? cardError.message
+    : "Please fill in all required fields.";
 }
 </script>
 
@@ -404,7 +407,7 @@ async function onValidationError(event: FormErrorEvent) {
               ref="passcodeInput"
               v-model="createState.passcode"
               @keydown.enter="isVisibilityModalOpen = false"
-              @vue:mounted="focusInput(passcodeRef?.inputRef);"
+              @vue:mounted="focusInput(passcodeRef?.inputRef)"
             />
           </UFormField>
         </template>

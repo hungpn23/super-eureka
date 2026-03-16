@@ -51,12 +51,15 @@ export function useCardsImport(createState: CreateDeckSchema) {
 
     const cards = importState.input
       .split(cardSep)
-      .filter((card) => card.trim().length > 0);
+      .filter((card) => card.trim().length);
 
     return cards.map((card) => {
-      const [term = "", definition = ""] = card.split(sep);
+      const [term, definition] = card
+        .split(sep)
+        .filter((part) => part.trim().length)
+        .map((part) => part.trim());
 
-      return { term, definition };
+      return { term: term || "", definition: definition || "" };
     });
   });
 
@@ -77,13 +80,14 @@ export function useCardsImport(createState: CreateDeckSchema) {
       .split(cardSep)
       .filter((card) => card.trim().length)
       .map((card) => {
-        const [term = "", definition = ""] = card
+        const [term, definition] = card
           .split(sep)
-          .filter((part) => part.trim().length);
+          .filter((part) => part.trim().length)
+          .map((part) => part.trim());
 
         const newCard: CreateCardSchema = {
-          term: term.trim(),
-          definition: definition.trim(),
+          term: term || "",
+          definition: definition || "",
           termLanguage: "en",
           definitionLanguage: "vi",
           examples: [],
