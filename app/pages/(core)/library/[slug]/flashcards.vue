@@ -8,36 +8,36 @@ const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
 
 const {
-	flashcardSession,
-	studyProgress,
-	handleFlipCard,
-	handleAnswer,
-	handleShuffleCards,
+  flashcardSession,
+  studyProgress,
+  handleFlipCard,
+  handleAnswer,
+  handleShuffleCards,
 } = useFlashcardStudy();
 
 const settingOptions = computed<DropdownMenuItem[]>(() => [
-	[
-		{
-			label: "Restart progress",
-			icon: "i-lucide-refresh-cw",
-			color: "warning",
-			onSelect: store.handleRestartDeck,
-		},
-		{
-			label: "Ignore review dates",
-			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
-			type: "checkbox",
-			checked: store.isIgnoreDate,
-			onUpdateChecked: (c: boolean) => store.handleCheckIgnoreDate(c),
-			onSelect: (e: Event) => e.preventDefault(),
-		},
-	],
+  [
+    {
+      label: "Restart progress",
+      icon: "i-lucide-refresh-cw",
+      color: "warning",
+      onSelect: store.handleRestartDeck,
+    },
+    {
+      label: "Ignore review dates",
+      icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
+      type: "checkbox",
+      checked: store.isIgnoreDate,
+      onUpdateChecked: (c: boolean) => store.handleCheckIgnoreDate(c),
+      onSelect: (e: Event) => e.preventDefault(),
+    },
+  ],
 ]);
 
 defineShortcuts({
-	[ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
-	[ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
-	[ShortcutKey.PREV_CARD]: () => handleAnswer(false),
+  [ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
+  [ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
+  [ShortcutKey.PREV_CARD]: () => handleAnswer(false),
 });
 </script>
 
@@ -84,7 +84,9 @@ defineShortcuts({
         </div>
 
         <div>
-          {{ `${flashcardSession.knownCount} / ${flashcardSession.totalCards}` }}
+          {{
+            `${flashcardSession.knownCount} / ${flashcardSession.totalCards}`
+          }}
         </div>
 
         <div class="flex place-items-center gap-2">
@@ -148,12 +150,13 @@ defineShortcuts({
                 {{ flashcardSession.currentCard.definition }}
               </div>
 
-              <div v-if="flashcardSession.currentCard.examples.length">
+              <div v-if="flashcardSession.currentCard.examples">
                 <p class="text-sm font-medium">Examples:</p>
 
                 <ul class="list-disc pl-4">
                   <li
-                    v-for="(example, i) in flashcardSession.currentCard.examples"
+                    v-for="(example, i) in flashcardSession.currentCard
+                      .examples"
                     :key="i"
                   >
                     <em>

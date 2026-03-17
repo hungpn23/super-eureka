@@ -90,7 +90,6 @@ export function useCardsImport(createState: CreateDeckSchema) {
           definition: definition || "",
           termLanguage: "en",
           definitionLanguage: "vi",
-          examples: [],
         };
 
         return newCard;

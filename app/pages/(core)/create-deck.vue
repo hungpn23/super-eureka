@@ -6,9 +6,9 @@ import {
   CONTENT_SEPARATOR_ITEMS,
   CREATE_DECK_SCHEMA,
   type CreateDeckSchema,
+  createCard,
   DEFINITION_LANGUAGE_ITEMS,
   FormId,
-  getNewCard,
   getVisibilityDesc,
   getVisibilityLabel,
   IMPORT_CARD_SCHEMA,
@@ -34,7 +34,7 @@ const createState = reactive<CreateDeckSchema>({
   name: "",
   description: "",
   visibility: Visibility.PUBLIC,
-  cards: [getNewCard(), getNewCard(), getNewCard(), getNewCard()],
+  cards: [createCard(), createCard(), createCard(), createCard()],
 });
 
 const {
@@ -65,6 +65,7 @@ const {
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
   formErrorMsg.value = "";
 
+  console.log("🚀 ~ handleSubmit ~ event.data:", event.data);
   Object.assign(createState, event.data);
   await createDeck();
 
@@ -87,6 +88,18 @@ async function onValidationError(event: FormErrorEvent) {
   formErrorMsg.value = cardError
     ? cardError.message
     : "Please fill in all required fields.";
+}
+
+function handleAddExample(index: number) {
+  const card = createState.cards?.[index];
+  if (!card) return;
+
+  if (!card.examples) {
+    card.examples = [""];
+    return;
+  }
+
+  card.examples.push("");
 }
 </script>
 
@@ -233,6 +246,7 @@ async function onValidationError(event: FormErrorEvent) {
                           : 'eg. noun'
                       "
                       @vue:before-unmount="card.partOfSpeech = undefined"
+                      @blur="console.log(card.partOfSpeech)"
                     />
                   </UFormField>
 
@@ -249,6 +263,7 @@ async function onValidationError(event: FormErrorEvent) {
                           : 'eg. /heˈloʊ/'
                       "
                       @vue:before-unmount="card.pronunciation = undefined"
+                      @blur="console.log(card.pronunciation)"
                     />
                   </UFormField>
                 </div>
@@ -267,6 +282,7 @@ async function onValidationError(event: FormErrorEvent) {
                           : 'Enter your usage or grammar notes'
                       "
                       @vue:before-unmount="card.usageOrGrammar = undefined"
+                      @blur="console.log(card.usageOrGrammar)"
                     />
                   </UFormField>
                 </div>
@@ -307,7 +323,7 @@ async function onValidationError(event: FormErrorEvent) {
                 </UFormField>
 
                 <UFormField
-                  v-if="card.examples.length"
+                  v-if="card.examples"
                   v-for="(_, eIndex) in card.examples"
                   class="flex-1"
                   :name="`cards.${cIndex}.examples.${eIndex}`"
@@ -316,7 +332,7 @@ async function onValidationError(event: FormErrorEvent) {
                     v-model="card.examples[eIndex]"
                     class="w-full"
                     :placeholder="
-                      isSuggestingThisCard(cIndex)
+                      isSuggestingThisCard(cIndex) && suggestion.examples
                         ? suggestion.examples[eIndex]
                         : 'eg. Hello, how are you?'
                     "
@@ -339,7 +355,7 @@ async function onValidationError(event: FormErrorEvent) {
                   icon="i-lucide-plus"
                   label="Add new example"
                   variant="ghost"
-                  @click="card.examples.push('')"
+                  @click="handleAddExample(cIndex)"
                 />
               </div>
             </div>
@@ -357,7 +373,7 @@ async function onValidationError(event: FormErrorEvent) {
 
         <UCard
           class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed ring-0 transition-all select-none active:scale-95"
-          @click="createState.cards.push(getNewCard())"
+          @click="createState.cards.push(createCard())"
         >
           <div class="flex place-content-center place-items-center gap-2">
             <UIcon name="i-lucide-plus" class="size-8" />

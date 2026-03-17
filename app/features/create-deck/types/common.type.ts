@@ -1,5 +1,5 @@
 import type * as v from "valibot";
-import type { LANGUAGE_CODES } from "~/features/deck";
+import type { LANGUAGE_CODES } from "~/features/deck/enums";
 import type {
 	CREATE_CARD_SCHEMA,
 	CREATE_DECK_SCHEMA,
