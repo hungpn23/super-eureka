@@ -264,7 +264,7 @@ defineShortcuts({
                         {{ flashcardSession.currentCard.definition }}
                       </div>
 
-                      <div v-if="flashcardSession.currentCard.examples">
+                      <div v-if="flashcardSession.currentCard.examples?.length">
                         <p class="text-sm font-medium">Examples:</p>
 
                         <ul class="list-disc pl-4">
@@ -524,13 +524,15 @@ defineShortcuts({
                   </span>
                 </div>
 
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div class="flex h-fit flex-col gap-2">
+                <div class="grid grid-cols-1 gap-1 sm:gap-2 sm:grid-cols-2">
+                  <div
+                    :class="`flex h-fit flex-col ${isEditing ? 'gap-2' : ''}`"
+                  >
                     <USelectMenu
-                      :items="TERM_LANGUAGE_ITEMS"
-                      :disabled="!isEditing"
-                      class="place-self-end"
+                      v-if="isEditing"
                       v-model="card.termLanguage"
+                      :items="TERM_LANGUAGE_ITEMS"
+                      class="place-self-end"
                       value-key="id"
                     />
 
@@ -541,7 +543,7 @@ defineShortcuts({
                         :maxrows="10"
                         :disabled="!isEditing"
                         :ui="{
-                          base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                          base: 'py-0 text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
                         }"
                         :variant="isEditing ? 'outline' : 'ghost'"
                         class="w-full"
@@ -596,13 +598,15 @@ defineShortcuts({
                     </div>
                   </div>
 
-                  <div class="flex h-fit flex-col gap-2">
+                  <div
+                    :class="`flex h-fit flex-col ${isEditing ? 'gap-2' : ''}`"
+                  >
                     <USelectMenu
-                      class="place-self-end"
+                      v-if="isEditing"
                       v-model="card.definitionLanguage"
-                      :items="DEFINITION_LANGUAGE_ITEMS"
+                      class="place-self-end"
                       value-key="id"
-                      :disabled="!isEditing"
+                      :items="DEFINITION_LANGUAGE_ITEMS"
                     />
 
                     <UFormField
@@ -615,7 +619,7 @@ defineShortcuts({
                         :maxrows="10"
                         :disabled="!isEditing"
                         :ui="{
-                          base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                          base: 'py-0 text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
                         }"
                         :variant="isEditing ? 'outline' : 'ghost'"
                         class="w-full"
