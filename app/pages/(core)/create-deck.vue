@@ -4,14 +4,11 @@ import {
   api,
   CARD_SEPARATOR_ITEMS,
   CONTENT_SEPARATOR_ITEMS,
-  CREATE_DECK_SCHEMA,
-  type CreateDeckSchema,
   createCard,
   DEFINITION_LANGUAGE_ITEMS,
   FormId,
   getVisibilityDesc,
   getVisibilityLabel,
-  IMPORT_CARD_SCHEMA,
   TERM_LANGUAGE_ITEMS,
   useCardSuggestion,
   useCardsImport,
@@ -20,6 +17,11 @@ import {
 } from "~/features/create-deck";
 import { Visibility } from "~/features/deck";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
+import {
+  CREATE_DECK_SCHEMA,
+  type CreateDeckSchema,
+  IMPORT_CARD_SCHEMA,
+} from "~/valibot/schemas";
 
 const toast = useCreateDeckToasts();
 const { token } = useAuth();
@@ -32,7 +34,6 @@ const formErrorMsg = ref("");
 
 const createState = reactive<CreateDeckSchema>({
   name: "",
-  description: "",
   visibility: Visibility.PUBLIC,
   cards: [createCard(), createCard(), createCard(), createCard()],
 });

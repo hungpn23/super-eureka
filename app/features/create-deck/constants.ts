@@ -1,42 +1,8 @@
 import type { SelectMenuItem } from "@nuxt/ui";
-import * as v from "valibot";
-import { LANGUAGE_CODES, Visibility } from "../deck/enums";
+
+import { Visibility } from "../deck/enums";
 import type { CardSeparator, ContentSeparator, LanguageCode } from "./types";
 import { getVisibilityLabel } from "./utils";
-
-export const CREATE_CARD_SCHEMA = v.object({
-  term: v.pipe(v.string(), v.nonEmpty("Term is required")),
-  termLanguage: v.picklist(LANGUAGE_CODES),
-  definition: v.pipe(v.string(), v.nonEmpty("Definition is required")),
-  definitionLanguage: v.picklist(LANGUAGE_CODES),
-  pronunciation: v.nullish(v.string()),
-  partOfSpeech: v.nullish(v.string()),
-  usageOrGrammar: v.nullish(v.string()),
-  examples: v.nullish(
-    v.array(v.pipe(v.string(), v.nonEmpty("Example cannot be empty"))),
-  ),
-});
-
-export const CREATE_DECK_SCHEMA = v.object({
-  name: v.pipe(v.string(), v.nonEmpty("Name is required")),
-  description: v.nullish(v.string()),
-  visibility: v.enum(Visibility),
-  passcode: v.nullish(
-    v.pipe(
-      v.string(),
-      v.minLength(4, "Passcode must be at least 4 characters"),
-      v.maxLength(20, "Passcode must be at most 20 characters"),
-    ),
-  ),
-  cards: v.pipe(
-    v.array(CREATE_CARD_SCHEMA),
-    v.minLength(4, "At least 4 cards are required"),
-  ),
-});
-
-export const IMPORT_CARD_SCHEMA = v.object({
-  input: v.pipe(v.string(), v.nonEmpty("Input is required")),
-});
 
 export const VISIBILITY_ITEMS = ref<(SelectMenuItem & { id: Visibility })[]>([
   {

@@ -1,59 +1,59 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
 import {
-	api,
-	CLONE_DECK_SCHEMA,
-	FormId,
-	type GetSharedDecksData,
-	useDeckClone,
-	useDeckSearch,
-	useDeckToasts,
+  api,
+  FormId,
+  type GetSharedDecksData,
+  useDeckClone,
+  useDeckSearch,
+  useDeckToasts,
 } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
 import type { UUID } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
+import { CLONE_DECK_SCHEMA } from "~/valibot/schemas";
 
 definePageMeta({ auth: false });
 
 const toast = useDeckToasts();
 const { token, data: user } = useAuth();
 const { page, limit, filter, search, filterItems, searchQuery } =
-	useDeckSearch();
+  useDeckSearch();
 
 const searchRef = useTemplateRef("searchInput");
 
 const deckId = ref<UUID | null>(null);
 
 const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
-	useDeckClone(deckId);
+  useDeckClone(deckId);
 
 const totalRecords = computed(
-	() => paginated.value?.metadata.totalRecords || 0,
+  () => paginated.value?.metadata.totalRecords || 0,
 );
 
 const query = computed(() => ({
-	...searchQuery.value,
-	visitorId: user.value?.id,
+  ...searchQuery.value,
+  visitorId: user.value?.id,
 }));
 
 const { data: paginated, error: getDecksError } = api.getSharedDecks({
-	query,
-	token,
+  query,
+  token,
 });
 
 watch(getDecksError, () => {
-	if (getDecksError.value) toast.getSharedDecksFailed();
+  if (getDecksError.value) toast.getSharedDecksFailed();
 });
 
 function handleAddToLibrary(deck: GetSharedDecksData) {
-	deckId.value = deck.id;
-	addToLibrary(deck.visibility);
+  deckId.value = deck.id;
+  addToLibrary(deck.visibility);
 }
 
 defineShortcuts({
-	[ShortcutKey.SEARCH]: () => {
-		focusInput(searchRef.value?.inputRef);
-	},
+  [ShortcutKey.SEARCH]: () => {
+    focusInput(searchRef.value?.inputRef);
+  },
 });
 </script>
 
@@ -240,7 +240,9 @@ defineShortcuts({
           @click="close"
         />
 
-        <UButton :form="FormId.CLONE_DECK" type="submit">Add to Library</UButton>
+        <UButton :form="FormId.CLONE_DECK" type="submit"
+          >Add to Library</UButton
+        >
       </template>
     </UModal>
   </UContainer>

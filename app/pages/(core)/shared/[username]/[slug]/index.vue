@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
-import {
-	api,
-	CLONE_DECK_SCHEMA,
-	FormId,
-	useDeckClone,
-	useDeckToasts,
-} from "~/features/deck";
+import { api, FormId, useDeckClone, useDeckToasts } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
 import type { UUID } from "~/shared/types";
+import { CLONE_DECK_SCHEMA } from "~/valibot/schemas";
 
 definePageMeta({
-	auth: false,
+  auth: false,
 });
 
 const route = useRoute();
@@ -22,25 +17,25 @@ const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const deckId = computed(() => route.query.deckId as UUID);
 
 const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
-	useDeckClone(deckId);
+  useDeckClone(deckId);
 
 const isFlipped = ref(false);
 
 const { data: deck, error: getDeckError } = api.getSharedDeck({
-	deckId,
-	token,
+  deckId,
+  token,
 });
 
 const throttledToggleFlip = useThrottleFn(() => {
-	isFlipped.value = !isFlipped.value;
+  isFlipped.value = !isFlipped.value;
 }, 300);
 
 watch(getDeckError, () => {
-	if (getDeckError.value) toast.getSharedDecksFailed();
+  if (getDeckError.value) toast.getSharedDecksFailed();
 });
 
 defineShortcuts({
-	[ShortcutKey.FLASHCARD_FLIP_CARD]: throttledToggleFlip,
+  [ShortcutKey.FLASHCARD_FLIP_CARD]: throttledToggleFlip,
 });
 </script>
 
@@ -103,7 +98,7 @@ defineShortcuts({
                 @click.stop="console.log('TTS not implemented yet')"
               />
 
-              {{ !isFlipped ? 'Term' : 'Definition' }}
+              {{ !isFlipped ? "Term" : "Definition" }}
             </span>
           </div>
 
@@ -238,7 +233,9 @@ defineShortcuts({
           @click="close"
         />
 
-        <UButton :form="FormId.CLONE_DECK" type="submit">Add to Library</UButton>
+        <UButton :form="FormId.CLONE_DECK" type="submit"
+          >Add to Library</UButton
+        >
       </template>
     </UModal>
   </UContainer>

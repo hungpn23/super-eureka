@@ -5,13 +5,10 @@ import {
   DEFINITION_LANGUAGE_ITEMS,
   TERM_LANGUAGE_ITEMS,
 } from "~/features/create-deck";
-import {
-  UPDATE_DECK_SCHEMA,
-  useDeckDelete,
-  useDeckUpdate,
-} from "~/features/deck";
+import { useDeckDelete, useDeckUpdate } from "~/features/deck";
 import { useFlashcardStudy } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
+import { UPDATE_DECK_SCHEMA } from "~/valibot/schemas";
 
 const { data: user } = useAuth();
 const store = useDeckStore();
@@ -105,6 +102,15 @@ const isWord = (term: string) => !term.trim().includes(" ");
 watch(
   () => flashcardSession.savedCards,
   () => syncSavedCards(flashcardSession.savedCards),
+);
+
+watchImmediate(
+  () => store.deck,
+  () => {
+    if (store.deck) {
+      console.log(store.deck);
+    }
+  },
 );
 
 defineShortcuts({

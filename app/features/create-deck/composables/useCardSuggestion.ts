@@ -1,7 +1,8 @@
 import type { ShallowRef } from "vue";
 import type { CardSuggestion } from "~/features/card";
 import { focusInput } from "~/shared/utils";
-import type { CreateCardSchema, TextareaRef } from "../types";
+import type { CreateCardSchema } from "~/valibot/schemas";
+import type { TextareaRef } from "../types";
 
 export function useCardSuggestion(
   definitionRef: Readonly<ShallowRef<TextareaRef[] | null>>,

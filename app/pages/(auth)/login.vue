@@ -2,12 +2,12 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
 import {
-	AUTH_SCHEMA,
 	applyProviderHandlers,
 	type GoogleQueryParams,
 	pickFields,
 	useAuthToasts,
 } from "~/features/auth";
+import { AUTH_SCHEMA } from "~/valibot/schemas";
 
 definePageMeta({
 	layout: "auth",
