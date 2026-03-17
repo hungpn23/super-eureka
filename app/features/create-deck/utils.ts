@@ -1,16 +1,15 @@
-import { Visibility } from "../deck";
+import { Visibility } from "../deck/enums";
 import type {
   CardSeparator,
   ContentSeparator,
   CreateCardSchema,
 } from "./types";
 
-export const getNewCard = (): CreateCardSchema => ({
+export const createCard = (): CreateCardSchema => ({
   term: "",
   definition: "",
   termLanguage: "en",
   definitionLanguage: "vi",
-  examples: [],
 });
 
 export const getVisibilityDesc = (visibility: Visibility) => {

@@ -4,72 +4,62 @@ import { focusInput } from "~/shared/utils";
 import type { CreateCardSchema, TextareaRef } from "../types";
 
 export function useCardSuggestion(
-	definitionRef: Readonly<ShallowRef<TextareaRef[] | null>>,
+  definitionRef: Readonly<ShallowRef<TextareaRef[] | null>>,
 ) {
-	const { token } = useAuth();
+  const { token } = useAuth();
 
-	const suggestion = reactive<CardSuggestion>({
-		currentCardIndex: -1,
-		definition: "",
-		examples: [],
-	});
+  const suggestion = reactive<CardSuggestion>({
+    currentCardIndex: -1,
+    definition: "",
+  });
 
-	const debouncedGetCardSuggestion = useDebounceFn(
-		async (card: CreateCardSchema, cardIndex: number) => {
-			const { term, partOfSpeech, termLanguage, definitionLanguage } = card;
+  const debouncedGetCardSuggestion = useDebounceFn(
+    async (card: CreateCardSchema, cardIndex: number) => {
+      const { term, partOfSpeech, termLanguage, definitionLanguage } = card;
 
-			$fetch<CardSuggestion>("/api/suggestion/term", {
-				method: "POST",
-				headers: { Authorization: token.value || "" },
-				body: {
-					term,
-					partOfSpeech,
-					termLanguage,
-					definitionLanguage,
-				},
-			})
-				.then((res) => {
-					suggestion.currentCardIndex = cardIndex;
-					suggestion.definition = res.definition;
-					suggestion.pronunciation = res.pronunciation || "";
-					suggestion.partOfSpeech = res.partOfSpeech || "";
-					suggestion.usageOrGrammar = res.usageOrGrammar || "";
-					suggestion.examples = res.examples.length ? res.examples : [""];
-				})
-				.catch(() => {});
-		},
-		500,
-	);
+      $fetch<CardSuggestion>("/api/suggestion/term", {
+        method: "POST",
+        headers: { Authorization: token.value || "" },
+        body: {
+          term,
+          partOfSpeech,
+          termLanguage,
+          definitionLanguage,
+        },
+      })
+        .then((res) => {
+          Object.assign(suggestion, res);
+          suggestion.currentCardIndex = cardIndex;
+        })
+        .catch(() => {});
+    },
+    500,
+  );
 
-	function isSuggestingThisCard(index: number) {
-		return suggestion.currentCardIndex === index;
-	}
+  function isSuggestingThisCard(index: number) {
+    return suggestion.currentCardIndex === index;
+  }
 
-	function hasSuggestion(card: CreateCardSchema) {
-		return !card.definition && !!suggestion.definition;
-	}
+  function hasSuggestion(card: CreateCardSchema) {
+    return !card.definition && !!suggestion.definition;
+  }
 
-	function applySuggestion(card: CreateCardSchema, index: number) {
-		if (!hasSuggestion(card)) return;
+  function applySuggestion(card: CreateCardSchema, index: number) {
+    if (!hasSuggestion(card)) return;
+    Object.assign(card, suggestion);
+    focusInput(definitionRef.value?.[index]?.textareaRef);
+  }
 
-		card.definition = suggestion.definition;
-		card.partOfSpeech = suggestion.partOfSpeech;
-		card.pronunciation = suggestion.pronunciation;
-		card.examples = suggestion.examples.length ? suggestion.examples : [""];
+  function isWord(term: string) {
+    return !term.trim().includes(" ");
+  }
 
-		focusInput(definitionRef.value?.[index]?.textareaRef);
-	}
-
-	function isWord(term: string) {
-		return !term.trim().includes(" ");
-	}
-
-	return {
-		suggestion,
-		debouncedGetCardSuggestion,
-		isSuggestingThisCard,
-		hasSuggestion,
-		applySuggestion,
-		isWord,
-	};
+  return {
+    suggestion,
+    debouncedGetCardSuggestion,
+    isSuggestingThisCard,
+    hasSuggestion,
+    applySuggestion,
+    isWord,
+  };
 }

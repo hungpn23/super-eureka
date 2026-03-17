@@ -2,9 +2,13 @@
 import type { DropdownMenuItem } from "@nuxt/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
-	UPDATE_DECK_SCHEMA,
-	useDeckDelete,
-	useDeckUpdate,
+  DEFINITION_LANGUAGE_ITEMS,
+  TERM_LANGUAGE_ITEMS,
+} from "~/features/create-deck";
+import {
+  UPDATE_DECK_SCHEMA,
+  useDeckDelete,
+  useDeckUpdate,
 } from "~/features/deck";
 import { useFlashcardStudy } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
@@ -14,95 +18,99 @@ const store = useDeckStore();
 const { isDeleting, handleDeleteDeck } = useDeckDelete();
 
 const {
-	isSavingAnswers,
-	flashcardSession,
-	studyProgress,
-	handleFlipCard,
-	handleAnswer,
-	handleShuffleCards,
+  isSavingAnswers,
+  flashcardSession,
+  studyProgress,
+  handleFlipCard,
+  handleAnswer,
+  handleShuffleCards,
 } = useFlashcardStudy();
 
 const {
-	updateFormErrorMessage,
-	isEditing,
-	isUpdating,
-	updateState,
-	syncSavedCards,
-	handleUpdateSubmit,
-	handleUpdateError,
-	handleStartEditing,
-	handleCancelEditing,
-	handleUnshiftCard,
-	handlePushCard,
-	handleRemoveCard,
+  updateFormErrorMessage,
+  isEditing,
+  isUpdating,
+  updateState,
+  syncSavedCards,
+  handleUpdateSubmit,
+  handleUpdateError,
+  handleStartEditing,
+  handleCancelEditing,
+  handleUnshiftCard,
+  handlePushCard,
+  handleRemoveCard,
+  handleAddExample,
+  handleRemoveExample,
 } = useDeckUpdate();
 
 const settings = computed<DropdownMenuItem[][]>(() => [
-	[
-		{
-			label: "Restart progress",
-			icon: "i-lucide-refresh-cw",
-			color: "warning",
-			onSelect: store.handleRestartDeck,
-		},
-		{
-			label: "Ignore review dates",
-			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
-			type: "checkbox",
-			checked: store.isIgnoreDate,
-			onUpdateChecked: (checked) => store.handleCheckIgnoreDate(checked),
-			onSelect: (e) => e.preventDefault(),
-		},
-		{
-			label: "Edit deck",
-			icon: "i-lucide-pencil-line",
-			disabled: isEditing.value,
-			onSelect: handleStartEditing,
-		},
-	],
-	[
-		{
-			label: "Delete deck",
-			icon: "i-lucide-trash-2",
-			color: "error",
-			disabled: isDeleting.value,
-			onSelect: handleDeleteDeck,
-		},
-	],
+  [
+    {
+      label: "Restart progress",
+      icon: "i-lucide-refresh-cw",
+      color: "warning",
+      onSelect: store.handleRestartDeck,
+    },
+    {
+      label: "Ignore review dates",
+      icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
+      type: "checkbox",
+      checked: store.isIgnoreDate,
+      onUpdateChecked: (checked) => store.handleCheckIgnoreDate(checked),
+      onSelect: (e) => e.preventDefault(),
+    },
+    {
+      label: "Edit deck",
+      icon: "i-lucide-pencil-line",
+      disabled: isEditing.value,
+      onSelect: handleStartEditing,
+    },
+  ],
+  [
+    {
+      label: "Delete deck",
+      icon: "i-lucide-trash-2",
+      color: "error",
+      disabled: isDeleting.value,
+      onSelect: handleDeleteDeck,
+    },
+  ],
 ]);
 
 const studyOptions = computed(() => [
-	{
-		label: "Flashcards",
-		icon: "i-lucide-gallery-horizontal-end",
-		to: `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
-	},
-	{
-		label: "Learn",
-		icon: "i-lucide-notebook-pen",
-		to: `/library/${store.slug}/learn?deckId=${store.deckId}`,
-	},
-	{
-		label: "Test",
-		icon: "i-lucide-flask-conical",
-		to: `/library/${store.slug}/test?deckId=${store.deckId}`,
-	},
-	{
-		label: "Coming soon",
-		icon: "",
-		to: `#`,
-	},
+  {
+    label: "Flashcards",
+    icon: "i-lucide-gallery-horizontal-end",
+    to: `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
+  },
+  {
+    label: "Learn",
+    icon: "i-lucide-notebook-pen",
+    to: `/library/${store.slug}/learn?deckId=${store.deckId}`,
+  },
+  {
+    label: "Test",
+    icon: "i-lucide-flask-conical",
+    to: `/library/${store.slug}/test?deckId=${store.deckId}`,
+  },
+  {
+    label: "Coming soon",
+    icon: "",
+    to: `#`,
+  },
 ]);
 
+const isWord = (term: string) => !term.trim().includes(" ");
+
 watch(
-	() => flashcardSession.savedCards,
-	() => syncSavedCards(flashcardSession.savedCards),
+  () => flashcardSession.savedCards,
+  () => syncSavedCards(flashcardSession.savedCards),
 );
 
 defineShortcuts({
-	[ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
-	[ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
-	[ShortcutKey.PREV_CARD]: () => handleAnswer(false),
+  [ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
+  [ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
+  [ShortcutKey.PREV_CARD]: () => handleAnswer(false),
 });
 </script>
 
@@ -200,7 +208,9 @@ defineShortcuts({
                   </div>
 
                   <div>
-                    {{ `${flashcardSession.knownCount} / ${flashcardSession.totalCards}` }}
+                    {{
+                      `${flashcardSession.knownCount} / ${flashcardSession.totalCards}`
+                    }}
                   </div>
 
                   <div class="flex place-items-center gap-2">
@@ -243,7 +253,9 @@ defineShortcuts({
                       }}</span>
                     </span>
 
-                    <CardStatusBadge :card="flashcardSession.currentCard" />
+                    <CardStatusBadge
+                      :status="flashcardSession.currentCard.status"
+                    />
                   </div>
 
                   <div
@@ -255,12 +267,13 @@ defineShortcuts({
                         {{ flashcardSession.currentCard.definition }}
                       </div>
 
-                      <div v-if="flashcardSession.currentCard.examples.length">
+                      <div v-if="flashcardSession.currentCard.examples">
                         <p class="text-sm font-medium">Examples:</p>
 
                         <ul class="list-disc pl-4">
                           <li
-                            v-for="(example, i) in flashcardSession.currentCard.examples"
+                            v-for="(example, i) in flashcardSession.currentCard
+                              .examples"
                             :key="i"
                           >
                             <em>
@@ -476,8 +489,8 @@ defineShortcuts({
 
             <TransitionGroup name="list" appear>
               <UCard
-                v-for="(c, index) in updateState.cards"
-                :key="c.id"
+                v-for="(card, cIndex) in updateState.cards"
+                :key="card.id"
                 :ui="{ body: `${!isEditing ? 'px-2 sm:px-4' : ''}` }"
                 class="bg-elevated"
                 variant="subtle"
@@ -485,7 +498,7 @@ defineShortcuts({
                 <div
                   :class="`mb-1 flex place-content-between place-items-center gap-2 ${isEditing ? 'px-0' : 'px-2.5'}`"
                 >
-                  <CardStatusBadge :card="c" />
+                  <CardStatusBadge :status="card.status" />
 
                   <UButton
                     v-if="isEditing"
@@ -493,67 +506,166 @@ defineShortcuts({
                     icon="i-lucide-trash-2"
                     color="error"
                     variant="ghost"
-                    @click="handleRemoveCard(c.id)"
+                    @click="handleRemoveCard(card.id)"
                   />
 
                   <span
                     v-else-if="
-                      !isEditing && c.reviewDate && c.status === 'known'
+                      !isEditing && card.reviewDate && card.status === 'known'
                     "
                     class="text-muted text-right text-sm text-balance"
                   >
                     Next review
 
                     {{
-                      formatDistanceToNowStrict(c.reviewDate, {
+                      formatDistanceToNowStrict(card.reviewDate, {
                         addSuffix: true,
-                        unit: 'day',
-                        roundingMethod: 'ceil',
+                        unit: "day",
+                        roundingMethod: "ceil",
                       })
                     }}
                   </span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row">
-                  <UFormField class="sm:flex-1" :name="`cards.${index}.term`">
-                    <UTextarea
-                      v-model="c.term"
-                      :rows="1"
-                      :maxrows="10"
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div class="flex h-fit flex-col gap-2">
+                    <USelectMenu
+                      :items="TERM_LANGUAGE_ITEMS"
                       :disabled="!isEditing"
-                      :ui="{
-                        base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
-                      }"
-                      :variant="isEditing ? 'outline' : 'ghost'"
-                      class="w-full"
-                      autoresize
+                      class="place-self-end"
+                      v-model="card.termLanguage"
+                      value-key="id"
                     />
-                  </UFormField>
 
-                  <USeparator class="m-2 sm:hidden" />
+                    <UFormField class="flex-1" :name="`cards.${cIndex}.term`">
+                      <UTextarea
+                        v-model="card.term"
+                        :rows="1"
+                        :maxrows="10"
+                        :disabled="!isEditing"
+                        :ui="{
+                          base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                        }"
+                        :variant="isEditing ? 'outline' : 'ghost'"
+                        class="w-full"
+                        autoresize
+                      />
+                    </UFormField>
 
-                  <USeparator
-                    orientation="vertical"
-                    class="m-2 hidden h-auto sm:block"
-                  />
+                    <div v-if="isWord(card.term)" class="flex gap-1">
+                      <UFormField
+                        class="max-w-30"
+                        :name="`cards.${cIndex}.partOfSpeech`"
+                      >
+                        <UInput
+                          v-model="card.partOfSpeech"
+                          class="w-full"
+                          placeholder="eg. noun"
+                          :disabled="!isEditing"
+                          :variant="isEditing ? 'outline' : 'ghost'"
+                          @vue:before-unmount="card.partOfSpeech = undefined"
+                          @blur="console.log(card.partOfSpeech)"
+                        />
+                      </UFormField>
 
-                  <UFormField
-                    class="sm:flex-1"
-                    :name="`cards.${index}.definition`"
-                  >
-                    <UTextarea
-                      v-model="c.definition"
-                      :rows="1"
-                      :maxrows="10"
+                      <UFormField
+                        class="grow"
+                        :name="`cards.${cIndex}.pronunciation`"
+                      >
+                        <UInput
+                          v-model="card.pronunciation"
+                          class="w-full"
+                          placeholder="eg. /heˈloʊ/"
+                          :disabled="!isEditing"
+                          :variant="isEditing ? 'outline' : 'ghost'"
+                          @vue:before-unmount="card.pronunciation = undefined"
+                          @blur="console.log(card.pronunciation)"
+                        />
+                      </UFormField>
+                    </div>
+
+                    <div v-else>
+                      <UFormField
+                        class="flex-1"
+                        :name="`cards.${cIndex}.usageOrGrammar`"
+                      >
+                        <UInput
+                          v-model="card.usageOrGrammar"
+                          class="w-full"
+                          placeholder="Enter your usage or grammar notes"
+                          :disabled="!isEditing"
+                          :variant="isEditing ? 'outline' : 'ghost'"
+                          @vue:before-unmount="card.usageOrGrammar = undefined"
+                          @blur="console.log(card.usageOrGrammar)"
+                        />
+                      </UFormField>
+                    </div>
+                  </div>
+
+                  <div class="flex h-fit flex-col gap-2">
+                    <USelectMenu
+                      class="place-self-end"
+                      v-model="card.definitionLanguage"
+                      :items="DEFINITION_LANGUAGE_ITEMS"
+                      value-key="id"
                       :disabled="!isEditing"
-                      :ui="{
-                        base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
-                      }"
-                      :variant="isEditing ? 'outline' : 'ghost'"
-                      class="w-full"
-                      autoresize
                     />
-                  </UFormField>
+
+                    <UFormField
+                      class="flex-1"
+                      :name="`cards.${cIndex}.definition`"
+                    >
+                      <UTextarea
+                        v-model="card.definition"
+                        :rows="1"
+                        :maxrows="10"
+                        :disabled="!isEditing"
+                        :ui="{
+                          base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                        }"
+                        :variant="isEditing ? 'outline' : 'ghost'"
+                        class="w-full"
+                        autoresize
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      v-if="card.examples"
+                      v-for="(_, eIndex) in card.examples"
+                      class="flex-1"
+                      :name="`cards.${cIndex}.examples.${eIndex}`"
+                      @blur="console.log(card.examples[eIndex])"
+                    >
+                      <UInput
+                        v-model="card.examples[eIndex]"
+                        class="w-full"
+                        placeholder="eg. Hello, how are you?"
+                        :disabled="!isEditing"
+                        :variant="isEditing ? 'outline' : 'ghost'"
+                      >
+                        <template #trailing>
+                          <UButton
+                            v-if="isEditing"
+                            icon="i-lucide-x"
+                            variant="ghost"
+                            color="error"
+                            size="sm"
+                            tabindex="-1"
+                            @click="handleRemoveExample(cIndex, eIndex)"
+                          />
+                        </template>
+                      </UInput>
+                    </UFormField>
+
+                    <UButton
+                      v-if="isEditing"
+                      class="w-fit"
+                      icon="i-lucide-plus"
+                      label="Add new example"
+                      variant="ghost"
+                      @click="handleAddExample(cIndex)"
+                    />
+                  </div>
                 </div>
               </UCard>
             </TransitionGroup>
