@@ -104,19 +104,10 @@ watch(
   () => syncSavedCards(flashcardSession.savedCards),
 );
 
-watchImmediate(
-  () => store.deck,
-  () => {
-    if (store.deck) {
-      console.log(store.deck);
-    }
-  },
-);
-
 defineShortcuts({
   [ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
-  [ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
-  [ShortcutKey.PREV_CARD]: () => handleAnswer(false),
+  [ShortcutKey.NEXT_CARD]: () => handleAnswer("correct"),
+  [ShortcutKey.PREV_CARD]: () => handleAnswer("incorrect"),
 });
 </script>
 
@@ -373,7 +364,7 @@ defineShortcuts({
                         variant="subtle"
                         color="error"
                         class="cursor-pointer transition-all hover:scale-103 hover:shadow active:scale-95"
-                        @click="handleAnswer(false)"
+                        @click="handleAnswer('incorrect')"
                       />
                     </UTooltip>
 
@@ -389,7 +380,7 @@ defineShortcuts({
                         variant="subtle"
                         color="success"
                         class="cursor-pointer transition-all hover:scale-103 hover:shadow active:scale-95"
-                        @click="handleAnswer(true)"
+                        @click="handleAnswer('correct')"
                       />
                     </UTooltip>
                   </div>
@@ -570,7 +561,6 @@ defineShortcuts({
                           :disabled="!isEditing"
                           :variant="isEditing ? 'outline' : 'ghost'"
                           @vue:before-unmount="card.partOfSpeech = undefined"
-                          @blur="console.log(card.partOfSpeech)"
                         />
                       </UFormField>
 
@@ -585,7 +575,6 @@ defineShortcuts({
                           :disabled="!isEditing"
                           :variant="isEditing ? 'outline' : 'ghost'"
                           @vue:before-unmount="card.pronunciation = undefined"
-                          @blur="console.log(card.pronunciation)"
                         />
                       </UFormField>
                     </div>
@@ -602,7 +591,6 @@ defineShortcuts({
                           :disabled="!isEditing"
                           :variant="isEditing ? 'outline' : 'ghost'"
                           @vue:before-unmount="card.usageOrGrammar = undefined"
-                          @blur="console.log(card.usageOrGrammar)"
                         />
                       </UFormField>
                     </div>
@@ -640,7 +628,6 @@ defineShortcuts({
                       v-for="(_, eIndex) in card.examples"
                       class="flex-1"
                       :name="`cards.${cIndex}.examples.${eIndex}`"
-                      @blur="console.log(card.examples[eIndex])"
                     >
                       <UInput
                         v-model="card.examples[eIndex]"

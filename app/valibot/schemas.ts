@@ -43,7 +43,8 @@ export const CREATE_CARD_SCHEMA = v.object({
   ),
 });
 
-export const STUDY_CARD_SCHEMA = v.object({
+export const UPDATE_CARD_SCHEMA = v.object({
+  ...CREATE_CARD_SCHEMA.entries,
   id: v.pipe(
     v.string(),
     v.uuid("Card id must be a valid UUID"),
@@ -58,11 +59,6 @@ export const STUDY_CARD_SCHEMA = v.object({
     ),
   ),
   status: v.picklist(CARD_STATUS),
-});
-
-export const UPDATE_CARD_SCHEMA = v.object({
-  ...CREATE_CARD_SCHEMA.entries,
-  ...STUDY_CARD_SCHEMA.entries,
 });
 
 export const CREATE_DECK_SCHEMA = v.object({
@@ -94,10 +90,8 @@ export const IMPORT_CARD_SCHEMA = v.object({
   input: v.pipe(v.string(), v.nonEmpty("Input is required")),
 });
 
-export type AuthSchema = v.InferOutput<typeof AUTH_SCHEMA>;
 export type CloneDeckSchema = v.InferOutput<typeof CLONE_DECK_SCHEMA>;
 export type CreateCardSchema = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
-export type StudyCardSchema = v.InferOutput<typeof STUDY_CARD_SCHEMA>;
 export type UpdateCardSchema = v.InferOutput<typeof UPDATE_CARD_SCHEMA>;
 export type CreateDeckSchema = v.InferOutput<typeof CREATE_DECK_SCHEMA>;
 export type UpdateDeckSchema = v.InferOutput<typeof UPDATE_DECK_SCHEMA>;

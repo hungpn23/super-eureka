@@ -1,9 +1,6 @@
+import type { CreateCardSchema } from "~/valibot/schemas";
 import { Visibility } from "../deck/enums";
-import type {
-  CardSeparator,
-  ContentSeparator,
-  CreateCardSchema,
-} from "./types";
+import type { CardSeparator, ContentSeparator } from "./types";
 
 export const createCard = (): CreateCardSchema => ({
   term: "",

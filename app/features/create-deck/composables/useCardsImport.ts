@@ -1,11 +1,10 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type {
-  CardSeparator,
-  ContentSeparator,
   CreateCardSchema,
   CreateDeckSchema,
   ImportCardsSchema,
-} from "../types";
+} from "~/valibot/schemas";
+import type { CardSeparator, ContentSeparator } from "../types";
 import { getCardSeparator, getContentSeparator } from "../utils";
 
 export function useCardsImport(createState: CreateDeckSchema) {

@@ -36,8 +36,8 @@ const settingOptions = computed<DropdownMenuItem[]>(() => [
 
 defineShortcuts({
   [ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
-  [ShortcutKey.NEXT_CARD]: () => handleAnswer(true),
-  [ShortcutKey.PREV_CARD]: () => handleAnswer(false),
+  [ShortcutKey.NEXT_CARD]: () => handleAnswer("correct"),
+  [ShortcutKey.PREV_CARD]: () => handleAnswer("incorrect"),
 });
 </script>
 
@@ -138,7 +138,7 @@ defineShortcuts({
               </span>
             </span>
 
-            <CardStatusBadge :card="flashcardSession.currentCard" />
+            <CardStatusBadge :status="flashcardSession.currentCard.status" />
           </div>
 
           <div
@@ -209,7 +209,7 @@ defineShortcuts({
               variant="subtle"
               color="error"
               class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              @click="handleAnswer(false)"
+              @click="handleAnswer('incorrect')"
             />
           </UTooltip>
 
@@ -221,7 +221,7 @@ defineShortcuts({
               variant="subtle"
               color="success"
               class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              @click="handleAnswer(true)"
+              @click="handleAnswer('correct')"
             />
           </UTooltip>
         </div>

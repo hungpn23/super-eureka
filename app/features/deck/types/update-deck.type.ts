@@ -4,5 +4,5 @@ import type { UpdateDeckSchema } from "~/valibot/schemas";
 export type UpdateDeckOptions = {
   deckId: UUID | null;
   token: Ref<string | null>;
-  body: Partial<UpdateDeckSchema>;
+  body: UpdateDeckSchema;
 };

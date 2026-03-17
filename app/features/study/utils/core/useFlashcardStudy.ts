@@ -1,128 +1,128 @@
 import { updateCard } from "~/features/deck";
 import { getCards, shuffleArray } from "~/shared/utils";
 import { api } from "../../api";
-import type { FlashcardSession } from "../../types";
+import type { FlashcardSession, LearnAnswerStatus } from "../../types";
 import { getDefaultFlashcardSession, useStudyToasts } from "../common";
 
 export const useFlashcardStudy = () => {
-	const { token } = useAuth();
-	const toast = useStudyToasts();
-	const store = useDeckStore();
+  const { token } = useAuth();
+  const toast = useStudyToasts();
+  const store = useDeckStore();
 
-	const flashcardSession = reactive<FlashcardSession>(
-		getDefaultFlashcardSession(),
-	);
-	const cards = computed(() =>
-		getCards(store.deck?.cards || [], store.isIgnoreDate),
-	);
-	const studyProgress = computed(
-		() => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
-	);
+  const flashcardSession = reactive<FlashcardSession>(
+    getDefaultFlashcardSession(),
+  );
+  const cards = computed(() =>
+    getCards(store.deck?.cards || [], store.isIgnoreDate),
+  );
+  const studyProgress = computed(
+    () => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
+  );
 
-	const {
-		status,
-		pending: isSavingAnswers,
-		execute: saveAnswers,
-	} = api.saveAnswers({
-		deckId: store.deckId,
-		token,
-		cardsToSave: flashcardSession.cardsToSave,
-	});
+  const {
+    status,
+    pending: isSavingAnswers,
+    execute: saveAnswers,
+  } = api.saveAnswers({
+    deckId: store.deckId,
+    token,
+    cardsToSave: flashcardSession.cardsToSave,
+  });
 
-	watch(
-		() => flashcardSession.currentCard?.id,
-		() => {
-			flashcardSession.isCardFlipped = false;
-		},
-	);
+  watch(
+    () => flashcardSession.currentCard?.id,
+    () => {
+      flashcardSession.isCardFlipped = false;
+    },
+  );
 
-	watchImmediate(cards, () => {
-		if (cards.value && cards.value.length > 0) {
-			Object.assign(flashcardSession, getDefaultFlashcardSession());
-			flashcardSession.studyQueue = cards.value;
-			flashcardSession.totalCards = flashcardSession.studyQueue.length;
-			flashcardSession.currentCard = flashcardSession.studyQueue.shift();
-		}
-	});
+  watchImmediate(cards, () => {
+    if (cards.value && cards.value.length > 0) {
+      Object.assign(flashcardSession, getDefaultFlashcardSession());
+      flashcardSession.studyQueue = cards.value;
+      flashcardSession.totalCards = flashcardSession.studyQueue.length;
+      flashcardSession.currentCard = flashcardSession.studyQueue.shift();
+    }
+  });
 
-	watchDebounced(() => flashcardSession.cardsToSave, handleSaveAnswers, {
-		debounce: 1000,
-		deep: true,
-	});
+  watchDebounced(() => flashcardSession.cardsToSave, handleSaveAnswers, {
+    debounce: 1000,
+    deep: true,
+  });
 
-	const handleFlipCard = useThrottleFn(() => {
-		flashcardSession.isCardFlipped = !flashcardSession.isCardFlipped;
-	}, 300);
+  const handleFlipCard = useThrottleFn(() => {
+    flashcardSession.isCardFlipped = !flashcardSession.isCardFlipped;
+  }, 300);
 
-	const handleAnswer = useThrottleFn(async (isCorrect: boolean) => {
-		if (!flashcardSession.currentCard) return;
+  const handleAnswer = useThrottleFn(async (status: LearnAnswerStatus) => {
+    if (!flashcardSession.currentCard) return;
 
-		const updated = updateCard(flashcardSession.currentCard, isCorrect);
+    const updated = updateCard(flashcardSession.currentCard, status);
 
-		if (isCorrect) {
-			flashcardSession.knownCount++;
-		} else {
-			flashcardSession.skippedCount++;
-			flashcardSession.retryQueue.push(updated);
-		}
+    if (status === "correct") {
+      flashcardSession.knownCount++;
+    } else {
+      flashcardSession.skippedCount++;
+      flashcardSession.retryQueue.push(updated);
+    }
 
-		// Update cardsToSave queue for saving
-		const index = flashcardSession.cardsToSave.findIndex(
-			(a) => a.id === updated.id,
-		);
-		if (index !== -1) {
-			flashcardSession.cardsToSave[index] = updated;
-		} else {
-			flashcardSession.cardsToSave.push(updated);
-		}
+    // Update cardsToSave queue for saving
+    const index = flashcardSession.cardsToSave.findIndex(
+      (a) => a.id === updated.id,
+    );
+    if (index !== -1) {
+      flashcardSession.cardsToSave[index] = updated;
+    } else {
+      flashcardSession.cardsToSave.push(updated);
+    }
 
-		// Pick next card
-		if (!flashcardSession.studyQueue.length) {
-			if (!flashcardSession.retryQueue.length) {
-				if (store.isIgnoreDate)
-					await Promise.all([handleSaveAnswers(), store.fetchDeck()]);
+    // Pick next card
+    if (!flashcardSession.studyQueue.length) {
+      if (!flashcardSession.retryQueue.length) {
+        if (store.isIgnoreDate)
+          await Promise.all([handleSaveAnswers(), store.fetchDeck()]);
 
-				flashcardSession.currentCard = undefined;
-				return;
-			}
+        flashcardSession.currentCard = undefined;
+        return;
+      }
 
-			flashcardSession.studyQueue = flashcardSession.retryQueue;
-			flashcardSession.retryQueue = [];
-		}
+      flashcardSession.studyQueue = flashcardSession.retryQueue;
+      flashcardSession.retryQueue = [];
+    }
 
-		flashcardSession.currentCard = flashcardSession.studyQueue.shift();
-	}, 300);
+    flashcardSession.currentCard = flashcardSession.studyQueue.shift();
+  }, 300);
 
-	function handleShuffleCards() {
-		if (!flashcardSession.currentCard) return;
+  function handleShuffleCards() {
+    if (!flashcardSession.currentCard) return;
 
-		flashcardSession.studyQueue = shuffleArray(flashcardSession.studyQueue);
-		flashcardSession.retryQueue = shuffleArray(flashcardSession.retryQueue);
+    flashcardSession.studyQueue = shuffleArray(flashcardSession.studyQueue);
+    flashcardSession.retryQueue = shuffleArray(flashcardSession.retryQueue);
 
-		flashcardSession.studyQueue.push(flashcardSession.currentCard);
-		flashcardSession.currentCard = flashcardSession.studyQueue.shift();
-	}
+    flashcardSession.studyQueue.push(flashcardSession.currentCard);
+    flashcardSession.currentCard = flashcardSession.studyQueue.shift();
+  }
 
-	async function handleSaveAnswers() {
-		if (!flashcardSession.cardsToSave.length) return;
-		await saveAnswers();
+  async function handleSaveAnswers() {
+    if (!flashcardSession.cardsToSave.length) return;
+    await saveAnswers();
 
-		if (status.value === "success") {
-			flashcardSession.savedCards = flashcardSession.cardsToSave;
-			flashcardSession.cardsToSave = [];
-		}
+    if (status.value === "success") {
+      flashcardSession.savedCards = flashcardSession.cardsToSave;
+      flashcardSession.cardsToSave = [];
+    }
 
-		if (status.value === "error") {
-			toast.saveAnswersFailed();
-		}
-	}
+    if (status.value === "error") {
+      toast.saveAnswersFailed();
+    }
+  }
 
-	return {
-		isSavingAnswers,
-		flashcardSession,
-		studyProgress,
-		handleFlipCard,
-		handleAnswer,
-		handleShuffleCards,
-	};
+  return {
+    isSavingAnswers,
+    flashcardSession,
+    studyProgress,
+    handleFlipCard,
+    handleAnswer,
+    handleShuffleCards,
+  };
 };

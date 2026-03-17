@@ -66,7 +66,6 @@ const {
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
   formErrorMsg.value = "";
 
-  console.log("🚀 ~ handleSubmit ~ event.data:", event.data);
   Object.assign(createState, event.data);
   await createDeck();
 
@@ -247,7 +246,6 @@ function handleAddExample(index: number) {
                           : 'eg. noun'
                       "
                       @vue:before-unmount="card.partOfSpeech = undefined"
-                      @blur="console.log(card.partOfSpeech)"
                     />
                   </UFormField>
 
@@ -264,7 +262,6 @@ function handleAddExample(index: number) {
                           : 'eg. /heˈloʊ/'
                       "
                       @vue:before-unmount="card.pronunciation = undefined"
-                      @blur="console.log(card.pronunciation)"
                     />
                   </UFormField>
                 </div>
@@ -283,7 +280,6 @@ function handleAddExample(index: number) {
                           : 'Enter your usage or grammar notes'
                       "
                       @vue:before-unmount="card.usageOrGrammar = undefined"
-                      @blur="console.log(card.usageOrGrammar)"
                     />
                   </UFormField>
                 </div>

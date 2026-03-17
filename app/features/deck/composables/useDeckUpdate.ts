@@ -2,8 +2,8 @@ import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import { type CardToSync, getCardStatus } from "~/features/card";
 import { createCard } from "~/features/create-deck";
 import type { UUID } from "~/shared/types";
+import type { UpdateCardSchema, UpdateDeckSchema } from "~/valibot/schemas";
 import { api } from "../api";
-import type { UpdateCardSchema, UpdateDeckSchema } from "../types";
 import { useDeckToasts } from "./useDeckToasts";
 
 export function useDeckUpdate() {
@@ -61,7 +61,6 @@ export function useDeckUpdate() {
   }
 
   async function handleUpdateSubmit(event: FormSubmitEvent<UpdateDeckSchema>) {
-    console.log("🚀 ~ handleUpdateSubmit ~ event.data:", event.data);
     Object.assign(updateState, event.data);
     await updateDeck();
 
@@ -80,7 +79,6 @@ export function useDeckUpdate() {
 
   async function handleUpdateError(event: FormErrorEvent) {
     const formError = event.errors.find((e) => e.name === "");
-    console.log("🚀 ~ handleUpdateError ~ event.errors:", event.errors);
 
     updateFormErrorMessage.value = formError
       ? formError.message
