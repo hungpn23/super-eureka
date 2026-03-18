@@ -5,34 +5,34 @@ import type { Deck, DeckStats } from "./common.type";
 import type { DeckOrderBy } from "./search-deck.type";
 
 export type GetDecksOptions = {
-	query: ComputedRef<{
-		page: number;
-		limit: string;
-		search: string;
-		orderBy: DeckOrderBy;
-		order: QueryOrder;
-	}>;
+  query: ComputedRef<{
+    page: number;
+    limit: string;
+    search: string;
+    orderBy: DeckOrderBy;
+    order: QueryOrder;
+  }>;
 
-	token: Ref<string | null>;
+  token: Ref<string | null>;
 };
 
 export type GetDecksData = Pick<
-	Deck,
-	"id" | "name" | "slug" | "visibility" | "openedAt"
+  Deck,
+  "id" | "name" | "slug" | "visibility" | "openedAt"
 > & {
-	stats: DeckStats;
+  stats: DeckStats;
 };
 
 export type GetDecksResponse = Paginated<GetDecksData>;
 
 export type GetDeckOptions = {
-	deckId: Ref<UUID | null>;
-	token: Ref<string | null>;
+  deckId: Ref<UUID | null>;
+  token: Ref<string | null>;
 };
 
 export type GetDeckResponse = Pick<
-	Deck,
-	"id" | "name" | "slug" | "description"
+  Deck,
+  "id" | "name" | "slug" | "description" | "visibility" | "passcode"
 > & {
-	cards: Card[];
+  cards: Card[];
 };

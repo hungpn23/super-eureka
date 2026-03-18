@@ -3,12 +3,24 @@ import type { DropdownMenuItem } from "@nuxt/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   DEFINITION_LANGUAGE_ITEMS,
+  getVisibilityDesc,
   TERM_LANGUAGE_ITEMS,
+  VISIBILITY_ITEMS,
 } from "~/features/create-deck";
-import { useDeckDelete, useDeckUpdate } from "~/features/deck";
+import {
+  DeckFormId,
+  useChangePasscode,
+  useDeckDelete,
+  useDeckUpdate,
+  Visibility,
+} from "~/features/deck";
 import { useFlashcardStudy } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
-import { UPDATE_DECK_SCHEMA } from "~/valibot/schemas";
+import { focusInput, getVisibilityIcon } from "~/shared/utils";
+import {
+  UPDATE_DECK_SCHEMA,
+  UPDATE_VISIBILITY_SCHEMA,
+} from "~/valibot/schemas";
 
 const { data: user } = useAuth();
 const store = useDeckStore();
@@ -40,6 +52,15 @@ const {
   handleRemoveExample,
 } = useDeckUpdate();
 
+const {
+  isChanging,
+  updateVisibilityState,
+  isUpdateVisibilityModalOpen,
+  handleUpdateVisibilitySubmit,
+} = useChangePasscode();
+
+const passcodeRef = useTemplateRef("passcodeInput");
+
 const settings = computed<DropdownMenuItem[][]>(() => [
   [
     {
@@ -61,6 +82,14 @@ const settings = computed<DropdownMenuItem[][]>(() => [
       icon: "i-lucide-pencil-line",
       disabled: isEditing.value,
       onSelect: handleStartEditing,
+    },
+    {
+      label: "Change passcode",
+      icon: "i-lucide-book-key",
+      disabled: isChanging.value,
+      onSelect: () => {
+        isUpdateVisibilityModalOpen.value = true;
+      },
     },
   ],
   [
@@ -125,6 +154,7 @@ defineShortcuts({
       />
 
       <UForm
+        :id="DeckFormId.UPDATE_DECK"
         :schema="UPDATE_DECK_SCHEMA"
         :state="updateState"
         @submit="handleUpdateSubmit"
@@ -453,13 +483,14 @@ defineShortcuts({
                 />
 
                 <UButton
-                  :loading="isUpdating"
-                  :disabled="isUpdating"
-                  :label="isUpdating ? 'Saving...' : 'Save Changes'"
                   class="cursor-pointer"
                   icon="i-lucide-save"
                   loading-icon="i-lucide-loader-circle"
                   type="submit"
+                  :form="DeckFormId.UPDATE_DECK"
+                  :loading="isUpdating"
+                  :disabled="isUpdating"
+                  :label="isUpdating ? 'Saving...' : 'Save Changes'"
                 />
               </div>
             </div>
@@ -702,6 +733,80 @@ defineShortcuts({
           </div>
         </UPageBody>
       </UForm>
+
+      <!-- Visibility Modal -->
+      <UModal
+        v-model:open="isUpdateVisibilityModalOpen"
+        :ui="{ title: 'text-base sm:text-lg font-medium' }"
+        title="Manage your deck access"
+      >
+        <template #body>
+          <UForm
+            :id="DeckFormId.UPDATE_VISIBILITY"
+            :schema="UPDATE_VISIBILITY_SCHEMA"
+            :state="updateVisibilityState"
+            class="flex flex-col gap-4"
+            @submit="handleUpdateVisibilitySubmit"
+          >
+            <UFormField
+              :help="getVisibilityDesc(updateVisibilityState.visibility)"
+              label="Visibility"
+              name="visibility"
+            >
+              <USelect
+                v-model="updateVisibilityState.visibility"
+                :items="VISIBILITY_ITEMS"
+                :icon="getVisibilityIcon(updateVisibilityState.visibility)"
+                :ui="{ content: 'min-w-fit' }"
+                value-key="id"
+                @change="
+                  updateVisibilityState.passcode =
+                    updateVisibilityState.visibility === Visibility.PROTECTED
+                      ? ''
+                      : undefined
+                "
+              />
+            </UFormField>
+
+            <UFormField
+              v-if="updateVisibilityState.visibility === Visibility.PROTECTED"
+              class="mt-2"
+              label="Passcode"
+              name="passcode"
+              required
+            >
+              <UInput
+                ref="passcodeInput"
+                v-model="updateVisibilityState.passcode"
+                @keydown.enter="isUpdateVisibilityModalOpen = false"
+                @vue:mounted="focusInput(passcodeRef?.inputRef, 300)"
+              />
+            </UFormField>
+          </UForm>
+        </template>
+
+        <template #footer>
+          <div class="flex flex-1 place-content-end gap-2">
+            <UButton
+              class="cursor-pointer"
+              label="Cancel"
+              icon="i-lucide-x"
+              color="neutral"
+              variant="outline"
+              @click="isUpdateVisibilityModalOpen = false"
+            />
+
+            <UButton
+              :form="DeckFormId.UPDATE_VISIBILITY"
+              class="cursor-pointer"
+              label="Confirm"
+              icon="i-lucide-check"
+              variant="subtle"
+              type="submit"
+            />
+          </div>
+        </template>
+      </UModal>
     </UContainer>
   </UPage>
 </template>

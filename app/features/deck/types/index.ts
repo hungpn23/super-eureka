@@ -6,3 +6,4 @@ export * from "./get-shared-deck.type";
 export * from "./restart-deck.type";
 export * from "./search-deck.type";
 export * from "./update-deck.type";
+export * from "./update-visibility.type";

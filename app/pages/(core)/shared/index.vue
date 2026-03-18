@@ -2,7 +2,7 @@
 import { formatTimeAgo } from "@vueuse/core";
 import {
   api,
-  FormId,
+  DeckFormId,
   type GetSharedDecksData,
   useDeckClone,
   useDeckSearch,
@@ -215,7 +215,7 @@ defineShortcuts({
     >
       <template #body>
         <UForm
-          :id="FormId.CLONE_DECK"
+          :id="DeckFormId.CLONE_DECK"
           :schema="CLONE_DECK_SCHEMA"
           :state="state"
           @submit="handleSubmit"
@@ -240,7 +240,7 @@ defineShortcuts({
           @click="close"
         />
 
-        <UButton :form="FormId.CLONE_DECK" type="submit"
+        <UButton :form="DeckFormId.CLONE_DECK" type="submit"
           >Add to Library</UButton
         >
       </template>

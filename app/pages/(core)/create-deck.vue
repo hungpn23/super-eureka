@@ -4,9 +4,9 @@ import {
   api,
   CARD_SEPARATOR_ITEMS,
   CONTENT_SEPARATOR_ITEMS,
+  CreateDeckFormId,
   createCard,
   DEFINITION_LANGUAGE_ITEMS,
-  FormId,
   getVisibilityDesc,
   getVisibilityLabel,
   TERM_LANGUAGE_ITEMS,
@@ -120,7 +120,7 @@ function handleAddExample(index: number) {
         </h1>
 
         <UButton
-          :form="FormId.CREATE_DECK"
+          :form="CreateDeckFormId.CREATE_DECK"
           :disabled="isCreating"
           class="cursor-pointer"
           icon="i-lucide-plus"
@@ -142,7 +142,7 @@ function handleAddExample(index: number) {
 
     <!-- Create Deck Form -->
     <UForm
-      :id="FormId.CREATE_DECK"
+      :id="CreateDeckFormId.CREATE_DECK"
       :schema="CREATE_DECK_SCHEMA"
       :state="createState"
       class="mt-4 flex flex-col gap-2"
@@ -442,7 +442,7 @@ function handleAddExample(index: number) {
       <template #body>
         <!-- Import Cards Form -->
         <UForm
-          :id="FormId.IMPORT"
+          :id="CreateDeckFormId.IMPORT_CARDS"
           :schema="IMPORT_CARD_SCHEMA"
           :state="importState"
           class="flex flex-col gap-4"
@@ -600,7 +600,7 @@ function handleAddExample(index: number) {
           />
 
           <UButton
-            :form="FormId.IMPORT"
+            :form="CreateDeckFormId.IMPORT_CARDS"
             class="cursor-pointer"
             label="Import"
             icon="i-lucide-copy-plus"

@@ -7,6 +7,7 @@ export type Deck = {
   slug: string;
   description?: string;
   visibility: Visibility;
+  passcode: string;
   viewCount: number;
   learnerCount: number;
   clonedFrom?: Pick<Deck, "id" | "name">;

@@ -86,6 +86,10 @@ export const UPDATE_DECK_SCHEMA = v.object({
   ),
 });
 
+export const UPDATE_VISIBILITY_SCHEMA = v.object({
+  ...v.pick(CREATE_DECK_SCHEMA, ["visibility", "passcode"]).entries,
+});
+
 export const IMPORT_CARD_SCHEMA = v.object({
   input: v.pipe(v.string(), v.nonEmpty("Input is required")),
 });
@@ -95,4 +99,7 @@ export type CreateCardSchema = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
 export type UpdateCardSchema = v.InferOutput<typeof UPDATE_CARD_SCHEMA>;
 export type CreateDeckSchema = v.InferOutput<typeof CREATE_DECK_SCHEMA>;
 export type UpdateDeckSchema = v.InferOutput<typeof UPDATE_DECK_SCHEMA>;
+export type UpdateVisibilitySchema = v.InferOutput<
+  typeof UPDATE_VISIBILITY_SCHEMA
+>;
 export type ImportCardsSchema = v.InferOutput<typeof IMPORT_CARD_SCHEMA>;

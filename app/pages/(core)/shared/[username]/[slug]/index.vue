@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
-import { api, FormId, useDeckClone, useDeckToasts } from "~/features/deck";
+import { api, DeckFormId, useDeckClone, useDeckToasts } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
 import type { UUID } from "~/shared/types";
 import { CLONE_DECK_SCHEMA } from "~/valibot/schemas";
@@ -209,7 +209,7 @@ defineShortcuts({
     >
       <template #body>
         <UForm
-          :id="FormId.CLONE_DECK"
+          :id="DeckFormId.CLONE_DECK"
           :schema="CLONE_DECK_SCHEMA"
           :state="state"
           @submit="handleSubmit"
@@ -233,9 +233,9 @@ defineShortcuts({
           @click="close"
         />
 
-        <UButton :form="FormId.CLONE_DECK" type="submit"
-          >Add to Library</UButton
-        >
+        <UButton :form="DeckFormId.CLONE_DECK" type="submit">
+          Add to Library
+        </UButton>
       </template>
     </UModal>
   </UContainer>

@@ -1,4 +1,4 @@
-export enum FormId {
-	CREATE_DECK = "create-deck",
-	IMPORT = "import",
+export enum CreateDeckFormId {
+  CREATE_DECK = "create_deck",
+  IMPORT_CARDS = "import_cards",
 }
