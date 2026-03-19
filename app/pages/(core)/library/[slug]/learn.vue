@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
 import { diffChars } from "diff";
-import { pick } from "lodash";
 import {
   QUESTION_DIRECTION_ITEMS,
   QUESTION_TYPE_ITEMS,
@@ -60,7 +59,7 @@ const {
 } = api.saveAnswers({
   deckId: store.deckId,
   token,
-  cardsToSave: toRef(learnSession, "cardsToSave"),
+  state: learnSession,
 });
 
 watch(
@@ -70,17 +69,7 @@ watch(
       isSettingModalOpen.reset();
       resetQuestionState();
 
-      Object.assign(
-        learnSession,
-        pick(
-          getDefaultLearnSession(),
-          "correctCount",
-          "incorrectCount",
-          "cardsToSave",
-          "retryQueue",
-        ),
-      );
-
+      Object.assign(learnSession, getDefaultLearnSession());
       learnSession.studyQueue = generateQuestions<LearnQuestion>({
         cards: getCards(newCards, store.isIgnoreDate),
         types: setting.types,
@@ -335,9 +324,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonLearnPage v-if="store.isFetchingDeck" />
-
-  <UContainer v-else>
+  <UContainer>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}/flashcards?deckId=${store.deckId}`"

@@ -42,9 +42,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonFlashcardsPage v-if="store.isFetchingDeck" />
-
-  <UContainer v-else>
+  <UContainer>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}?deckId=${store.deckId}`"

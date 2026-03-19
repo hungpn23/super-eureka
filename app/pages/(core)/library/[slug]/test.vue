@@ -3,12 +3,12 @@ import { breakpointsTailwind } from "@vueuse/core";
 import type { UCard } from "#components";
 import { QUESTION_DIRECTION_ITEMS, QUESTION_TYPE_ITEMS } from "~/features/deck";
 import {
-	generateQuestions,
-	getDefaultTestSession,
-	getDefaultTestSetting,
-	type TestQuestion,
-	type TestSession,
-	type TestSetting,
+  generateQuestions,
+  getDefaultTestSession,
+  getDefaultTestSetting,
+  type TestQuestion,
+  type TestSession,
+  type TestSetting,
 } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards, shuffleArray } from "~/shared/utils";
@@ -23,217 +23,215 @@ const setting = reactive<TestSetting>(getDefaultTestSetting());
 const session = reactive<TestSession>(getDefaultTestSession());
 
 watch([() => session.questions, () => session.currentQuestionIndex], () => {
-	session.currentQuestion = session.questions[session.currentQuestionIndex];
+  session.currentQuestion = session.questions[session.currentQuestionIndex];
 });
 
 watch(
-	[() => questionRefs.value?.length, () => session.currentQuestionIndex],
-	() => {
-		if (questionRefs.value?.length) {
-			session.questionElement = questionRefs.value[session.currentQuestionIndex]
-				?.$el as Element;
-		}
-	},
+  [() => questionRefs.value?.length, () => session.currentQuestionIndex],
+  () => {
+    if (questionRefs.value?.length) {
+      session.questionElement = questionRefs.value[session.currentQuestionIndex]
+        ?.$el as Element;
+    }
+  },
 );
 
 watch(
-	[
-		() => store.deck?.cards,
-		() => setting.isIgnoreDate,
-		() => setting.questionAmount,
-	],
-	([newCards, newIsIgnoreDate]) => {
-		if (newCards && newCards.length > 0) {
-			session.questionInput = null;
-			session.currentQuestionIndex = 0;
-			session.isSubmitted = false;
+  [
+    () => store.deck?.cards,
+    () => setting.isIgnoreDate,
+    () => setting.questionAmount,
+  ],
+  ([newCards, newIsIgnoreDate]) => {
+    if (newCards && newCards.length > 0) {
+      session.questionInput = null;
+      session.currentQuestionIndex = 0;
+      session.isSubmitted = false;
 
-			const filteredCards = getCards(newCards, newIsIgnoreDate);
+      const filteredCards = getCards(newCards, newIsIgnoreDate);
 
-			if (
-				setting.questionAmount === 0 ||
-				setting.questionAmount > filteredCards.length
-			) {
-				setting.questionAmount = filteredCards.length;
-			}
+      if (
+        setting.questionAmount === 0 ||
+        setting.questionAmount > filteredCards.length
+      ) {
+        setting.questionAmount = filteredCards.length;
+      }
 
-			session.questions = generateQuestions<TestQuestion>({
-				cards: shuffleArray(newCards).slice(0, setting.questionAmount),
-				types: setting.types,
-				dir: setting.direction,
-				answerPool: newCards,
-			});
-		}
-	},
+      session.questions = generateQuestions<TestQuestion>({
+        cards: shuffleArray(newCards).slice(0, setting.questionAmount),
+        types: setting.types,
+        dir: setting.direction,
+        answerPool: newCards,
+      });
+    }
+  },
 );
 
 watch(() => session.currentQuestionIndex, scrollAndFocusQuestion);
 
 watch(
-	() => setting.types.length,
-	(length) => {
-		if (!length) setting.types = ["multiple_choices"];
-	},
+  () => setting.types.length,
+  (length) => {
+    if (!length) setting.types = ["multiple_choices"];
+  },
 );
 
 const handleChoiceSelected = useThrottleFn(
-	(choiceIndex: number, questionIndex: number, question?: TestQuestion) => {
-		if (!question) return;
+  (choiceIndex: number, questionIndex: number, question?: TestQuestion) => {
+    if (!question) return;
 
-		question.userChoiceIndex = choiceIndex;
-		question.isUserAnswerCorrect = choiceIndex === question.correctChoiceIndex;
-		session.currentQuestionIndex = questionIndex;
-		handleChangeQuestion("right");
-	},
-	500,
+    question.userChoiceIndex = choiceIndex;
+    question.isUserAnswerCorrect = choiceIndex === question.correctChoiceIndex;
+    session.currentQuestionIndex = questionIndex;
+    handleChangeQuestion("right");
+  },
+  500,
 );
 
 function scrollAndFocusQuestion() {
-	if (session.questionElement) {
-		session.questionElement.scrollIntoView({
-			behavior: "smooth",
-			block: "center",
-		});
+  if (session.questionElement) {
+    session.questionElement.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
 
-		const oldInput = session.questionInput;
-		if (oldInput) oldInput.blur();
+    const oldInput = session.questionInput;
+    if (oldInput) oldInput.blur();
 
-		const newInput = session.questionElement.querySelector("input");
-		if (newInput) {
-			session.questionInput = newInput;
-			return focusInput(newInput);
-		}
+    const newInput = session.questionElement.querySelector("input");
+    if (newInput) {
+      session.questionInput = newInput;
+      return focusInput(newInput);
+    }
 
-		session.questionInput = null;
-	}
+    session.questionInput = null;
+  }
 }
 
 function handleChangeQuestion(dir: "left" | "right") {
-	if (!questionRefs.value?.length) return;
+  if (!questionRefs.value?.length) return;
 
-	if (dir === "left" && session.currentQuestionIndex > 0) {
-		session.currentQuestionIndex--;
-	}
+  if (dir === "left" && session.currentQuestionIndex > 0) {
+    session.currentQuestionIndex--;
+  }
 
-	if (
-		dir === "right" &&
-		session.currentQuestionIndex < questionRefs.value.length - 1
-	) {
-		session.currentQuestionIndex++;
-	}
+  if (
+    dir === "right" &&
+    session.currentQuestionIndex < questionRefs.value.length - 1
+  ) {
+    session.currentQuestionIndex++;
+  }
 }
 
 async function handleSettingClosed() {
-	if (JSON.stringify(setting) === snapshotSetting.value) {
-		scrollAndFocusQuestion();
-		return;
-	}
+  if (JSON.stringify(setting) === snapshotSetting.value) {
+    scrollAndFocusQuestion();
+    return;
+  }
 
-	snapshotSetting.reset();
-	await store.fetchDeck();
-	scrollAndFocusQuestion();
+  snapshotSetting.reset();
+  await store.fetchDeck();
+  scrollAndFocusQuestion();
 }
 
 function handleWrittenAnswerBlur(question: TestQuestion) {
-	if (!question.userAnswer) return;
+  if (!question.userAnswer) return;
 
-	question.userAnswer = question.userAnswer.trim();
-	question.isUserAnswerCorrect =
-		question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
+  question.userAnswer = question.userAnswer.trim();
+  question.isUserAnswerCorrect =
+    question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
 }
 
 function handleDontKnowClicked(question: TestQuestion, questionIndex: number) {
-	if (question.isMarkedAsDontKnow) return;
+  if (question.isMarkedAsDontKnow) return;
 
-	question.isMarkedAsDontKnow = true;
-	question.isUserAnswerCorrect = true;
-	session.currentQuestionIndex = questionIndex;
-	handleChangeQuestion("right");
+  question.isMarkedAsDontKnow = true;
+  question.isUserAnswerCorrect = true;
+  session.currentQuestionIndex = questionIndex;
+  handleChangeQuestion("right");
 }
 
 function handleTestSubmitted() {
-	session.isSubmitted = true;
-	window.scrollTo({ top: 0, behavior: "smooth" });
+  session.isSubmitted = true;
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function getChoiceBtnClass(question: TestQuestion, choiceIndex: number) {
-	const isThisChoiceSelected = question.userChoiceIndex === choiceIndex;
-	const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
+  const isThisChoiceSelected = question.userChoiceIndex === choiceIndex;
+  const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
 
-	if (!session.isSubmitted) {
-		if (isThisChoiceSelected) {
-			return "border-primary bg-primary/10 text-primary";
-		}
+  if (!session.isSubmitted) {
+    if (isThisChoiceSelected) {
+      return "border-primary bg-primary/10 text-primary";
+    }
 
-		return "";
-	}
+    return "";
+  }
 
-	if (isThisChoiceSelected) {
-		if (isThisChoiceCorrect) {
-			return "border-success bg-success/10 text-success";
-		}
+  if (isThisChoiceSelected) {
+    if (isThisChoiceCorrect) {
+      return "border-success bg-success/10 text-success";
+    }
 
-		return "border-error bg-error/10 text-error";
-	} else {
-		if (isThisChoiceCorrect) {
-			return "border-dashed border-success bg-success/10 text-success";
-		}
+    return "border-error bg-error/10 text-error";
+  } else {
+    if (isThisChoiceCorrect) {
+      return "border-dashed border-success bg-success/10 text-success";
+    }
 
-		return "opacity-70";
-	}
+    return "opacity-70";
+  }
 }
 
 function getWrittenInputClass(question: TestQuestion) {
-	if (!session.isSubmitted) return "";
-	return question.isUserAnswerCorrect ? "border-success" : "border-error";
+  if (!session.isSubmitted) return "";
+  return question.isUserAnswerCorrect ? "border-success" : "border-error";
 }
 
 defineShortcuts({
-	[ShortcutKey.CHOICE_1]: () =>
-		handleChoiceSelected(
-			0,
-			session.currentQuestionIndex,
-			session.currentQuestion,
-		),
-	[ShortcutKey.CHOICE_2]: () =>
-		handleChoiceSelected(
-			1,
-			session.currentQuestionIndex,
-			session.currentQuestion,
-		),
-	[ShortcutKey.CHOICE_3]: () =>
-		handleChoiceSelected(
-			2,
-			session.currentQuestionIndex,
-			session.currentQuestion,
-		),
-	[ShortcutKey.CHOICE_4]: () =>
-		handleChoiceSelected(
-			3,
-			session.currentQuestionIndex,
-			session.currentQuestion,
-		),
+  [ShortcutKey.CHOICE_1]: () =>
+    handleChoiceSelected(
+      0,
+      session.currentQuestionIndex,
+      session.currentQuestion,
+    ),
+  [ShortcutKey.CHOICE_2]: () =>
+    handleChoiceSelected(
+      1,
+      session.currentQuestionIndex,
+      session.currentQuestion,
+    ),
+  [ShortcutKey.CHOICE_3]: () =>
+    handleChoiceSelected(
+      2,
+      session.currentQuestionIndex,
+      session.currentQuestion,
+    ),
+  [ShortcutKey.CHOICE_4]: () =>
+    handleChoiceSelected(
+      3,
+      session.currentQuestionIndex,
+      session.currentQuestion,
+    ),
 
-	[ShortcutKey.PREV_CARD]: {
-		handler: () => handleChangeQuestion("left"),
-		usingInput: true,
-	},
+  [ShortcutKey.PREV_CARD]: {
+    handler: () => handleChangeQuestion("left"),
+    usingInput: true,
+  },
 
-	[ShortcutKey.NEXT_CARD]: {
-		handler: () => handleChangeQuestion("right"),
-		usingInput: true,
-	},
+  [ShortcutKey.NEXT_CARD]: {
+    handler: () => handleChangeQuestion("right"),
+    usingInput: true,
+  },
 });
 
 onMounted(() => {
-	isSettingModalOpen.value = true;
+  isSettingModalOpen.value = true;
 });
 </script>
 
 <template>
-  <SkeletonTestPage v-if="store.isFetchingDeck" />
-
-  <UContainer v-else>
+  <UContainer>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}?deckId=${store.deckId}`"
@@ -284,7 +282,7 @@ onMounted(() => {
             />
 
             {{
-              setting.direction === 'term_to_def'
+              setting.direction === "term_to_def"
                 ? `Term (${question.termLanguage})`
                 : `Definition (${question.definitionLanguage})`
             }}
@@ -304,9 +302,9 @@ onMounted(() => {
         <div class="mt-2 flex w-full flex-col gap-2">
           <em class="text-sm font-medium">
             {{
-              question.type === 'multiple_choices'
-                ? 'Choose an answer'
-                : 'Type your answer'
+              question.type === "multiple_choices"
+                ? "Choose an answer"
+                : "Type your answer"
             }}
           </em>
 
@@ -320,7 +318,9 @@ onMounted(() => {
               :key="choiceIndex"
               :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none disabled:opacity-70 ${getChoiceBtnClass(question, choiceIndex)}`"
               :disabled="session.isSubmitted || question.isMarkedAsDontKnow"
-              @click.stop="handleChoiceSelected(choiceIndex, questionIndex, question)"
+              @click.stop="
+                handleChoiceSelected(choiceIndex, questionIndex, question)
+              "
             >
               <UBadge
                 class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"

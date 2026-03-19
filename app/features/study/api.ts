@@ -1,11 +1,12 @@
+import type { Reactive } from "vue";
 import type { ErrorResponse, SuccessResponse, UUID } from "~/shared/types";
-import type { CardToSave } from "../card";
 import type { UserStats } from "../user";
+import type { FlashcardSession, LearnSession } from "./types";
 
 export type SaveAnswersOptions = {
   deckId: UUID | null;
   token: Ref<string | null>;
-  cardsToSave: Ref<CardToSave[]>;
+  state: Reactive<LearnSession | FlashcardSession>;
 };
 
 class StudyApi {
@@ -19,13 +20,13 @@ class StudyApi {
     });
   }
 
-  saveAnswers({ deckId, token, cardsToSave }: SaveAnswersOptions) {
+  saveAnswers({ deckId, token, state }: SaveAnswersOptions) {
     return useFetch<SuccessResponse, ErrorResponse>(
       `${this.BASE_URL}/save-answers/${deckId}`,
       {
         method: "POST",
         headers: { Authorization: token.value || "" },
-        body: computed(() => ({ answers: cardsToSave.value })),
+        body: computed(() => ({ answers: state.cardsToSave })),
         immediate: false,
         watch: false,
       },

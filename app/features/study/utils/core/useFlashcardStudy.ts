@@ -26,7 +26,7 @@ export const useFlashcardStudy = () => {
   } = api.saveAnswers({
     deckId: store.deckId,
     token,
-    cardsToSave: toRef(flashcardSession, "cardsToSave"),
+    state: flashcardSession,
   });
 
   watch(
