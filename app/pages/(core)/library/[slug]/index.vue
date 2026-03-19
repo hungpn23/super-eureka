@@ -316,6 +316,7 @@ defineShortcuts({
                     <NuxtImg
                       src="https://avatars.githubusercontent.com/u/177613774?v=4"
                       alt="User avatar"
+                      class="rounded-md"
                     />
                   </div>
 
@@ -447,9 +448,7 @@ defineShortcuts({
 
         <UPageBody class="mt-4 pb-0">
           <div class="flex flex-col gap-4">
-            <div
-              class="grid place-content-between place-items-center gap-4 sm:flex"
-            >
+            <div class="flex place-content-between place-items-center gap-4">
               <h2
                 class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
               >
@@ -490,7 +489,7 @@ defineShortcuts({
                   :form="DeckFormId.UPDATE_DECK"
                   :loading="isUpdating"
                   :disabled="isUpdating"
-                  :label="isUpdating ? 'Saving...' : 'Save Changes'"
+                  :label="isUpdating ? 'Saving...' : 'Save'"
                 />
               </div>
             </div>
@@ -555,9 +554,9 @@ defineShortcuts({
                   </span>
                 </div>
 
-                <div class="grid grid-cols-1 gap-1 sm:gap-2 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div
-                    :class="`flex h-fit flex-col ${isEditing ? 'gap-2' : ''}`"
+                    :class="`flex h-fit flex-col ${isEditing ? 'gap-1' : ''}`"
                   >
                     <USelectMenu
                       v-if="isEditing"
@@ -574,7 +573,7 @@ defineShortcuts({
                         :maxrows="10"
                         :disabled="!isEditing"
                         :ui="{
-                          base: 'py-0 text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                          base: `text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default ${!isEditing ? 'py-0' : ''}`,
                         }"
                         :variant="isEditing ? 'outline' : 'ghost'"
                         class="w-full"
@@ -591,6 +590,9 @@ defineShortcuts({
                           v-model="card.partOfSpeech"
                           class="w-full"
                           placeholder="eg. noun"
+                          :ui="{
+                            base: !isEditing ? 'py-0' : '',
+                          }"
                           :disabled="!isEditing"
                           :variant="isEditing ? 'outline' : 'ghost'"
                           @vue:before-unmount="card.partOfSpeech = undefined"
@@ -605,6 +607,7 @@ defineShortcuts({
                           v-model="card.pronunciation"
                           class="w-full"
                           placeholder="eg. /heˈloʊ/"
+                          :ui="{ base: !isEditing ? 'py-0' : '' }"
                           :disabled="!isEditing"
                           :variant="isEditing ? 'outline' : 'ghost'"
                           @vue:before-unmount="card.pronunciation = undefined"
@@ -621,6 +624,7 @@ defineShortcuts({
                           v-model="card.usageOrGrammar"
                           class="w-full"
                           placeholder="Enter your usage or grammar notes"
+                          :ui="{ base: !isEditing ? 'py-0' : '' }"
                           :disabled="!isEditing"
                           :variant="isEditing ? 'outline' : 'ghost'"
                           @vue:before-unmount="card.usageOrGrammar = undefined"
@@ -630,7 +634,7 @@ defineShortcuts({
                   </div>
 
                   <div
-                    :class="`flex h-fit flex-col ${isEditing ? 'gap-2' : ''}`"
+                    :class="`flex h-fit flex-col ${isEditing ? 'gap-1' : ''}`"
                   >
                     <USelectMenu
                       v-if="isEditing"
@@ -650,7 +654,7 @@ defineShortcuts({
                         :maxrows="10"
                         :disabled="!isEditing"
                         :ui="{
-                          base: 'py-0 text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                          base: `text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default ${!isEditing ? 'py-0' : ''}`,
                         }"
                         :variant="isEditing ? 'outline' : 'ghost'"
                         class="w-full"
@@ -668,6 +672,7 @@ defineShortcuts({
                         v-model="card.examples[eIndex]"
                         class="w-full"
                         placeholder="eg. Hello, how are you?"
+                        :ui="{ base: !isEditing ? 'py-0' : '' }"
                         :disabled="!isEditing"
                         :variant="isEditing ? 'outline' : 'ghost'"
                       >

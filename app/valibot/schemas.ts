@@ -63,9 +63,9 @@ export const UPDATE_CARD_SCHEMA = v.object({
 
 export const CREATE_DECK_SCHEMA = v.object({
   name: v.pipe(v.string(), v.nonEmpty("Name is required")),
-  description: v.optional(v.string()),
+  description: v.nullish(v.string()),
   visibility: v.enum(Visibility),
-  passcode: v.optional(
+  passcode: v.nullish(
     v.pipe(
       v.string(),
       v.minLength(4, "Passcode must be at least 4 characters"),

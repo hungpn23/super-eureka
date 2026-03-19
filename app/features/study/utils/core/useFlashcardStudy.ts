@@ -1,4 +1,4 @@
-import { updateCard } from "~/features/deck";
+import { scheduleCardReview } from "~/features/deck";
 import { getCards, shuffleArray } from "~/shared/utils";
 import { api } from "../../api";
 import type { FlashcardSession, LearnAnswerStatus } from "../../types";
@@ -26,7 +26,7 @@ export const useFlashcardStudy = () => {
   } = api.saveAnswers({
     deckId: store.deckId,
     token,
-    cardsToSave: flashcardSession.cardsToSave,
+    cardsToSave: toRef(flashcardSession, "cardsToSave"),
   });
 
   watch(
@@ -57,23 +57,26 @@ export const useFlashcardStudy = () => {
   const handleAnswer = useThrottleFn(async (status: LearnAnswerStatus) => {
     if (!flashcardSession.currentCard) return;
 
-    const updated = updateCard(flashcardSession.currentCard, status);
+    const updatedCard = scheduleCardReview(
+      flashcardSession.currentCard,
+      status,
+    );
 
     if (status === "correct") {
       flashcardSession.knownCount++;
     } else {
       flashcardSession.skippedCount++;
-      flashcardSession.retryQueue.push(updated);
+      flashcardSession.retryQueue.push(updatedCard);
     }
 
     // Update cardsToSave queue for saving
     const index = flashcardSession.cardsToSave.findIndex(
-      (a) => a.id === updated.id,
+      (a) => a.id === updatedCard.id,
     );
     if (index !== -1) {
-      flashcardSession.cardsToSave[index] = updated;
+      flashcardSession.cardsToSave[index] = updatedCard;
     } else {
-      flashcardSession.cardsToSave.push(updated);
+      flashcardSession.cardsToSave.push(updatedCard);
     }
 
     // Pick next card

@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
 import {
-	api,
-	type GetDecksData,
-	USER_STATS_ITEMS,
-	useDeckSearch,
-	useDeckToasts,
+  api,
+  type GetDecksData,
+  USER_STATS_ITEMS,
+  useDeckSearch,
+  useDeckToasts,
 } from "~/features/deck";
 import { api as studyApi, useStudyToasts } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
@@ -15,69 +15,64 @@ const toast = useDeckToasts();
 const studyToast = useStudyToasts();
 const { token, data: user } = useAuth();
 const searchRef = useTemplateRef("searchInput");
-const { page, limit, filter, search, filterItems, searchQuery } =
-	useDeckSearch();
+const { page, limit, filter, filterItems, search, searchApiParams } =
+  useDeckSearch();
 
 const userStatistics = computed(() =>
-	USER_STATS_ITEMS.map((item, index) => {
-		if (!userStats.value) return item;
+  USER_STATS_ITEMS.map((item, index) => {
+    if (!userStats.value) return item;
 
-		const { currentStreak, longestStreak, totalCardsLearned, masteryRate } =
-			userStats.value;
+    const { currentStreak, longestStreak, totalCardsLearned, masteryRate } =
+      userStats.value;
 
-		let value = "";
-		let bonus = "";
-		if (index === 0) {
-			value = currentStreak.toString();
-			bonus = longestStreak.toString();
-		} else if (index === 1) {
-			value = totalCardsLearned.toString();
-		} else if (index === 2) {
-			value = `${masteryRate}%`;
-		}
+    let value = "";
+    let bonus = "";
+    if (index === 0) {
+      value = currentStreak.toString();
+      bonus = longestStreak.toString();
+    } else if (index === 1) {
+      value = totalCardsLearned.toString();
+    } else if (index === 2) {
+      value = `${masteryRate}%`;
+    }
 
-		return { ...item, value, bonus };
-	}),
+    return { ...item, value, bonus };
+  }),
 );
 
-const {
-	data: paginatedDecks,
-	error: fetchDecksError,
-	status,
-} = api.getDecks({ query: searchQuery, token });
+const { data: paginatedDecks, error: fetchDecksError } = api.getDecks({
+  query: searchApiParams,
+  token,
+});
 
 const { data: userStats, error: getUserStatsError } = studyApi.getStats(token);
 
 watch([fetchDecksError, getUserStatsError], () => {
-	if (fetchDecksError.value) toast.getDecksFailed();
-	if (getUserStatsError.value) studyToast.getUserStatsFailed();
+  if (fetchDecksError.value) toast.getDecksFailed();
+  if (getUserStatsError.value) studyToast.getUserStatsFailed();
 });
 
 function getDeckProgress(deck: GetDecksData) {
-	const total = deck.stats.total;
-	const known = deck.stats.known;
+  const total = deck.stats.total;
+  const known = deck.stats.known;
 
-	if (total === 0) return 0;
+  if (total === 0) return 0;
 
-	return Math.round((known / total) * 100);
+  return Math.round((known / total) * 100);
 }
 
 defineShortcuts({
-	[ShortcutKey.SEARCH]: () => {
-		focusInput(searchRef.value?.inputRef);
-	},
-	[ShortcutKey.CREATE_DECK]: () => {
-		navigateTo("/create-deck");
-	},
+  [ShortcutKey.SEARCH]: () => {
+    focusInput(searchRef.value?.inputRef);
+  },
+  [ShortcutKey.CREATE_DECK]: () => {
+    navigateTo("/create-deck");
+  },
 });
 </script>
 
 <template>
-  <ClientOnly v-if="status === 'idle' || status === 'pending'">
-    <SkeletonLibraryPage />
-  </ClientOnly>
-
-  <UContainer v-else>
+  <UContainer>
     <UPageHeader
       :ui="{
         title: 'text-xl sm:text-2xl font-medium',
@@ -268,7 +263,10 @@ defineShortcuts({
       </div>
 
       <UPageSection
-        v-if="Array.isArray(paginatedDecks?.data) && paginatedDecks.data.length === 0"
+        v-if="
+          Array.isArray(paginatedDecks?.data) &&
+          paginatedDecks.data.length === 0
+        "
       >
         <template #description>
           <p v-if="!search">Click "Add" button to add your first deck!</p>

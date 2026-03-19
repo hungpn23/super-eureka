@@ -1,18 +1,10 @@
 import type { Card } from "~/features/card";
 import type { Paginated, UUID } from "~/shared/types";
-import type { QueryOrder } from "../enums";
 import type { Deck, DeckStats } from "./common.type";
-import type { DeckOrderBy } from "./search-deck.type";
+import type { DeckSearchApiParams } from "./search-deck.type";
 
 export type GetDecksOptions = {
-  query: ComputedRef<{
-    page: number;
-    limit: string;
-    search: string;
-    orderBy: DeckOrderBy;
-    order: QueryOrder;
-  }>;
-
+  query: ComputedRef<DeckSearchApiParams>;
   token: Ref<string | null>;
 };
 

@@ -1,2 +1,2 @@
 export * from "./getDailyQuote";
-export * from "./updateCard";
+export * from "./scheduleCardReview";

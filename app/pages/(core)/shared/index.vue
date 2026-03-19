@@ -17,7 +17,7 @@ definePageMeta({ auth: false });
 
 const toast = useDeckToasts();
 const { token, data: user } = useAuth();
-const { page, limit, filter, search, filterItems, searchQuery } =
+const { page, limit, filter, filterItems, search, searchApiParams } =
   useDeckSearch();
 
 const searchRef = useTemplateRef("searchInput");
@@ -31,13 +31,11 @@ const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
 
-const query = computed(() => ({
-  ...searchQuery.value,
-  visitorId: user.value?.id,
-}));
-
 const { data: paginated, error: getDecksError } = api.getSharedDecks({
-  query,
+  query: computed(() => ({
+    ...searchApiParams.value,
+    visitorId: user.value?.id,
+  })),
   token,
 });
 

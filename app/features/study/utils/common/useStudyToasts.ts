@@ -1,22 +1,29 @@
 import { DEFAULT_TOAST_OPTIONS } from "~/shared/constants";
 
 export function useStudyToasts() {
-	const toast = useToast();
+  const toast = useToast();
 
-	return {
-		getUserStatsFailed: () => {
-			toast.add({
-				...DEFAULT_TOAST_OPTIONS.FAIL,
-				title: "Failed to load your stats.",
-				description: undefined,
-			});
-		},
-		saveAnswersFailed: () => {
-			toast.add({
-				...DEFAULT_TOAST_OPTIONS.FAIL,
-				title: "Failed to save your answers.",
-				description: undefined,
-			});
-		},
-	};
+  return {
+    getUserStatsFailed: () => {
+      toast.add({
+        ...DEFAULT_TOAST_OPTIONS.FAIL,
+        title: "Failed to load your stats.",
+        description: undefined,
+      });
+    },
+    saveAnswersFailed: () => {
+      toast.add({
+        ...DEFAULT_TOAST_OPTIONS.FAIL,
+        title: "Failed to save your answers.",
+        description: undefined,
+      });
+    },
+    saveAnswersSuccess: () => {
+      toast.add({
+        ...DEFAULT_TOAST_OPTIONS.SUCCESS,
+        title: "Answers saved successfully.",
+        description: undefined,
+      });
+    },
+  };
 }

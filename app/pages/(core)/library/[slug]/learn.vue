@@ -5,7 +5,7 @@ import { pick } from "lodash";
 import {
   QUESTION_DIRECTION_ITEMS,
   QUESTION_TYPE_ITEMS,
-  updateCard,
+  scheduleCardReview,
 } from "~/features/deck";
 import {
   api,
@@ -60,7 +60,7 @@ const {
 } = api.saveAnswers({
   deckId: store.deckId,
   token,
-  cardsToSave: learnSession.cardsToSave,
+  cardsToSave: toRef(learnSession, "cardsToSave"),
 });
 
 watch(
@@ -157,9 +157,10 @@ function evaluateUserAnswer(userAnswer: number | string) {
 function nextQuestion() {
   if (!learnSession.currentQuestion || !questionState.answerStatus) return;
 
-  const updatedCard = updateCard(
+  const updatedCard = scheduleCardReview(
     learnSession.currentQuestion,
     questionState.answerStatus,
+    questionState.hintUsedCount,
   );
 
   if (questionState.answerStatus === "incorrect") {
@@ -201,6 +202,7 @@ async function handleSaveAnswers() {
   await saveAnswers();
 
   if (status.value === "success") {
+    toast.saveAnswersSuccess();
     learnSession.cardsToSave = [];
   }
 
