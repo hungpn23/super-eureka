@@ -224,7 +224,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UContainer>
+  <UContainer v-if="session.questions.length">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}?deckId=${store.deckId}`"
@@ -246,7 +246,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="session.questions.length" class="flex w-full flex-col gap-4">
+    <div class="flex w-full flex-col gap-4">
       <h1
         class="mb-2 max-w-5/6 place-self-center truncate text-lg font-semibold sm:text-xl"
       >

@@ -34,7 +34,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <UContainer>
+  <UContainer v-if="flashcardSession.currentCard">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}?deckId=${store.deckId}`"
@@ -53,7 +53,7 @@ defineShortcuts({
       />
     </div>
 
-    <div v-if="flashcardSession.currentCard" class="flex w-full flex-col gap-2">
+    <div class="flex w-full flex-col gap-2">
       <h1
         v-if="store.deck?.name"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"
@@ -238,7 +238,7 @@ defineShortcuts({
         </div>
       </div>
     </div>
-
-    <AppEmpty v-else />
   </UContainer>
+
+  <AppEmpty v-else-if="!store.isFetchingDeck" />
 </template>

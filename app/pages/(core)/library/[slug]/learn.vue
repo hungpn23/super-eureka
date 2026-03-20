@@ -302,7 +302,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <UContainer>
+  <UContainer v-if="learnSession.currentQuestion">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}/flashcards?deckId=${store.deckId}`"
@@ -321,10 +321,7 @@ defineShortcuts({
       />
     </div>
 
-    <div
-      v-if="learnSession.currentQuestion"
-      class="mb-8 flex w-full flex-col gap-2"
-    >
+    <div class="mb-8 flex w-full flex-col gap-2">
       <h1
         class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
       >
@@ -560,8 +557,6 @@ defineShortcuts({
       </div>
     </div>
 
-    <AppEmpty v-else-if="!store.isFetchingDeck" />
-
     <UModal
       v-model:open="isSettingModalOpen"
       :fullscreen="!smAndLarger"
@@ -625,4 +620,6 @@ defineShortcuts({
       </template>
     </UModal>
   </UContainer>
+
+  <AppEmpty v-else-if="!store.isFetchingDeck" />
 </template>

@@ -133,7 +133,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <UContainer>
+  <UContainer v-if="flashcardSession.currentCard">
     <UButton
       to="/library"
       class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
@@ -206,10 +206,7 @@ defineShortcuts({
             </div>
 
             <!-- Flashcard Study -->
-            <div
-              v-if="flashcardSession.currentCard"
-              class="flex w-full flex-col gap-2"
-            >
+            <div class="flex w-full flex-col gap-2">
               <!-- Status bar -->
               <div class="flex place-content-between">
                 <div class="flex place-items-center gap-2">
@@ -429,13 +426,11 @@ defineShortcuts({
                 </div>
               </div>
             </div>
-
-            <AppEmpty v-else-if="!store.isFetchingDeck" />
           </div>
         </template>
       </UPageHeader>
 
-      <UPageBody class="mt-4 pb-0">
+      <UPageBody v-if="updateState.cards?.length" class="mt-4 pb-0">
         <div class="flex flex-col gap-4">
           <div class="flex place-content-between place-items-center gap-4">
             <h2
@@ -798,6 +793,8 @@ defineShortcuts({
       </template>
     </UModal>
   </UContainer>
+
+  <AppEmpty v-else-if="!store.isFetchingDeck" />
 </template>
 
 <style scoped></style>
