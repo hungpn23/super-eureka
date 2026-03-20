@@ -21,14 +21,6 @@ const store = useDeckStore();
         class: 'cursor-pointer hover:scale-102 hover:shadow',
         onClick: store.handleRestartDeck,
       },
-      {
-        icon: 'i-lucide-fast-forward',
-        label: 'Ignore & continue',
-        color: 'neutral',
-        variant: 'subtle',
-        class: 'cursor-pointer hover:scale-102 hover:shadow',
-        onClick: () => store.handleCheckIgnoreDate(true),
-      },
     ]"
     variant="naked"
     icon="i-lucide-party-popper"

@@ -62,25 +62,7 @@ const {
   state: learnSession,
 });
 
-watch(
-  () => store.deck?.cards,
-  (newCards) => {
-    if (newCards && newCards.length > 0) {
-      isSettingModalOpen.reset();
-      resetQuestionState();
-
-      Object.assign(learnSession, getDefaultLearnSession());
-      learnSession.studyQueue = generateQuestions<LearnQuestion>({
-        cards: getCards(newCards, store.isIgnoreDate),
-        types: setting.types,
-        dir: setting.direction,
-        answerPool: newCards,
-      });
-      learnSession.totalQuestions = learnSession.studyQueue.length;
-      learnSession.currentQuestion = learnSession.studyQueue.shift();
-    }
-  },
-);
+watch(() => store.deck?.cards, initLearnSession);
 
 watch(
   () => setting.types.length,
@@ -93,6 +75,25 @@ watchDebounced(() => learnSession.cardsToSave, handleSaveAnswers, {
   debounce: 1000,
   deep: true,
 });
+
+function initLearnSession() {
+  if (!store.deck?.cards?.length) return;
+
+  const cards = store.deck.cards;
+
+  isSettingModalOpen.reset();
+  resetQuestionState();
+
+  Object.assign(learnSession, getDefaultLearnSession());
+  learnSession.studyQueue = generateQuestions<LearnQuestion>({
+    cards: getCards(cards),
+    types: setting.types,
+    dir: setting.direction,
+    answerPool: cards,
+  });
+  learnSession.totalQuestions = learnSession.studyQueue.length;
+  learnSession.currentQuestion = learnSession.studyQueue.shift();
+}
 
 function evaluateUserAnswer(userAnswer: number | string) {
   const question = learnSession.currentQuestion;
@@ -143,7 +144,7 @@ function evaluateUserAnswer(userAnswer: number | string) {
   setTimeout(() => nextQuestion(), NEXT_QUESTION_DELAY);
 }
 
-function nextQuestion() {
+async function nextQuestion() {
   if (!learnSession.currentQuestion || !questionState.answerStatus) return;
 
   const updatedCard = scheduleCardReview(
@@ -191,7 +192,6 @@ async function handleSaveAnswers() {
   await saveAnswers();
 
   if (status.value === "success") {
-    toast.saveAnswersSuccess();
     learnSession.cardsToSave = [];
   }
 
@@ -328,7 +328,7 @@ defineShortcuts({
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}/flashcards?deckId=${store.deckId}`"
-        :label="smAndLarger ? 'Back to Flashcards' : 'Flashcards'"
+        label="Flashcards"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
@@ -336,7 +336,7 @@ defineShortcuts({
 
       <UButton
         :to="`/library/${store.slug}/test?deckId=${store.deckId}`"
-        :label="smAndLarger ? 'Go to Test' : 'Test'"
+        label="Test"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         trailing-icon="i-lucide-move-right"
@@ -559,17 +559,6 @@ defineShortcuts({
         <div v-else />
 
         <div class="flex place-items-center place-self-end">
-          <UTooltip :delay-duration="200" text="Ignore review dates">
-            <UButton
-              :icon="`i-lucide-calendar${store.isIgnoreDate ? '-off' : ''}`"
-              class="cursor-pointer"
-              variant="ghost"
-              color="neutral"
-              size="lg"
-              @click="store.handleToggleIgnoreDate"
-            />
-          </UTooltip>
-
           <UTooltip :delay-duration="200" text="Restart deck progress">
             <UButton
               class="cursor-pointer"
@@ -593,7 +582,7 @@ defineShortcuts({
       </div>
     </div>
 
-    <AppEmpty v-else />
+    <AppEmpty v-else-if="!store.isFetchingDeck" />
 
     <UModal
       v-model:open="isSettingModalOpen"

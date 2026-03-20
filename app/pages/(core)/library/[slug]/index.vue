@@ -70,14 +70,6 @@ const settings = computed<DropdownMenuItem[][]>(() => [
       onSelect: store.handleRestartDeck,
     },
     {
-      label: "Ignore review dates",
-      icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
-      type: "checkbox",
-      checked: store.isIgnoreDate,
-      onUpdateChecked: (checked) => store.handleCheckIgnoreDate(checked),
-      onSelect: (e) => e.preventDefault(),
-    },
-    {
       label: "Edit deck",
       icon: "i-lucide-pencil-line",
       disabled: isEditing.value,

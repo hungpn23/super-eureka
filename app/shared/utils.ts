@@ -11,12 +11,10 @@ export const getVisibilityIcon = (visibility: Visibility) => {
   return icons[visibility];
 };
 
-export const getCards = (cards: Card[], isIgnoreDate: boolean): Card[] => {
-  return isIgnoreDate
-    ? structuredClone(cards)
-    : cards.filter(
-        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
-      );
+export const getCards = (cards: Card[]): Card[] => {
+  return cards.filter(
+    (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
+  );
 };
 
 export const focusInput = (

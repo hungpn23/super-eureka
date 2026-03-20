@@ -36,36 +36,29 @@ watch(
   },
 );
 
-watch(
-  [
-    () => store.deck?.cards,
-    () => setting.isIgnoreDate,
-    () => setting.questionAmount,
-  ],
-  ([newCards, newIsIgnoreDate]) => {
-    if (newCards && newCards.length > 0) {
-      session.questionInput = null;
-      session.currentQuestionIndex = 0;
-      session.isSubmitted = false;
+watch([() => store.deck?.cards, () => setting.questionAmount], ([newCards]) => {
+  if (newCards && newCards.length > 0) {
+    session.questionInput = null;
+    session.currentQuestionIndex = 0;
+    session.isSubmitted = false;
 
-      const filteredCards = getCards(newCards, newIsIgnoreDate);
+    const filteredCards = getCards(newCards);
 
-      if (
-        setting.questionAmount === 0 ||
-        setting.questionAmount > filteredCards.length
-      ) {
-        setting.questionAmount = filteredCards.length;
-      }
-
-      session.questions = generateQuestions<TestQuestion>({
-        cards: shuffleArray(newCards).slice(0, setting.questionAmount),
-        types: setting.types,
-        dir: setting.direction,
-        answerPool: newCards,
-      });
+    if (
+      setting.questionAmount === 0 ||
+      setting.questionAmount > filteredCards.length
+    ) {
+      setting.questionAmount = filteredCards.length;
     }
-  },
-);
+
+    session.questions = generateQuestions<TestQuestion>({
+      cards: shuffleArray(newCards).slice(0, setting.questionAmount),
+      types: setting.types,
+      dir: setting.direction,
+      answerPool: newCards,
+    });
+  }
+});
 
 watch(() => session.currentQuestionIndex, scrollAndFocusQuestion);
 
@@ -408,12 +401,6 @@ onMounted(() => {
               type="number"
               size="lg"
             />
-          </div>
-
-          <div class="flex place-content-between place-items-center gap-2">
-            <div>Test all questions</div>
-
-            <USwitch v-model="setting.isIgnoreDate" />
           </div>
 
           <USeparator label="Answer format" />

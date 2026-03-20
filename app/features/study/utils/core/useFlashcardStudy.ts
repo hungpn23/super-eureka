@@ -12,9 +12,7 @@ export const useFlashcardStudy = () => {
   const flashcardSession = reactive<FlashcardSession>(
     getDefaultFlashcardSession(),
   );
-  const cards = computed(() =>
-    getCards(store.deck?.cards || [], store.isIgnoreDate),
-  );
+  const cards = computed(() => getCards(store.deck?.cards || []));
   const studyProgress = computed(
     () => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
   );
@@ -82,9 +80,6 @@ export const useFlashcardStudy = () => {
     // Pick next card
     if (!flashcardSession.studyQueue.length) {
       if (!flashcardSession.retryQueue.length) {
-        if (store.isIgnoreDate)
-          await Promise.all([handleSaveAnswers(), store.fetchDeck()]);
-
         flashcardSession.currentCard = undefined;
         return;
       }

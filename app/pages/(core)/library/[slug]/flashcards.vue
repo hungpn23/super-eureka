@@ -23,14 +23,6 @@ const settingOptions = computed<DropdownMenuItem[]>(() => [
       color: "warning",
       onSelect: store.handleRestartDeck,
     },
-    {
-      label: "Ignore review dates",
-      icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
-      type: "checkbox",
-      checked: store.isIgnoreDate,
-      onUpdateChecked: (c: boolean) => store.handleCheckIgnoreDate(c),
-      onSelect: (e: Event) => e.preventDefault(),
-    },
   ],
 ]);
 
