@@ -52,18 +52,13 @@ const shouldShowAnswerDiff = computed(
     learnSession.currentQuestion?.type === "written",
 );
 
-const {
-  status,
-  pending: isSavingAnswers,
-  execute: saveAnswers,
-} = api.saveAnswers({
+const { status, pending } = api.saveAnswers({
   deckId: store.deckId,
   token,
-  state: learnSession,
+  session: learnSession,
 });
 
 watch(() => store.deck?.cards, initLearnSession);
-
 watch(
   () => setting.types.length,
   () => {
@@ -71,25 +66,22 @@ watch(
   },
 );
 
-watchDebounced(() => learnSession.cardsToSave, handleSaveAnswers, {
-  debounce: 1000,
-  deep: true,
+watch(status, () => {
+  if (status.value === "error") toast.saveAnswersFailed();
 });
 
 function initLearnSession() {
   if (!store.deck?.cards?.length) return;
-
-  const cards = store.deck.cards;
 
   isSettingModalOpen.reset();
   resetQuestionState();
 
   Object.assign(learnSession, getDefaultLearnSession());
   learnSession.studyQueue = generateQuestions<LearnQuestion>({
-    cards: getCards(cards),
+    cards: getCards(store.deck.cards),
     types: setting.types,
     dir: setting.direction,
-    answerPool: cards,
+    answerPool: store.deck.cards,
   });
   learnSession.totalQuestions = learnSession.studyQueue.length;
   learnSession.currentQuestion = learnSession.studyQueue.shift();
@@ -183,21 +175,7 @@ async function nextQuestion() {
 
 function resetQuestionState() {
   Object.assign(questionState, getDefaultLearnQuestionState());
-
   focusInput(userWrittenAnswerRef.value?.inputRef);
-}
-
-async function handleSaveAnswers() {
-  if (!learnSession.cardsToSave.length) return;
-  await saveAnswers();
-
-  if (status.value === "success") {
-    learnSession.cardsToSave = [];
-  }
-
-  if (status.value === "error") {
-    toast.saveAnswersFailed();
-  }
 }
 
 async function handleCloseSettingModal() {
@@ -353,7 +331,7 @@ defineShortcuts({
         {{ store.deck?.name }}
 
         <UIcon
-          v-if="!isSavingAnswers"
+          v-if="!pending"
           name="i-lucide-check"
           class="text-success ml-2 size-5"
         />

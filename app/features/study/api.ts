@@ -6,7 +6,7 @@ import type { FlashcardSession, LearnSession } from "./types";
 export type SaveAnswersOptions = {
   deckId: UUID | null;
   token: Ref<string | null>;
-  state: Reactive<LearnSession | FlashcardSession>;
+  session: Reactive<LearnSession | FlashcardSession>;
 };
 
 class StudyApi {
@@ -20,8 +20,8 @@ class StudyApi {
     });
   }
 
-  saveAnswers({ deckId, token, state }: SaveAnswersOptions) {
-    const body = computed(() => ({ answers: state.cardsToSave }));
+  saveAnswers({ deckId, token, session }: SaveAnswersOptions) {
+    const body = computed(() => ({ answers: session.cardsToSave }));
 
     return useFetch<SuccessResponse, ErrorResponse>(
       `${this.BASE_URL}/save-answers/${deckId}`,

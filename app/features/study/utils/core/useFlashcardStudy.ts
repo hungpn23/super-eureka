@@ -17,14 +17,10 @@ export const useFlashcardStudy = () => {
     () => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
   );
 
-  const {
-    status,
-    pending: isSavingAnswers,
-    execute: saveAnswers,
-  } = api.saveAnswers({
+  const { status, pending: isSavingAnswers } = api.saveAnswers({
     deckId: store.deckId,
     token,
-    state: flashcardSession,
+    session: flashcardSession,
   });
 
   watch(
@@ -43,8 +39,8 @@ export const useFlashcardStudy = () => {
     }
   });
 
-  watchDebounced(() => flashcardSession.cardsToSave.length, handleSaveAnswers, {
-    debounce: 1000,
+  watch(status, () => {
+    if (status.value === "error") toast.saveAnswersFailed();
   });
 
   const handleFlipCard = useThrottleFn(() => {
@@ -98,20 +94,6 @@ export const useFlashcardStudy = () => {
 
     flashcardSession.studyQueue.push(flashcardSession.currentCard);
     flashcardSession.currentCard = flashcardSession.studyQueue.shift();
-  }
-
-  async function handleSaveAnswers() {
-    if (!flashcardSession.cardsToSave.length) return;
-    await saveAnswers();
-
-    if (status.value === "success") {
-      flashcardSession.savedCards = flashcardSession.cardsToSave;
-      flashcardSession.cardsToSave = [];
-    }
-
-    if (status.value === "error") {
-      toast.saveAnswersFailed();
-    }
   }
 
   return {
