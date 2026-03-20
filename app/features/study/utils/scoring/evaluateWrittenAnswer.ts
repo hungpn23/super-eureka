@@ -40,7 +40,7 @@ export function evaluateWrittenAnswer(
       status: "incorrect",
     };
 
-    if (userInput.length === 1 && userInput !== correctAnswer) {
+    if (userInput.length <= 3 && userInput !== correctAnswer) {
       return result;
     }
 
