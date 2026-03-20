@@ -38,7 +38,7 @@ defineShortcuts({
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/library/${store.slug}?deckId=${store.deckId}`"
-        :label="smAndLarger ? 'Back to Home' : 'Home'"
+        label="Home"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
@@ -46,7 +46,7 @@ defineShortcuts({
 
       <UButton
         :to="`/library/${store.slug}/learn?deckId=${store.deckId}`"
-        :label="smAndLarger ? 'Go to Learn' : 'Learn'"
+        label="Learn"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         trailing-icon="i-lucide-move-right"

@@ -231,7 +231,7 @@ onMounted(() => {
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
-        label="Back to Home"
+        label="Home"
       />
 
       <div class="flex place-items-center place-self-end">

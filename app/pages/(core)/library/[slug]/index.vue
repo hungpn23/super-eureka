@@ -139,7 +139,7 @@ defineShortcuts({
       class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
       variant="link"
       icon="i-lucide-move-left"
-      label="Back to library"
+      label="Library"
     />
 
     <UForm

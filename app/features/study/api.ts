@@ -21,14 +21,16 @@ class StudyApi {
   }
 
   saveAnswers({ deckId, token, state }: SaveAnswersOptions) {
+    const body = computed(() => ({ answers: state.cardsToSave }));
+
     return useFetch<SuccessResponse, ErrorResponse>(
       `${this.BASE_URL}/save-answers/${deckId}`,
       {
         method: "POST",
         headers: { Authorization: token.value || "" },
-        body: computed(() => ({ answers: state.cardsToSave })),
+        body,
         immediate: false,
-        watch: false,
+        watch: [body],
       },
     );
   }

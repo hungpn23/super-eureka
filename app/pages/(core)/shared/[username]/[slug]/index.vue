@@ -46,7 +46,7 @@ defineShortcuts({
       class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
       variant="link"
       icon="i-lucide-move-left"
-      label="Back to shared"
+      label="Shared"
     />
 
     <h1 class="text-lg font-semibold sm:text-xl">

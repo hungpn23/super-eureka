@@ -43,9 +43,8 @@ export const useFlashcardStudy = () => {
     }
   });
 
-  watchDebounced(() => flashcardSession.cardsToSave, handleSaveAnswers, {
+  watchDebounced(() => flashcardSession.cardsToSave.length, handleSaveAnswers, {
     debounce: 1000,
-    deep: true,
   });
 
   const handleFlipCard = useThrottleFn(() => {
@@ -71,10 +70,10 @@ export const useFlashcardStudy = () => {
     const index = flashcardSession.cardsToSave.findIndex(
       (a) => a.id === updatedCard.id,
     );
-    if (index !== -1) {
-      flashcardSession.cardsToSave[index] = updatedCard;
-    } else {
+    if (index === -1) {
       flashcardSession.cardsToSave.push(updatedCard);
+    } else {
+      flashcardSession.cardsToSave[index] = updatedCard;
     }
 
     // Pick next card

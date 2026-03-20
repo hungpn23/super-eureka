@@ -110,7 +110,7 @@ function handleAddExample(index: number) {
       class="cursor-pointer px-0 text-base"
       variant="link"
       icon="i-lucide-move-left"
-      label="Back to home"
+      label="Home"
     />
 
     <div class="space-y-2">
