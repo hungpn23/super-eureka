@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
-import { api, DeckFormId, useDeckClone, useDeckToasts } from "~/features/deck";
+import { DeckFormId, type GetSharedDeckResponse, useDeckClone, useDeckToasts } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
-import type { UUID } from "~/shared/types";
+import type { ErrorResponse, UUID } from "~/shared/types";
 import { CLONE_DECK_SCHEMA } from "~/valibot/schemas";
 
 definePageMeta({
@@ -21,10 +21,13 @@ const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
 
 const isFlipped = ref(false);
 
-const { data: deck, error: getDeckError } = api.getSharedDeck({
-  deckId,
-  token,
-});
+const { data: deck, error: getDeckError } = useFetch<GetSharedDeckResponse, ErrorResponse>(
+  computed(() => `/api/decks/shared/${deckId.value}`),
+  {
+    method: "GET",
+    headers: { Authorization: token.value || "" },
+  },
+);
 
 const throttledToggleFlip = useThrottleFn(() => {
   isFlipped.value = !isFlipped.value;

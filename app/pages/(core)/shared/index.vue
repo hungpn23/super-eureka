@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
 import {
-  api,
   DeckFormId,
   type GetSharedDecksData,
+  type GetSharedDecksResponse,
   useDeckClone,
   useDeckSearch,
   useDeckToasts,
 } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
-import type { UUID } from "~/shared/types";
+import type { ErrorResponse, UUID } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 import { CLONE_DECK_SCHEMA } from "~/valibot/schemas";
 
@@ -31,13 +31,17 @@ const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
 
-const { data: paginated, error: getDecksError } = api.getSharedDecks({
-  query: computed(() => ({
-    ...searchApiParams.value,
-    visitorId: user.value?.id,
-  })),
-  token,
-});
+const { data: paginated, error: getDecksError } = useFetch<GetSharedDecksResponse, ErrorResponse>(
+  "/api/decks/shared",
+  {
+    method: "GET",
+    headers: { Authorization: token.value || "" },
+    query: computed(() => ({
+      ...searchApiParams.value,
+      visitorId: user.value?.id,
+    })),
+  },
+);
 
 watch(getDecksError, () => {
   if (getDecksError.value) toast.getSharedDecksFailed();

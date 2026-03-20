@@ -1,6 +1,6 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { api, useDeckToasts } from "~/features/deck";
-import type { UUID } from "~/shared/types";
+import { type GetDeckResponse, useDeckToasts } from "~/features/deck";
+import type { ErrorResponse, SuccessResponse, UUID } from "~/shared/types";
 
 export const useDeckStore = defineStore("deck", () => {
   const route = useRoute();
@@ -17,13 +17,37 @@ export const useDeckStore = defineStore("deck", () => {
     data: restartData,
     error: restartError,
     execute: restartDeck,
-  } = api.restartDeck({ deckId, token });
+  } = useFetch<SuccessResponse, ErrorResponse>(
+    computed(() => `/api/decks/restart/${deckId.value}`),
+    {
+      method: "POST",
+      headers: { Authorization: token.value || "" },
+      immediate: false,
+      watch: false,
+    },
+  );
 
   const {
     data: deck,
     status,
     execute: fetchDeck,
-  } = api.getDeck({ deckId, token });
+  } = useFetch<GetDeckResponse, ErrorResponse>(
+    computed(() => `/api/decks/${deckId.value}`),
+    {
+      method: "GET",
+      headers: { Authorization: token.value || "" },
+      server: false,
+      immediate: false,
+      watch: false,
+
+      onResponseError: () => {
+        showError({
+          statusCode: 404,
+          statusMessage: "Page Not Found",
+        });
+      },
+    },
+  );
 
   watchImmediate(
     () => route.name,

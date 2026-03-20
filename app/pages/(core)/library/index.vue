@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from "@vueuse/core";
 import {
-  api,
   type GetDecksData,
+  type GetDecksResponse,
   USER_STATS_ITEMS,
   useDeckSearch,
   useDeckToasts,
@@ -42,10 +42,16 @@ const userStatistics = computed(() =>
   }),
 );
 
-const { data: paginatedDecks, error: fetchDecksError } = api.getDecks({
-  query: searchApiParams,
-  token,
-});
+const { data: paginatedDecks, error: fetchDecksError } = useFetch<GetDecksResponse, ErrorResponse>(
+  "/api/decks",
+  {
+    method: "GET",
+    headers: { Authorization: token.value || "" },
+    query: searchApiParams,
+    lazy: true,
+    server: false,
+  },
+);
 
 const { data: userStats, error: getUserStatsError } = useFetch<
   UserStats,

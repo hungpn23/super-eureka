@@ -1,9 +1,8 @@
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import { type CardToSync, getCardStatus } from "~/features/card";
 import { createCard } from "~/features/create-deck";
-import type { UUID } from "~/shared/types";
+import type { ErrorResponse, SuccessResponse, UUID } from "~/shared/types";
 import type { UpdateCardSchema, UpdateDeckSchema } from "~/valibot/schemas";
-import { api } from "../api";
 import { useDeckToasts } from "./useDeckToasts";
 
 export function useDeckUpdate() {
@@ -24,10 +23,12 @@ export function useDeckUpdate() {
     status,
     pending: isUpdating,
     execute: updateDeck,
-  } = api.updateDeck({
-    deckId: store.deckId,
-    token,
+  } = useFetch<SuccessResponse, ErrorResponse>(`/api/decks/${store.deckId}`, {
+    method: "PATCH",
+    headers: { Authorization: token.value || "" },
     body: updateState,
+    immediate: false,
+    watch: false,
   });
 
   watchImmediate(

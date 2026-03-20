@@ -1,6 +1,6 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import type { UpdateVisibilitySchema } from "~/valibot/schemas";
-import { api } from "../api";
 import { Visibility } from "../enums";
 import { useDeckToasts } from "./useDeckToasts";
 
@@ -20,10 +20,12 @@ export function useChangePasscode() {
     status,
     pending: isChanging,
     execute: updateVisibility,
-  } = api.updateVisibility({
-    deckId: store.deckId,
-    token,
+  } = useFetch<SuccessResponse, ErrorResponse>(`/api/decks/${store.deckId}`, {
+    method: "PATCH",
+    headers: { Authorization: token.value || "" },
     body: updateVisibilityState,
+    immediate: false,
+    watch: false,
   });
 
   async function handleUpdateVisibilitySubmit(

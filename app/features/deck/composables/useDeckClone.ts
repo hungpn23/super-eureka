@@ -1,7 +1,6 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
-import type { UUID } from "~/shared/types";
+import type { ErrorResponse, SuccessResponse, UUID } from "~/shared/types";
 import type { CloneDeckSchema } from "~/valibot/schemas";
-import { api } from "../api";
 import { Visibility } from "../enums";
 import { useDeckToasts } from "./useDeckToasts";
 
@@ -19,7 +18,16 @@ export function useDeckClone(deckId: Ref<UUID | null>) {
     data,
     error,
     pending: isCloning,
-  } = api.cloneDeck({ deckId, token, state });
+  } = useFetch<SuccessResponse, ErrorResponse>(
+    computed(() => `/api/decks/clone/${deckId.value}`),
+    {
+      method: "POST",
+      headers: { Authorization: token.value || "" },
+      body: state,
+      immediate: false,
+      watch: false,
+    },
+  );
 
   watch(error, () => {
     if (error.value) toast.cloneDeckFailed();
