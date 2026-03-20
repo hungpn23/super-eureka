@@ -1,57 +1,64 @@
 import {
-	evaluateSentenceSimilarity,
-	type SentenceSimilarityStatus,
-	type WordInSentenceSimilarity,
+  evaluateSentenceSimilarity,
+  type SentenceSimilarityStatus,
+  type WordInSentenceSimilarity,
 } from "./evaluateSentenceSimilarity";
 import {
-	evaluateWordSimilarity,
-	type WordSimilarityStatus,
+  evaluateWordSimilarity,
+  type WordSimilarityStatus,
 } from "./evaluateWordSimilarity";
 
 type WrittenAnswerType = "word" | "sentence";
 
 export type EvaluateWrittenAnswerResult =
-	| EvaluateWordResult
-	| EvaluateSentenceResult;
+  | EvaluateWordResult
+  | EvaluateSentenceResult;
 
 export type EvaluateWordResult = {
-	type: Extract<WrittenAnswerType, "word">;
-	score: number;
-	status: WordSimilarityStatus;
+  type: Extract<WrittenAnswerType, "word">;
+  score: number;
+  status: WordSimilarityStatus;
 };
 
 export type EvaluateSentenceResult = {
-	type: Extract<WrittenAnswerType, "sentence">;
-	score: number;
-	status: SentenceSimilarityStatus;
-	similarities: WordInSentenceSimilarity[];
+  type: Extract<WrittenAnswerType, "sentence">;
+  score: number;
+  status: SentenceSimilarityStatus;
+  similarities: WordInSentenceSimilarity[];
 };
 
 export function evaluateWrittenAnswer(
-	userInput: string,
-	correctAnswer: string,
+  userInput: string,
+  correctAnswer: string,
 ): EvaluateWrittenAnswerResult {
-	const isWord = userInput.split(/\s+/).filter(Boolean).length <= 1;
+  const isWord = userInput.split(/\s+/).filter(Boolean).length <= 1;
 
-	if (isWord) {
-		const { score, status } = evaluateWordSimilarity(userInput, correctAnswer);
+  if (isWord) {
+    const result: EvaluateWordResult = {
+      type: "word",
+      score: 0,
+      status: "incorrect",
+    };
 
-		return {
-			type: "word",
-			score,
-			status,
-		} satisfies EvaluateWordResult;
-	} else {
-		const { score, status, similarities } = evaluateSentenceSimilarity({
-			inputSentence: userInput,
-			correctSentence: correctAnswer,
-		});
+    if (userInput.length === 1 && userInput !== correctAnswer) {
+      return result;
+    }
 
-		return {
-			type: "sentence",
-			score,
-			status,
-			similarities,
-		} satisfies EvaluateSentenceResult;
-	}
+    const evaluatedResult = evaluateWordSimilarity(userInput, correctAnswer);
+    return Object.assign(result, evaluatedResult);
+  } else {
+    const result: EvaluateSentenceResult = {
+      type: "sentence",
+      score: 0,
+      status: "incorrect",
+      similarities: [],
+    };
+
+    const evaluatedResult = evaluateSentenceSimilarity({
+      userInput,
+      correctAnswer,
+    });
+
+    return Object.assign(result, evaluatedResult);
+  }
 }
