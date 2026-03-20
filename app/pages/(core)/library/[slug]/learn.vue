@@ -59,7 +59,7 @@ const shouldShowAnswerDiff = computed(
 
 const {
   status,
-  pending,
+  pending: isSavingAnswers,
   execute: saveAnswers,
 } = useFetch<SuccessResponse, ErrorResponse>(
   `/api/study/save-answers/${store.deckId}`,
@@ -351,7 +351,7 @@ defineShortcuts({
         {{ store.deck?.name }}
 
         <UIcon
-          v-if="!pending"
+          v-if="!isSavingAnswers"
           name="i-lucide-check"
           class="text-success ml-2 size-5"
         />

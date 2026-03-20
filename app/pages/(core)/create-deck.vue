@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
-  api,
   CARD_SEPARATOR_ITEMS,
   CONTENT_SEPARATOR_ITEMS,
   CreateDeckFormId,
+  type CreateDeckResponse,
   createCard,
   DEFINITION_LANGUAGE_ITEMS,
   getVisibilityDesc,
@@ -16,6 +16,7 @@ import {
   VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import { Visibility } from "~/features/deck";
+import type { ErrorResponse } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 import {
   CREATE_DECK_SCHEMA,
@@ -61,7 +62,13 @@ const {
   pending: isCreating,
   data: newDeck,
   error,
-} = api.createDeck({ data: createState, token });
+} = useFetch<CreateDeckResponse, ErrorResponse>("/api/decks", {
+  method: "POST",
+  headers: { Authorization: token.value || "" },
+  body: createState,
+  immediate: false,
+  watch: false,
+});
 
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
   formErrorMsg.value = "";

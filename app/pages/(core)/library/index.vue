@@ -7,8 +7,10 @@ import {
   useDeckSearch,
   useDeckToasts,
 } from "~/features/deck";
-import { api as studyApi, useStudyToasts } from "~/features/study";
+import { useStudyToasts } from "~/features/study";
+import type { UserStats } from "~/features/user";
 import { ShortcutKey } from "~/shared/enums";
+import type { ErrorResponse } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useDeckToasts();
@@ -45,7 +47,13 @@ const { data: paginatedDecks, error: fetchDecksError } = api.getDecks({
   token,
 });
 
-const { data: userStats, error: getUserStatsError } = studyApi.getStats(token);
+const { data: userStats, error: getUserStatsError } = useFetch<
+  UserStats,
+  ErrorResponse
+>("/api/study/stats", {
+  method: "GET",
+  headers: { Authorization: token.value || "" },
+});
 
 watch([fetchDecksError, getUserStatsError], () => {
   if (fetchDecksError.value) toast.getDecksFailed();

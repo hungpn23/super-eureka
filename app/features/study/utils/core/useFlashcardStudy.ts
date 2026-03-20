@@ -1,7 +1,11 @@
 import { scheduleCardReview } from "~/features/deck";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import { getCards, shuffleArray } from "~/shared/utils";
-import { api, type SaveAnswersPayload } from "../../api";
-import type { FlashcardSession, LearnAnswerStatus } from "../../types";
+import type {
+  FlashcardSession,
+  LearnAnswerStatus,
+  SaveAnswersPayload,
+} from "../../types";
 import { getDefaultFlashcardSession, useStudyToasts } from "../common";
 
 export const useFlashcardStudy = () => {
@@ -25,11 +29,16 @@ export const useFlashcardStudy = () => {
     status,
     pending: isSavingAnswers,
     execute: saveAnswers,
-  } = api.saveAnswers({
-    deckId: store.deckId,
-    token,
-    payload: saveAnswerPayload,
-  });
+  } = useFetch<SuccessResponse, ErrorResponse>(
+    `/api/study/save-answers/${store.deckId}`,
+    {
+      method: "POST",
+      headers: { Authorization: token.value || "" },
+      body: saveAnswerPayload,
+      immediate: false,
+      watch: false,
+    },
+  );
 
   watchImmediate(cards, () => {
     if (cards.value && cards.value.length > 0) {
