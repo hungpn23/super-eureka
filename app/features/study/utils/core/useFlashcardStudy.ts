@@ -1,6 +1,6 @@
 import { scheduleCardReview } from "~/features/deck";
 import { getCards, shuffleArray } from "~/shared/utils";
-import { api } from "../../api";
+import { api, type SaveAnswersPayload } from "../../api";
 import type { FlashcardSession, LearnAnswerStatus } from "../../types";
 import { getDefaultFlashcardSession, useStudyToasts } from "../common";
 
@@ -8,6 +8,10 @@ export const useFlashcardStudy = () => {
   const { token } = useAuth();
   const toast = useStudyToasts();
   const store = useDeckStore();
+
+  const saveAnswerPayload = ref<SaveAnswersPayload>({
+    answers: [],
+  });
 
   const flashcardSession = reactive<FlashcardSession>(
     getDefaultFlashcardSession(),
@@ -17,18 +21,15 @@ export const useFlashcardStudy = () => {
     () => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
   );
 
-  const { status, pending: isSavingAnswers } = api.saveAnswers({
+  const {
+    status,
+    pending: isSavingAnswers,
+    execute: saveAnswers,
+  } = api.saveAnswers({
     deckId: store.deckId,
     token,
-    session: flashcardSession,
+    payload: saveAnswerPayload,
   });
-
-  watch(
-    () => flashcardSession.currentCard?.id,
-    () => {
-      flashcardSession.isCardFlipped = false;
-    },
-  );
 
   watchImmediate(cards, () => {
     if (cards.value && cards.value.length > 0) {
@@ -38,6 +39,15 @@ export const useFlashcardStudy = () => {
       flashcardSession.currentCard = flashcardSession.studyQueue.shift();
     }
   });
+
+  watchDeep(() => flashcardSession.cardsToSave, handleSaveAnswers);
+
+  watch(
+    () => flashcardSession.currentCard?.id,
+    () => {
+      flashcardSession.isCardFlipped = false;
+    },
+  );
 
   watch(status, () => {
     if (status.value === "error") toast.saveAnswersFailed();
@@ -85,6 +95,14 @@ export const useFlashcardStudy = () => {
 
     flashcardSession.currentCard = flashcardSession.studyQueue.shift();
   }, 300);
+
+  async function handleSaveAnswers() {
+    if (!flashcardSession.cardsToSave.length) return;
+    saveAnswerPayload.value = { answers: flashcardSession.cardsToSave };
+    await saveAnswers();
+    flashcardSession.savedCards = [...flashcardSession.cardsToSave];
+    flashcardSession.cardsToSave = [];
+  }
 
   function handleShuffleCards() {
     if (!flashcardSession.currentCard) return;

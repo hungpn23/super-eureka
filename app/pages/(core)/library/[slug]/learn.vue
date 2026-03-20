@@ -7,7 +7,6 @@ import {
   scheduleCardReview,
 } from "~/features/deck";
 import {
-  api,
   generateQuestions,
   getDefaultLearnQuestionState,
   getDefaultLearnSession,
@@ -16,10 +15,12 @@ import {
   type LearnQuestionState,
   type LearnSession,
   type LearnSetting,
+  type SaveAnswersPayload,
   useStudyToasts,
 } from "~/features/study";
 import { evaluateWrittenAnswer } from "~/features/study/utils/scoring/evaluateWrittenAnswer";
 import { ShortcutKey } from "~/shared/enums";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import { focusInput, getCards } from "~/shared/utils";
 
 const NEXT_QUESTION_DELAY = 750;
@@ -32,6 +33,10 @@ const store = useDeckStore();
 const userWrittenAnswerRef = useTemplateRef("userWrittenAnswerInput");
 const isSettingModalOpen = refManualReset(false);
 const snapshotSetting = refManualReset("");
+
+const saveAnswerPayload = ref<SaveAnswersPayload>({
+  answers: [],
+});
 
 const learnSession = reactive<LearnSession>(getDefaultLearnSession());
 const questionState = reactive<LearnQuestionState>(
@@ -52,11 +57,20 @@ const shouldShowAnswerDiff = computed(
     learnSession.currentQuestion?.type === "written",
 );
 
-const { status, pending } = api.saveAnswers({
-  deckId: store.deckId,
-  token,
-  session: learnSession,
-});
+const {
+  status,
+  pending,
+  execute: saveAnswers,
+} = useFetch<SuccessResponse, ErrorResponse>(
+  `/api/study/save-answers/${store.deckId}`,
+  {
+    method: "POST",
+    headers: { Authorization: token.value || "" },
+    body: saveAnswerPayload,
+    immediate: false,
+    watch: false,
+  },
+);
 
 watch(() => store.deck?.cards, initLearnSession);
 watch(
@@ -69,6 +83,15 @@ watch(
 watch(status, () => {
   if (status.value === "error") toast.saveAnswersFailed();
 });
+
+watchDeep(() => learnSession.cardsToSave, handleSaveAnswers);
+
+async function handleSaveAnswers() {
+  if (!learnSession.cardsToSave.length) return;
+  saveAnswerPayload.value = { answers: learnSession.cardsToSave };
+  await saveAnswers();
+  learnSession.cardsToSave = [];
+}
 
 function initLearnSession() {
   if (!store.deck?.cards?.length) return;

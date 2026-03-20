@@ -117,12 +117,13 @@ const studyOptions = computed(() => [
     to: `#`,
   },
 ]);
-
 const isWord = (term: string) => !term.trim().includes(" ");
 
 watch(
   () => flashcardSession.savedCards,
-  () => syncSavedCards(flashcardSession.savedCards),
+  () => {
+    syncSavedCards(flashcardSession.savedCards);
+  },
 );
 
 defineShortcuts({
