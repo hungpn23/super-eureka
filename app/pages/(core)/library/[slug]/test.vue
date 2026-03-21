@@ -22,6 +22,8 @@ const snapshotSetting = refManualReset("");
 const setting = reactive<TestSetting>(getDefaultTestSetting());
 const session = reactive<TestSession>(getDefaultTestSession());
 
+const homeUrl = computed(() => `/library/${store.slug}?deckId=${store.deckId}`);
+
 watch([() => session.questions, () => session.currentQuestionIndex], () => {
   session.currentQuestion = session.questions[session.currentQuestionIndex];
 });
@@ -227,7 +229,7 @@ onMounted(() => {
   <UContainer v-if="session.questions.length">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/library/${store.slug}?deckId=${store.deckId}`"
+        :to="homeUrl"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"

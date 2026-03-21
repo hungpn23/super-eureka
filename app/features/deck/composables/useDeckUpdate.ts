@@ -23,13 +23,16 @@ export function useDeckUpdate() {
     status,
     pending: isUpdating,
     execute: updateDeck,
-  } = useFetch<SuccessResponse, ErrorResponse>(`/api/decks/${store.deckId}`, {
-    method: "PATCH",
-    headers: { Authorization: token.value || "" },
-    body: updateState,
-    immediate: false,
-    watch: false,
-  });
+  } = useFetch<SuccessResponse, ErrorResponse>(
+    computed(() => `/api/decks/${store.deckId}`),
+    {
+      method: "PATCH",
+      headers: { Authorization: token.value || "" },
+      body: updateState,
+      immediate: false,
+      watch: false,
+    },
+  );
 
   watchImmediate(
     () => store.deck,

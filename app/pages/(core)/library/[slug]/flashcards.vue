@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
-import { breakpointsTailwind } from "@vueuse/core";
 import { useFlashcardStudy } from "~/features/study";
 import { ShortcutKey } from "~/shared/enums";
 
-const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const store = useDeckStore();
-
 const {
   flashcardSession,
   studyProgress,
@@ -14,6 +11,11 @@ const {
   handleAnswer,
   handleShuffleCards,
 } = useFlashcardStudy();
+
+const homeUrl = computed(() => `/library/${store.slug}?deckId=${store.deckId}`);
+const learnUrl = computed(
+  () => `/library/${store.slug}/learn?deckId=${store.deckId}`,
+);
 
 const settingOptions = computed<DropdownMenuItem[]>(() => [
   [
@@ -37,7 +39,7 @@ defineShortcuts({
   <UContainer v-if="flashcardSession.currentCard">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/library/${store.slug}?deckId=${store.deckId}`"
+        :to="homeUrl"
         label="Home"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
@@ -45,7 +47,7 @@ defineShortcuts({
       />
 
       <UButton
-        :to="`/library/${store.slug}/learn?deckId=${store.deckId}`"
+        :to="learnUrl"
         label="Learn"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"

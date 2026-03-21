@@ -1,8 +1,6 @@
 import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import { useDeckToasts } from "./useDeckToasts";
 
-const BASE_URL = "";
-
 export function useDeckDelete() {
   const { token } = useAuth();
   const toast = useDeckToasts();
@@ -13,12 +11,15 @@ export function useDeckDelete() {
     pending: isDeleting,
     error,
     execute: deleteDeck,
-  } = useFetch<SuccessResponse, ErrorResponse>(`/api/decks/${store.deckId}`, {
-    method: "DELETE",
-    headers: { Authorization: token.value || "" },
-    immediate: false,
-    watch: false,
-  });
+  } = useFetch<SuccessResponse, ErrorResponse>(
+    computed(() => `/api/decks/${store.deckId}`),
+    {
+      method: "DELETE",
+      headers: { Authorization: token.value || "" },
+      immediate: false,
+      watch: false,
+    },
+  );
 
   async function handleDeleteDeck() {
     if (isDeleting.value) return;

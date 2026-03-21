@@ -44,6 +44,13 @@ const questionState = reactive<LearnQuestionState>(
 );
 const setting = reactive<LearnSetting>(getDefaultLearnSetting());
 
+const flashcardUrl = computed(
+  () => `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
+);
+const testUrl = computed(
+  () => `/library/${store.slug}/test?deckId=${store.deckId}`,
+);
+
 const progress = computed(() => {
   if (!learnSession.totalQuestions) return 0;
   return (learnSession.correctCount / learnSession.totalQuestions) * 100;
@@ -62,7 +69,7 @@ const {
   pending: isSavingAnswers,
   execute: saveAnswers,
 } = useFetch<SuccessResponse, ErrorResponse>(
-  `/api/study/save-answers/${store.deckId}`,
+  computed(() => `/api/study/save-answers/${store.deckId}`),
   {
     method: "POST",
     headers: { Authorization: token.value || "" },
@@ -328,7 +335,7 @@ defineShortcuts({
   <UContainer v-if="learnSession.currentQuestion">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/library/${store.slug}/flashcards?deckId=${store.deckId}`"
+        :to="flashcardUrl"
         label="Flashcards"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
@@ -336,7 +343,7 @@ defineShortcuts({
       />
 
       <UButton
-        :to="`/library/${store.slug}/test?deckId=${store.deckId}`"
+        :to="testUrl"
         label="Test"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"

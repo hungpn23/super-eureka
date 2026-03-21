@@ -20,13 +20,16 @@ export function useChangePasscode() {
     status,
     pending: isChanging,
     execute: updateVisibility,
-  } = useFetch<SuccessResponse, ErrorResponse>(`/api/decks/${store.deckId}`, {
-    method: "PATCH",
-    headers: { Authorization: token.value || "" },
-    body: updateVisibilityState,
-    immediate: false,
-    watch: false,
-  });
+  } = useFetch<SuccessResponse, ErrorResponse>(
+    computed(() => `/api/decks/${store.deckId}`),
+    {
+      method: "PATCH",
+      headers: { Authorization: token.value || "" },
+      body: updateVisibilityState,
+      immediate: false,
+      watch: false,
+    },
+  );
 
   async function handleUpdateVisibilitySubmit(
     event: FormSubmitEvent<UpdateVisibilitySchema>,
