@@ -1,4 +1,4 @@
-export type CardSuggestion = {
+export type ContentSuggestion = {
   currentCardIndex: number;
   definition: string;
   pronunciation?: string;

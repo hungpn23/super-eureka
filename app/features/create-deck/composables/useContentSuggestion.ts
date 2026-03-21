@@ -1,24 +1,24 @@
 import type { ShallowRef } from "vue";
-import type { CardSuggestion } from "~/features/card";
+import type { ContentSuggestion } from "~/features/card";
 import { focusInput } from "~/shared/utils";
 import type { CreateCardSchema } from "~/valibot/schemas";
 import type { TextareaRef } from "../types";
 
-export function useCardSuggestion(
-  definitionRef: Readonly<ShallowRef<TextareaRef[] | null>>,
+export function useContentSuggestion(
+  definitionRefs: Readonly<ShallowRef<TextareaRef[] | null>>,
 ) {
   const { token } = useAuth();
 
-  const suggestion = reactive<CardSuggestion>({
+  const suggestion = reactive<ContentSuggestion>({
     currentCardIndex: -1,
     definition: "",
   });
 
-  const debouncedGetCardSuggestion = useDebounceFn(
+  const suggestContent = useDebounceFn(
     async (card: CreateCardSchema, cardIndex: number) => {
       const { term, partOfSpeech, termLanguage, definitionLanguage } = card;
 
-      $fetch<CardSuggestion>("/api/suggestion/term", {
+      $fetch<ContentSuggestion>("/api/suggestion/content", {
         method: "POST",
         headers: { Authorization: token.value || "" },
         body: {
@@ -41,14 +41,14 @@ export function useCardSuggestion(
     return suggestion.currentCardIndex === index;
   }
 
-  function hasSuggestion(card: CreateCardSchema) {
+  function hasContentSuggestion(card: CreateCardSchema) {
     return !card.definition && !!suggestion.definition;
   }
 
-  function applySuggestion(card: CreateCardSchema, index: number) {
-    if (!hasSuggestion(card)) return;
+  function applyContentSuggestion(card: CreateCardSchema, index: number) {
+    if (!hasContentSuggestion(card)) return;
     Object.assign(card, suggestion);
-    focusInput(definitionRef.value?.[index]?.textareaRef);
+    focusInput(definitionRefs.value?.[index]?.textareaRef);
   }
 
   function isWord(term: string) {
@@ -57,10 +57,10 @@ export function useCardSuggestion(
 
   return {
     suggestion,
-    debouncedGetCardSuggestion,
+    suggestContent,
     isSuggestingThisCard,
-    hasSuggestion,
-    applySuggestion,
+    hasContentSuggestion,
+    applyContentSuggestion,
     isWord,
   };
 }

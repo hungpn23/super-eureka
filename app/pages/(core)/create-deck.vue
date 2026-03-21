@@ -10,8 +10,8 @@ import {
   getVisibilityDesc,
   getVisibilityLabel,
   TERM_LANGUAGE_ITEMS,
-  useCardSuggestion,
   useCardsImport,
+  useContentSuggestion,
   useCreateDeckToasts,
   VISIBILITY_ITEMS,
 } from "~/features/create-deck";
@@ -50,12 +50,12 @@ const {
 
 const {
   suggestion,
-  debouncedGetCardSuggestion,
+  suggestContent,
   isSuggestingThisCard,
-  hasSuggestion,
-  applySuggestion,
+  hasContentSuggestion,
+  applyContentSuggestion,
   isWord,
-} = useCardSuggestion(definitionRefs);
+} = useContentSuggestion(definitionRefs);
 
 const {
   execute: createDeck,
@@ -232,10 +232,10 @@ function handleAddExample(index: number) {
                     class="w-full"
                     placeholder="Enter your term..."
                     autoresize
-                    @update:model-value="
-                      () => debouncedGetCardSuggestion(card, cIndex)
+                    @update:model-value="() => suggestContent(card, cIndex)"
+                    @keydown.tab.prevent="
+                      () => applyContentSuggestion(card, cIndex)
                     "
-                    @keydown.tab.prevent="() => applySuggestion(card, cIndex)"
                   />
                 </UFormField>
 
@@ -292,7 +292,9 @@ function handleAddExample(index: number) {
                 </div>
 
                 <span
-                  v-if="isSuggestingThisCard(cIndex) && hasSuggestion(card)"
+                  v-if="
+                    isSuggestingThisCard(cIndex) && hasContentSuggestion(card)
+                  "
                   class="text-muted text-sm"
                 >
                   Press <UKbd size="lg">tab</UKbd> to accept suggestion.
