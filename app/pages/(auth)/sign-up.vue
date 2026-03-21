@@ -2,12 +2,14 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
 import {
-	api,
+	type ConfirmEmailVerificationResponse,
 	pickFields,
 	type SignUpState,
+	type TokenPairResponse,
 	useAuthToasts,
 	useUsers,
 } from "~/features/auth";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import { AUTH_SCHEMA } from "~/valibot/schemas";
 
 definePageMeta({
@@ -42,9 +44,40 @@ const state = reactive<SignUpState>({
 	isEmailVerified: false,
 	verifiedToken: "",
 });
-const requestMutation = api.requestEmailVerification(state);
-const confirmMutation = api.confirmEmailVerification(state);
-const signUpMutation = api.signUp(state);
+
+const requestMutation = useFetch<SuccessResponse, ErrorResponse>(
+	"/api/auth/email-verification/request",
+	{
+		method: "POST",
+		body: computed(() => ({ email: state.email })),
+		immediate: false,
+		watch: false,
+	},
+);
+
+const confirmMutation = useFetch<ConfirmEmailVerificationResponse, ErrorResponse>(
+	"/api/auth/email-verification/confirm",
+	{
+		method: "POST",
+		body: computed(() => ({ email: state.email, otp: state.otp })),
+		immediate: false,
+		watch: false,
+	},
+);
+
+const signUpMutation = useFetch<TokenPairResponse, ErrorResponse>(
+	"/api/auth/sign-up",
+	{
+		method: "POST",
+		body: computed(() => ({
+			verifiedToken: state.verifiedToken,
+			username: state.username,
+			password: state.password,
+		})),
+		immediate: false,
+		watch: false,
+	},
+);
 
 async function handleEmailSubmit(
 	payload: FormSubmitEvent<v.InferOutput<typeof emailSchema>>,

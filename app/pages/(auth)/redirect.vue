@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { api, useAuthToasts, useUsers } from "~/features/auth";
+import { type TokenPairResponse, useAuthToasts, useUsers } from "~/features/auth";
+import type { ErrorResponse } from "~/shared/types";
 
 definePageMeta({
 	auth: {
@@ -12,7 +13,15 @@ const route = useRoute();
 const toast = useAuthToasts();
 const users = useUsers();
 const token = computed(() => route.query.token as string);
-const { execute, data, error, pending } = api.verifyToken(token);
+const { execute, data, error, pending } = useFetch<TokenPairResponse, ErrorResponse>(
+	"/api/auth/verify-token",
+	{
+		method: "POST",
+		query: { token },
+		immediate: false,
+		watch: false,
+	},
+);
 
 onMounted(async () => {
 	if (!token.value) return navigateTo("/login");

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { api, pickFields } from "~/features/auth";
+import { pickFields } from "~/features/auth";
 import { ERROR_MESSAGES } from "~/shared/constants";
+import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import { AUTH_SCHEMA } from "~/valibot/schemas";
 
 definePageMeta({
@@ -16,7 +17,15 @@ definePageMeta({
 const schema = v.pick(AUTH_SCHEMA, ["email"]);
 const toast = useToast();
 const email = ref("");
-const { execute, status, data, error } = api.requestMagicLink(email);
+const { execute, status, data, error } = useFetch<SuccessResponse, ErrorResponse>(
+  "/api/auth/magic-link",
+  {
+    method: "POST",
+    body: { email },
+    immediate: false,
+    watch: false,
+  },
+);
 
 async function handleSubmit(
   payload: FormSubmitEvent<v.InferOutput<typeof schema>>,
