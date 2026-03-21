@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
+import { diffChars } from "diff";
 import type { UCard } from "#components";
 import { QUESTION_DIRECTION_ITEMS, QUESTION_TYPE_ITEMS } from "~/features/deck";
 import {
@@ -10,6 +11,7 @@ import {
   type TestSession,
   type TestSetting,
 } from "~/features/study";
+import { evaluateWrittenAnswer } from "~/features/study/utils/scoring/evaluateWrittenAnswer";
 import { ShortcutKey } from "~/shared/enums";
 import { focusInput, getCards, shuffleArray } from "~/shared/utils";
 
@@ -52,7 +54,7 @@ watch([() => store.deck?.cards, () => setting.questionAmount], ([newCards]) => {
     const filteredCards = getCards(newCards);
 
     if (
-      setting.questionAmount === 0 ||
+      !setting.questionAmount ||
       setting.questionAmount > filteredCards.length
     ) {
       setting.questionAmount = filteredCards.length;
@@ -69,11 +71,10 @@ watch([() => store.deck?.cards, () => setting.questionAmount], ([newCards]) => {
 
 watch(() => testSession.currentQuestionIndex, scrollAndFocusQuestion);
 
-watchDeep(
-  () => setting,
+watch(
+  () => setting.types.length,
   () => {
     if (!setting.types.length) setting.types = ["multiple_choices"];
-    if (!setting.questionAmount) setting.questionAmount = 1;
   },
 );
 
@@ -82,7 +83,8 @@ const handleChoiceSelected = useThrottleFn(
     if (!question) return;
 
     question.userChoiceIndex = choiceIndex;
-    question.isUserAnswerCorrect = choiceIndex === question.correctChoiceIndex;
+    question.answerStatus =
+      choiceIndex === question.correctChoiceIndex ? "correct" : "incorrect";
     testSession.currentQuestionIndex = questionIndex;
     handleChangeQuestion("right");
   },
@@ -137,22 +139,47 @@ async function handleSettingClosed() {
 
 function handleWrittenAnswerBlur(question: TestQuestion) {
   if (!question.userAnswer) return;
-
   question.userAnswer = question.userAnswer.trim();
-  question.isUserAnswerCorrect =
-    question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
+}
+
+function evaluateWrittenQuestion(question: TestQuestion) {
+  if (!question.userAnswer?.trim() || question.type !== "written") return;
+
+  const userAnswer = question.userAnswer.trim();
+  const result = evaluateWrittenAnswer(userAnswer, question.correctAnswer);
+
+  question.answerStatus = result.status;
+  question.answerDiffs =
+    result.status === "correct"
+      ? []
+      : diffChars(userAnswer, question.correctAnswer);
 }
 
 function handleDontKnowClicked(question: TestQuestion, questionIndex: number) {
   if (question.isMarkedAsDontKnow) return;
 
   question.isMarkedAsDontKnow = true;
-  question.isUserAnswerCorrect = true;
+  question.answerStatus = "incorrect";
   testSession.currentQuestionIndex = questionIndex;
   handleChangeQuestion("right");
 }
 
 function handleTestSubmitted() {
+  for (const question of testSession.questions) {
+    if (question.type === "written") {
+      if (question.isMarkedAsDontKnow || !question.userAnswer?.trim()) {
+        question.answerStatus = "incorrect";
+        question.answerDiffs = diffChars("", question.correctAnswer);
+      } else {
+        evaluateWrittenQuestion(question);
+      }
+    }
+
+    if (question.type === "multiple_choices" && !question.answerStatus) {
+      question.answerStatus = "incorrect";
+    }
+  }
+
   testSession.isSubmitted = true;
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -186,7 +213,14 @@ function getChoiceBtnClass(question: TestQuestion, choiceIndex: number) {
 
 function getWrittenInputClass(question: TestQuestion) {
   if (!testSession.isSubmitted) return "";
-  return question.isUserAnswerCorrect ? "border-success" : "border-error";
+
+  if (question.answerStatus === "typo" || question.answerStatus === "almost") {
+    return "border-warning";
+  }
+
+  return question.answerStatus === "correct"
+    ? "border-success"
+    : "border-error";
 }
 
 defineShortcuts({
@@ -351,13 +385,9 @@ onMounted(() => {
               @click.stop="testSession.currentQuestionIndex = questionIndex"
             />
 
-            <UInput
-              v-if="!question.isUserAnswerCorrect && testSession.isSubmitted"
-              :ui="{
-                base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
-              }"
-              :default-value="question.correctAnswer"
-              disabled
+            <StudyAnswerDiff
+              v-if="testSession.isSubmitted && question.answerDiffs?.length"
+              :diffs="question.answerDiffs"
             />
           </div>
 

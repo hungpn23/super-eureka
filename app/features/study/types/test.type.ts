@@ -1,12 +1,14 @@
+import type { Change } from "diff";
 import type { QuestionDirection, QuestionType } from "./common.type";
-import type { LearnQuestion } from "./learn.type";
+import type { LearnAnswerStatus, LearnQuestion } from "./learn.type";
 
 export type TestQuestion = Omit<LearnQuestion, "streak" | "reviewDate"> &
   Partial<{
     userAnswer: string;
     userChoiceIndex: number;
-    isUserAnswerCorrect: boolean;
     isMarkedAsDontKnow: boolean;
+    answerStatus: LearnAnswerStatus;
+    answerDiffs: Change[];
   }>;
 
 export type TestSession = {
