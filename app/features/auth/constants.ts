@@ -4,7 +4,6 @@ import type {
   AuthFormOtpField,
   ButtonProps,
 } from "@nuxt/ui";
-import * as v from "valibot";
 import type { AuthField, ProviderId } from "./types";
 
 export const DEFAULT_FIELDS: AuthFormField[] = [
@@ -52,15 +51,8 @@ export const AUTH_PROVIDERS: (ButtonProps & { id: ProviderId })[] = [
     icon: "i-simple-icons-google",
   },
   {
-    id: "github" satisfies ProviderId,
-    label: "Continue with GitHub",
-    icon: "i-simple-icons-github",
-  },
-  {
     id: "magic-link" satisfies ProviderId,
     label: "Continue with Email",
     icon: "i-simple-icons-simplelogin",
   },
 ] as const;
-
-

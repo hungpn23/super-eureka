@@ -1,4 +1,0 @@
-- [x] refactor shared detail page
-- [ ] refactor all library pages
-- [ ] refactor this: `headers: { Authorization: token.value || "" }`
-- [ ] refactor user page
