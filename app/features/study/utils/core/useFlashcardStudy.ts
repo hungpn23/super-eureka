@@ -1,3 +1,4 @@
+import type { Card } from "~/features/card";
 import { scheduleCardReview } from "~/features/deck";
 import type { ErrorResponse, SuccessResponse } from "~/shared/types";
 import { getCards, shuffleArray } from "~/shared/utils";
@@ -13,6 +14,7 @@ export const useFlashcardStudy = () => {
   const toast = useStudyToasts();
   const store = useDeckStore();
 
+  const cards = ref<Card[]>([]);
   const saveAnswerPayload = ref<SaveAnswersPayload>({
     answers: [],
   });
@@ -20,7 +22,7 @@ export const useFlashcardStudy = () => {
   const flashcardSession = reactive<FlashcardSession>(
     getDefaultFlashcardSession(),
   );
-  const cards = computed(() => getCards(store.deck?.cards || []));
+
   const studyProgress = computed(
     () => (flashcardSession.knownCount / flashcardSession.totalCards) * 100,
   );
@@ -30,7 +32,7 @@ export const useFlashcardStudy = () => {
     pending: isSavingAnswers,
     execute: saveAnswers,
   } = useFetch<SuccessResponse, ErrorResponse>(
-    `/api/study/save-answers/${store.deckId}`,
+    computed(() => `/api/study/save-answers/${store.deckId}`),
     {
       method: "POST",
       headers: { Authorization: token.value || "" },
@@ -50,6 +52,12 @@ export const useFlashcardStudy = () => {
   });
 
   watchDeep(() => flashcardSession.cardsToSave, handleSaveAnswers);
+  watchDeep(
+    () => store.deck?.cards,
+    () => {
+      cards.value = store.deck?.cards.length ? getCards(store.deck.cards) : [];
+    },
+  );
 
   watch(
     () => flashcardSession.currentCard?.id,
