@@ -7,17 +7,16 @@ A modern vocabulary learning application built with **Nuxt 4** and **Vue 3**, fe
 ## 🎯 Features
 
 ### 📚 Deck Management
-
-- **Create Decks**: Build vocabulary decks with custom cards (term, definition, pronunciation, part of speech, examples)
+- **Create Decks**: Build vocabulary decks with custom cards (term, definition, pronunciation, part of speech, usage/grammar, examples)
 - **Edit Decks**: Modify deck content with live validation
-- **Visibility Control**: Set decks as PUBLIC/PROTECTED/PRIVATE
+- **Visibility Control**: Set decks as PUBLIC / PROTECTED (passcode) / PRIVATE
 - **Clone Decks**: Clone shared decks to personal library
+- **Restart Progress**: Reset all card streaks and review dates
 - **Statistics**: Track progress with deck stats (known, learning, new cards)
 
 ### 🎴 Three Study Modes
 
 #### 1. Flashcards
-
 - Classic flip-card review
 - **Know / Don't Know** tracking
 - Auto-save progress with debounced API calls
@@ -25,48 +24,56 @@ A modern vocabulary learning application built with **Nuxt 4** and **Vue 3**, fe
 - Shuffle functionality
 
 #### 2. Learn Mode
-
 - **Multiple choice** and **written answer** questions
 - Bi-directional practice (term → definition, definition → term)
 - Hint system with streak penalty
+- Answer diff highlighting for incorrect/typo written answers
 - Progress tracking with spaced repetition
 
 #### 3. Test Mode
-
 - Quiz-style assessment
 - Configurable question amount
 - Multiple question types
 - Results summary with correct/incorrect breakdown
 
 ### 🔐 Authentication
-
-- **Local Authentication**: Username/password signup & login
-- **Google OAuth**: One-click Google sign-in
+- **Local Authentication**: Username/password sign-up & login (with OTP email verification)
+- **Google OAuth**: One-click Google sign-in (Authorization Code Flow)
 - **Magic Link**: Passwordless email sign-in
-- **JWT Token Management**: Access token (30 min) + refresh token (14 days)
-- Email verification with OTP
+- **Password Reset**: OTP-based password recovery flow
+- **JWT Token Management**: Access token (30 min) + refresh token (14 days) with automatic rotation
 
 ### 👥 Social Features
-
 - **Public Profiles**: View other users' shared decks
 - **Deck Sharing**: Share decks with the community
+- **Protected Decks**: Share with passcode protection
 - **View & Learner Counts**: Popularity metrics
+- **Real-time Notifications**: WebSocket-based notification system (Socket.IO)
+
+### 📊 User Statistics
+- Study streaks (current & longest)
+- Total cards learned
+- Mastery rate tracking
+- Last study date
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Category             | Technology                                                        |
-| -------------------- | ----------------------------------------------------------------- |
-| **Framework**        | [Nuxt 4](https://nuxt.com/) (Vue 3)                               |
-| **State Management** | [Pinia](https://pinia.vuejs.org/) with persistence                |
-| **UI Components**    | [@nuxt/ui v4](https://ui.nuxt.com/)                               |
-| **Authentication**   | [@sidebase/nuxt-auth](https://auth.sidebase.io/) (local provider) |
-| **Validation**       | [Valibot](https://valibot.dev/)                                   |
-| **Utilities**        | [VueUse](https://vueuse.org/), [date-fns](https://date-fns.org/)  |
-| **Icons**            | Iconify (Heroicons, Lucide)                                       |
-| **Linting**          | [Biome](https://biomejs.dev/)                                     |
-| **Package Manager**  | pnpm                                                              |
+| Category | Technology |
+|----------|------------|
+| **Framework** | [Nuxt 4](https://nuxt.com/) (Vue 3) |
+| **State Management** | [Pinia](https://pinia.vuejs.org/) v3 with persistence |
+| **UI Components** | [@nuxt/ui v4](https://ui.nuxt.com/) |
+| **Authentication** | [@sidebase/nuxt-auth](https://auth.sidebase.io/) (local provider) |
+| **Validation** | [Valibot](https://valibot.dev/) |
+| **Utilities** | [VueUse](https://vueuse.org/), [date-fns](https://date-fns.org/), [lodash](https://lodash.com/) |
+| **Real-time** | [Socket.IO Client](https://socket.io/) |
+| **Text Diffing** | [diff](https://github.com/kpdecker/jsdiff) |
+| **Icons** | Iconify (Heroicons, Lucide, Simple Icons) |
+| **Linting & Formatting** | [Biome](https://biomejs.dev/) |
+| **Image Optimization** | [@nuxt/image](https://image.nuxt.com/) |
+| **Package Manager** | pnpm |
 
 ---
 
@@ -88,7 +95,7 @@ vocabify_fe/
 │   │   ├── card/             # Card types & utilities
 │   │   ├── create-deck/      # Deck creation logic
 │   │   ├── deck/             # Deck management (composables, types, utils)
-│   │   ├── study/            # Study modes (flashcard, learn, test)
+│   │   ├── study/            # Study modes (types, utils, constants)
 │   │   └── user/             # User types & constants
 │   ├── layouts/              # Page layouts
 │   │   ├── auth.vue          # Authentication pages layout
@@ -99,7 +106,7 @@ vocabify_fe/
 │   │   │   ├── create-deck.vue
 │   │   │   ├── library/
 │   │   │   │   └── [slug]/
-│   │   │   │       ├── index.vue       # Deck details + flashcard
+│   │   │   │       ├── index.vue       # Deck details
 │   │   │   │       ├── flashcards.vue
 │   │   │   │       ├── learn.vue
 │   │   │   │       └── test.vue
@@ -125,15 +132,15 @@ vocabify_fe/
 ### Architecture Highlights
 
 - **Feature-based modules**: Each feature (`auth`, `deck`, `study`, etc.) is self-contained with its own types, composables, constants, and utilities, exported through barrel `index.ts` files
+- **Direct `useFetch` calls**: API calls use Nuxt's `useFetch` composable directly at call sites — no wrapper classes
 - **Server proxy**: A single catch-all route (`server/api/[...].ts`) proxies all `/api/*` requests to the backend
-- **Pinia store**: Centralized deck state management with HMR support
+- **Pinia store**: Centralized deck state management with persistence and HMR support
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
 - **Node.js** ≥ 18.0.0
 - **pnpm** (recommended)
 
@@ -180,18 +187,18 @@ pnpm preview
 
 ## 📜 Available Scripts
 
-| Script            | Description                    |
-| ----------------- | ------------------------------ |
-| `pnpm dev`        | Start development server       |
-| `pnpm build`      | Build for production           |
-| `pnpm preview`    | Preview production build       |
-| `pnpm typecheck`  | Run TypeScript type checking   |
-| `pnpm lint`       | Run Biome linter               |
-| `pnpm lint:fix`   | Fix linting issues             |
-| `pnpm format`     | Check code formatting          |
-| `pnpm format:fix` | Fix formatting issues          |
-| `pnpm check`      | Run all checks (lint + format) |
-| `pnpm check:fix`  | Fix all issues                 |
+| Script | Description |
+|--------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm preview` | Preview production build |
+| `pnpm typecheck` | Run TypeScript type checking |
+| `pnpm lint` | Run Biome linter |
+| `pnpm lint:fix` | Fix linting issues |
+| `pnpm format` | Check code formatting |
+| `pnpm format:fix` | Fix formatting issues |
+| `pnpm check` | Run all checks (lint + format) |
+| `pnpm check:fix` | Fix all issues |
 
 ---
 
@@ -199,13 +206,18 @@ pnpm preview
 
 Vocabify uses a spaced repetition algorithm to optimize learning:
 
-| Field        | Description                        |
-| ------------ | ---------------------------------- |
-| `streak`     | Consecutive correct answers (0-5+) |
-| `reviewDate` | Scheduled next review date         |
-| `status`     | `new` → `learning` → `known`       |
+| Field | Description |
+|-------|-------------|
+| `streak` | Consecutive correct answers (0-5+) |
+| `reviewDate` | Scheduled next review date |
+| `status` | `new` → `learning` → `known` |
 
 **Study Priority**: Cards due for review (`reviewDate ≤ today`) appear first, followed by new cards.
+
+**Status Transitions**:
+- `new`: Card has no `reviewDate` set
+- `learning`: Card has `reviewDate ≤ today` (due for review)
+- `known`: Card has `reviewDate > today` (mastered, will be reviewed later)
 
 ---
 
