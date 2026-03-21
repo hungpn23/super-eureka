@@ -134,56 +134,63 @@ defineShortcuts({
           </div>
 
           <div
-            v-if="flashcardSession.isCardFlipped"
-            class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
+            class="card-flip-container w-full flex-1 flex flex-col place-content-center place-items-center"
           >
-            <div class="flex flex-col place-content-evenly gap-2">
-              <div class="text-xl font-medium sm:text-2xl">
-                {{ flashcardSession.currentCard.definition }}
+            <Transition name="flip" mode="out-in">
+              <div
+                v-if="flashcardSession.isCardFlipped"
+                key="back"
+                class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
+              >
+                <div class="flex flex-col place-content-evenly gap-2">
+                  <div class="text-xl font-medium sm:text-2xl">
+                    {{ flashcardSession.currentCard.definition }}
+                  </div>
+                  <div v-if="flashcardSession.currentCard.examples?.length">
+                    <p class="text-sm font-medium">Examples:</p>
+                    <ul class="list-disc pl-4">
+                      <li
+                        v-for="(example, i) in flashcardSession.currentCard
+                          .examples"
+                        :key="i"
+                      >
+                        <em>
+                          {{ example }}
+                          <span v-if="!example.endsWith('.')">.</span>
+                        </em>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <NuxtImg
+                  class="rounded-md"
+                  src="https://avatars.githubusercontent.com/u/177613774?v=4"
+                  alt="User avatar"
+                />
               </div>
 
-              <div v-if="flashcardSession.currentCard.examples">
-                <p class="text-sm font-medium">Examples:</p>
-
-                <ul class="list-disc pl-4">
-                  <li
-                    v-for="(example, i) in flashcardSession.currentCard
-                      .examples"
-                    :key="i"
-                  >
-                    <em>
-                      {{ example }}
-
-                      <span v-if="!example.endsWith('.')">.</span>
-                    </em>
-                  </li>
-                </ul>
+              <div
+                v-else
+                key="front"
+                class="flex flex-col place-items-center sm:px-4"
+              >
+                <div class="space-x-2">
+                  <span class="text-2xl font-medium sm:text-3xl">
+                    {{ flashcardSession.currentCard.term }}
+                  </span>
+                  <span v-if="flashcardSession.currentCard.partOfSpeech">
+                    ({{ flashcardSession.currentCard.partOfSpeech }})
+                  </span>
+                </div>
+                <em v-if="flashcardSession.currentCard.pronunciation">
+                  {{ flashcardSession.currentCard.pronunciation }}
+                </em>
               </div>
-            </div>
+            </Transition>
 
-            <NuxtImg
-              src="https://avatars.githubusercontent.com/u/177613774?v=4"
-              alt="User avatar"
-            />
+            <div />
           </div>
-
-          <div v-else class="flex flex-col place-items-center sm:px-4">
-            <div class="space-x-2">
-              <span class="text-2xl font-medium sm:text-3xl">
-                {{ flashcardSession.currentCard.term }}
-              </span>
-
-              <span v-if="flashcardSession.currentCard.partOfSpeech">
-                ({{ flashcardSession.currentCard.partOfSpeech }})
-              </span>
-            </div>
-
-            <em v-if="flashcardSession.currentCard.pronunciation">
-              {{ flashcardSession.currentCard.pronunciation }}
-            </em>
-          </div>
-
-          <div />
         </template>
       </UCard>
 
@@ -244,3 +251,39 @@ defineShortcuts({
 
   <AppEmpty v-else-if="!store.isFetchingDeck" />
 </template>
+
+<style scoped>
+.card-flip-container {
+  perspective: 1000px;
+}
+
+/* Flip từ front → back */
+.flip-enter-active {
+  animation: flip-in 0.3s ease-out;
+}
+.flip-leave-active {
+  animation: flip-out 0.3s ease-in;
+}
+
+@keyframes flip-out {
+  from {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: rotateY(90deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flip-in {
+  from {
+    transform: rotateY(-90deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+</style>
