@@ -258,6 +258,15 @@ defineShortcuts({
     handler: () => handleChangeQuestion("right"),
     usingInput: true,
   },
+
+  [ShortcutKey.MARK_AS_DONT_KNOW]: {
+    handler: () =>
+      handleDontKnowClicked(
+        testSession.currentQuestion!,
+        testSession.currentQuestionIndex,
+      ),
+    usingInput: true,
+  },
 });
 
 onMounted(() => {
