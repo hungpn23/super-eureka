@@ -20,29 +20,34 @@ const questionRefs = useTemplateRef("questionCards");
 const isSettingModalOpen = ref(false);
 const snapshotSetting = refManualReset("");
 const setting = reactive<TestSetting>(getDefaultTestSetting());
-const session = reactive<TestSession>(getDefaultTestSession());
+const testSession = reactive<TestSession>(getDefaultTestSession());
 
 const homeUrl = computed(() => `/library/${store.slug}?deckId=${store.deckId}`);
 
-watch([() => session.questions, () => session.currentQuestionIndex], () => {
-  session.currentQuestion = session.questions[session.currentQuestionIndex];
-});
+watch(
+  [() => testSession.questions, () => testSession.currentQuestionIndex],
+  () => {
+    testSession.currentQuestion =
+      testSession.questions[testSession.currentQuestionIndex];
+  },
+);
 
 watch(
-  [() => questionRefs.value?.length, () => session.currentQuestionIndex],
+  [() => questionRefs.value?.length, () => testSession.currentQuestionIndex],
   () => {
     if (questionRefs.value?.length) {
-      session.questionElement = questionRefs.value[session.currentQuestionIndex]
-        ?.$el as Element;
+      testSession.questionElement = questionRefs.value[
+        testSession.currentQuestionIndex
+      ]?.$el as Element;
     }
   },
 );
 
 watch([() => store.deck?.cards, () => setting.questionAmount], ([newCards]) => {
   if (newCards && newCards.length > 0) {
-    session.questionInput = null;
-    session.currentQuestionIndex = 0;
-    session.isSubmitted = false;
+    testSession.questionInput = null;
+    testSession.currentQuestionIndex = 0;
+    testSession.isSubmitted = false;
 
     const filteredCards = getCards(newCards);
 
@@ -53,7 +58,7 @@ watch([() => store.deck?.cards, () => setting.questionAmount], ([newCards]) => {
       setting.questionAmount = filteredCards.length;
     }
 
-    session.questions = generateQuestions<TestQuestion>({
+    testSession.questions = generateQuestions<TestQuestion>({
       cards: shuffleArray(newCards).slice(0, setting.questionAmount),
       types: setting.types,
       dir: setting.direction,
@@ -62,12 +67,13 @@ watch([() => store.deck?.cards, () => setting.questionAmount], ([newCards]) => {
   }
 });
 
-watch(() => session.currentQuestionIndex, scrollAndFocusQuestion);
+watch(() => testSession.currentQuestionIndex, scrollAndFocusQuestion);
 
-watch(
-  () => setting.types.length,
-  (length) => {
-    if (!length) setting.types = ["multiple_choices"];
+watchDeep(
+  () => setting,
+  () => {
+    if (!setting.types.length) setting.types = ["multiple_choices"];
+    if (!setting.questionAmount) setting.questionAmount = 1;
   },
 );
 
@@ -77,44 +83,44 @@ const handleChoiceSelected = useThrottleFn(
 
     question.userChoiceIndex = choiceIndex;
     question.isUserAnswerCorrect = choiceIndex === question.correctChoiceIndex;
-    session.currentQuestionIndex = questionIndex;
+    testSession.currentQuestionIndex = questionIndex;
     handleChangeQuestion("right");
   },
   500,
 );
 
 function scrollAndFocusQuestion() {
-  if (session.questionElement) {
-    session.questionElement.scrollIntoView({
+  if (testSession.questionElement) {
+    testSession.questionElement.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
 
-    const oldInput = session.questionInput;
+    const oldInput = testSession.questionInput;
     if (oldInput) oldInput.blur();
 
-    const newInput = session.questionElement.querySelector("input");
+    const newInput = testSession.questionElement.querySelector("input");
     if (newInput) {
-      session.questionInput = newInput;
+      testSession.questionInput = newInput;
       return focusInput(newInput);
     }
 
-    session.questionInput = null;
+    testSession.questionInput = null;
   }
 }
 
 function handleChangeQuestion(dir: "left" | "right") {
   if (!questionRefs.value?.length) return;
 
-  if (dir === "left" && session.currentQuestionIndex > 0) {
-    session.currentQuestionIndex--;
+  if (dir === "left" && testSession.currentQuestionIndex > 0) {
+    testSession.currentQuestionIndex--;
   }
 
   if (
     dir === "right" &&
-    session.currentQuestionIndex < questionRefs.value.length - 1
+    testSession.currentQuestionIndex < questionRefs.value.length - 1
   ) {
-    session.currentQuestionIndex++;
+    testSession.currentQuestionIndex++;
   }
 }
 
@@ -142,12 +148,12 @@ function handleDontKnowClicked(question: TestQuestion, questionIndex: number) {
 
   question.isMarkedAsDontKnow = true;
   question.isUserAnswerCorrect = true;
-  session.currentQuestionIndex = questionIndex;
+  testSession.currentQuestionIndex = questionIndex;
   handleChangeQuestion("right");
 }
 
 function handleTestSubmitted() {
-  session.isSubmitted = true;
+  testSession.isSubmitted = true;
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -155,7 +161,7 @@ function getChoiceBtnClass(question: TestQuestion, choiceIndex: number) {
   const isThisChoiceSelected = question.userChoiceIndex === choiceIndex;
   const isThisChoiceCorrect = question.correctChoiceIndex === choiceIndex;
 
-  if (!session.isSubmitted) {
+  if (!testSession.isSubmitted) {
     if (isThisChoiceSelected) {
       return "border-primary bg-primary/10 text-primary";
     }
@@ -179,7 +185,7 @@ function getChoiceBtnClass(question: TestQuestion, choiceIndex: number) {
 }
 
 function getWrittenInputClass(question: TestQuestion) {
-  if (!session.isSubmitted) return "";
+  if (!testSession.isSubmitted) return "";
   return question.isUserAnswerCorrect ? "border-success" : "border-error";
 }
 
@@ -187,26 +193,26 @@ defineShortcuts({
   [ShortcutKey.CHOICE_1]: () =>
     handleChoiceSelected(
       0,
-      session.currentQuestionIndex,
-      session.currentQuestion,
+      testSession.currentQuestionIndex,
+      testSession.currentQuestion,
     ),
   [ShortcutKey.CHOICE_2]: () =>
     handleChoiceSelected(
       1,
-      session.currentQuestionIndex,
-      session.currentQuestion,
+      testSession.currentQuestionIndex,
+      testSession.currentQuestion,
     ),
   [ShortcutKey.CHOICE_3]: () =>
     handleChoiceSelected(
       2,
-      session.currentQuestionIndex,
-      session.currentQuestion,
+      testSession.currentQuestionIndex,
+      testSession.currentQuestion,
     ),
   [ShortcutKey.CHOICE_4]: () =>
     handleChoiceSelected(
       3,
-      session.currentQuestionIndex,
-      session.currentQuestion,
+      testSession.currentQuestionIndex,
+      testSession.currentQuestion,
     ),
 
   [ShortcutKey.PREV_CARD]: {
@@ -226,7 +232,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UContainer v-if="session.questions.length">
+  <UContainer v-if="testSession.questions.length">
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="homeUrl"
@@ -256,7 +262,7 @@ onMounted(() => {
       </h1>
 
       <UCard
-        v-for="(question, questionIndex) in session.questions"
+        v-for="(question, questionIndex) in testSession.questions"
         :key="questionIndex"
         ref="questionCards"
         :ui="{
@@ -264,7 +270,7 @@ onMounted(() => {
           body: `flex-1 w-full flex flex-col gap-4 p-2`,
         }"
         class="bg-elevated mb-2 flex min-h-[30dvh] flex-col divide-none shadow-md transition-all sm:mb-4"
-        @click="session.currentQuestionIndex = questionIndex"
+        @click="testSession.currentQuestionIndex = questionIndex"
       >
         <div class="flex w-full place-content-between place-items-center">
           <span class="flex place-items-center gap-1">
@@ -284,7 +290,7 @@ onMounted(() => {
           </span>
 
           <UBadge
-            :label="`${questionIndex + 1} of ${session.questions.length}`"
+            :label="`${questionIndex + 1} of ${testSession.questions.length}`"
             variant="soft"
             color="neutral"
           />
@@ -312,7 +318,7 @@ onMounted(() => {
               v-for="(choice, choiceIndex) in question.choices"
               :key="choiceIndex"
               :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none disabled:opacity-70 ${getChoiceBtnClass(question, choiceIndex)}`"
-              :disabled="session.isSubmitted || question.isMarkedAsDontKnow"
+              :disabled="testSession.isSubmitted || question.isMarkedAsDontKnow"
               @click.stop="
                 handleChoiceSelected(choiceIndex, questionIndex, question)
               "
@@ -337,16 +343,16 @@ onMounted(() => {
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ring-transparent disabled:opacity-70 ${getWrittenInputClass(question)}`,
               }"
-              :disabled="session.isSubmitted || question.isMarkedAsDontKnow"
+              :disabled="testSession.isSubmitted || question.isMarkedAsDontKnow"
               variant="outline"
               color="neutral"
               @keydown.enter="handleChangeQuestion('right')"
               @blur="handleWrittenAnswerBlur(question)"
-              @click.stop="session.currentQuestionIndex = questionIndex"
+              @click.stop="testSession.currentQuestionIndex = questionIndex"
             />
 
             <UInput
-              v-if="!question.isUserAnswerCorrect && session.isSubmitted"
+              v-if="!question.isUserAnswerCorrect && testSession.isSubmitted"
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
               }"
@@ -356,7 +362,7 @@ onMounted(() => {
           </div>
 
           <UButton
-            v-if="!question.isMarkedAsDontKnow && !session.isSubmitted"
+            v-if="!question.isMarkedAsDontKnow && !testSession.isSubmitted"
             class="cursor-pointer place-self-end font-medium"
             variant="ghost"
             tabindex="-1"
@@ -368,7 +374,7 @@ onMounted(() => {
       </UCard>
 
       <UButton
-        v-if="!session.isSubmitted"
+        v-if="!testSession.isSubmitted"
         class="hover:bg-primary w-fit cursor-pointer place-self-center font-normal transition-all hover:scale-103 active:scale-98"
         label="Submit Test"
         icon="i-lucide-send-horizontal"
