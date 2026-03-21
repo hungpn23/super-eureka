@@ -343,37 +343,20 @@ defineShortcuts({
               </UCard>
 
               <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <div class="col-span-1">
-                  <UButton
-                    v-if="user"
-                    class="w-fit p-0 hover:bg-inherit active:bg-inherit"
-                    variant="ghost"
-                    color="neutral"
-                  >
-                    <div class="flex place-items-center gap-2">
-                      <UAvatar
-                        :ui="{ fallback: 'uppercase' }"
-                        :src="user.avatarUrl || ''"
-                        :alt="user.username"
-                        class="cursor-pointer"
-                        size="xl"
-                      />
-
-                      <div class="flex flex-col place-items-start">
-                        <p class="text-muted text-sm font-normal text-pretty">
-                          Created by
-                        </p>
-
-                        <NuxtLink
-                          :to="`/${user.username}`"
-                          class="cursor-default text-base font-medium hover:underline"
-                        >
-                          {{ user.username }}
-                        </NuxtLink>
-                      </div>
-                    </div>
-                  </UButton>
-                </div>
+                <UUser
+                  v-if="user"
+                  class="col-span-1"
+                  to="/profile"
+                  target="_self"
+                  description="Owner"
+                  :name="user.username"
+                  :avatar="{
+                    src: user.avatarUrl || '',
+                    alt: user.username,
+                    loading: 'lazy',
+                    icon: 'i-lucide-user',
+                  }"
+                />
 
                 <div
                   class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"

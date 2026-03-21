@@ -31,17 +31,17 @@ const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
 
-const { data: paginated, error: getDecksError } = useFetch<GetSharedDecksResponse, ErrorResponse>(
-  "/api/decks/shared",
-  {
-    method: "GET",
-    headers: { Authorization: token.value || "" },
-    query: computed(() => ({
-      ...searchApiParams.value,
-      visitorId: user.value?.id,
-    })),
-  },
-);
+const { data: paginated, error: getDecksError } = useFetch<
+  GetSharedDecksResponse,
+  ErrorResponse
+>("/api/decks/shared", {
+  method: "GET",
+  headers: { Authorization: token.value || "" },
+  query: computed(() => ({
+    ...searchApiParams.value,
+    visitorId: user.value?.id,
+  })),
+});
 
 watch(getDecksError, () => {
   if (getDecksError.value) toast.getSharedDecksFailed();
@@ -153,32 +153,19 @@ defineShortcuts({
             </div>
 
             <div class="flex place-content-between place-items-center gap-2">
-              <UButton
-                class="w-fit p-0 hover:bg-inherit active:bg-inherit"
-                variant="ghost"
-                color="neutral"
-              >
-                <div class="flex place-items-center gap-2">
-                  <UAvatar
-                    :ui="{ fallback: 'uppercase' }"
-                    :src="d.owner.avatarUrl || ''"
-                    :alt="d.owner.username"
-                  />
-
-                  <div class="flex flex-col place-items-start">
-                    <NuxtLink
-                      :to="`/shared/${d.owner.username}`"
-                      class="cursor-default place-self-start text-sm font-medium hover:underline sm:text-base"
-                    >
-                      {{ d.owner.username }}
-                    </NuxtLink>
-
-                    <p class="text-muted text-sm font-normal">
-                      {{ `Created ${formatTimeAgo(new Date(d.createdAt))}` }}
-                    </p>
-                  </div>
-                </div>
-              </UButton>
+              <UUser
+                v-if="d.owner.id"
+                target="_self"
+                :description="`Created ${formatTimeAgo(new Date(d.createdAt))}`"
+                :to="`/shared/${d.owner.username}`"
+                :name="d.owner.username"
+                :avatar="{
+                  src: d.owner.avatarUrl || '',
+                  alt: d.owner.username,
+                  loading: 'lazy',
+                  icon: 'i-lucide-user',
+                }"
+              />
 
               <UButton
                 :ui="{ label: 'hidden sm:inline' }"

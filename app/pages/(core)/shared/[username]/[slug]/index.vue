@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
-import { DeckFormId, type GetSharedDeckResponse, useDeckClone, useDeckToasts } from "~/features/deck";
+import {
+  DeckFormId,
+  type GetSharedDeckResponse,
+  useDeckClone,
+  useDeckToasts,
+} from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
 import type { ErrorResponse, UUID } from "~/shared/types";
 import { CLONE_DECK_SCHEMA } from "~/valibot/schemas";
@@ -21,7 +26,10 @@ const { state, isModalOpen, isCloning, addToLibrary, handleSubmit } =
 
 const isFlipped = ref(false);
 
-const { data: deck, error: getDeckError } = useFetch<GetSharedDeckResponse, ErrorResponse>(
+const { data: deck, error: getDeckError } = useFetch<
+  GetSharedDeckResponse,
+  ErrorResponse
+>(
   computed(() => `/api/decks/shared/${deckId.value}`),
   {
     method: "GET",
@@ -116,34 +124,20 @@ defineShortcuts({
         </UCard>
 
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="col-span-1 cursor-default">
-            <UButton
-              class="w-fit p-0 hover:bg-inherit active:bg-inherit"
-              variant="ghost"
-              color="neutral"
-            >
-              <div class="flex place-items-center gap-2">
-                <UAvatar
-                  :ui="{ fallback: 'uppercase' }"
-                  :src="deck.owner.avatarUrl || ''"
-                  :alt="deck.owner.username"
-                  class="cursor-pointer"
-                  size="xl"
-                />
-
-                <div class="flex flex-col place-items-start">
-                  <span class="text-muted text-sm font-normal">Owner</span>
-
-                  <NuxtLink
-                    :to="`/shared/${deck.owner.username}`"
-                    class="cursor-default text-base font-medium hover:underline"
-                  >
-                    {{ deck.owner.username }}
-                  </NuxtLink>
-                </div>
-              </div>
-            </UButton>
-          </div>
+          <UUser
+            v-if="deck.owner.id"
+            class="col-span-1"
+            target="_self"
+            description="Owner"
+            :to="`/shared/${deck.owner.username}`"
+            :name="deck.owner.username"
+            :avatar="{
+              src: deck.owner.avatarUrl || '',
+              alt: deck.owner.username,
+              loading: 'lazy',
+              icon: 'i-lucide-user',
+            }"
+          />
 
           <div
             class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
