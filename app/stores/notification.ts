@@ -16,38 +16,38 @@ export const useNotificationStore = defineStore("notification", () => {
   }
 
   // --- Handlers ---
-  function onConnect() {
+  function handleConnect() {
     isConnected.value = true;
     connectionError.value = null;
     console.log("Connected to Socket.IO server.");
   }
 
-  function onDisconnect(reason: string) {
+  function handleDisconnect(reason: string) {
     isConnected.value = false;
     notifications.value = [];
     console.log("Disconnected:", reason);
   }
 
-  function onConnectError(err: Error) {
+  function handleConnectError(err: Error) {
     connectionError.value = err.message;
     console.error("Socket.IO connection error:", err.message);
   }
 
-  function onSocketConnected(message: string) {
+  function handleSocketConnected(message: string) {
     console.log("socketConnected event:", message);
   }
 
-  function onNotificationAdded(data: Notification) {
+  function handleNotificationAdded(data: Notification) {
     notifications.value.unshift(data);
   }
 
   // --- Setup / Teardown ---
   function setup() {
-    $socket.on("connect", onConnect);
-    $socket.on("disconnect", onDisconnect);
-    $socket.on("connect_error", onConnectError);
-    $socket.on("socketConnected", onSocketConnected);
-    $socket.on("notificationAdded", onNotificationAdded);
+    $socket.on("connect", handleConnect);
+    $socket.on("disconnect", handleDisconnect);
+    $socket.on("connect_error", handleConnectError);
+    $socket.on("socketConnected", handleSocketConnected);
+    $socket.on("notificationAdded", handleNotificationAdded);
 
     watch([token, user], ([newToken, newUser], [oldToken, oldUser]) => {
       if (newToken === oldToken || newUser?.id === oldUser?.id) return;
@@ -59,11 +59,11 @@ export const useNotificationStore = defineStore("notification", () => {
   }
 
   function teardown() {
-    $socket.off("connect", onConnect);
-    $socket.off("disconnect", onDisconnect);
-    $socket.off("connect_error", onConnectError);
-    $socket.off("socketConnected", onSocketConnected);
-    $socket.off("notificationAdded", onNotificationAdded);
+    $socket.off("connect", handleConnect);
+    $socket.off("disconnect", handleDisconnect);
+    $socket.off("connect_error", handleConnectError);
+    $socket.off("socketConnected", handleSocketConnected);
+    $socket.off("notificationAdded", handleNotificationAdded);
     $socket.disconnect();
   }
 
