@@ -7,6 +7,7 @@ const toaster: ToasterProps = {
   expand: false,
 };
 
+const ioStore = useSocketIOStore();
 const notificationStore = useNotificationStore();
 const colorMode = useColorMode();
 
@@ -25,8 +26,15 @@ useHead({
   },
 });
 
-onMounted(() => notificationStore.setup());
-onUnmounted(() => notificationStore.teardown());
+onMounted(() => {
+  ioStore.setup();
+  notificationStore.setup();
+});
+
+onUnmounted(() => {
+  ioStore.teardown();
+  notificationStore.teardown();
+});
 </script>
 
 <template>

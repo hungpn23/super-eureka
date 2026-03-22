@@ -42,16 +42,16 @@ const userStatistics = computed(() =>
   }),
 );
 
-const { data: paginatedDecks, error: fetchDecksError } = useFetch<GetDecksResponse, ErrorResponse>(
-  "/api/decks",
-  {
-    method: "GET",
-    headers: { Authorization: token.value || "" },
-    query: searchApiParams,
-    lazy: true,
-    server: false,
-  },
-);
+const { data: paginatedDecks, error: fetchDecksError } = useFetch<
+  GetDecksResponse,
+  ErrorResponse
+>("/api/decks", {
+  method: "GET",
+  headers: { Authorization: token.value || "" },
+  query: searchApiParams,
+  lazy: true,
+  server: false,
+});
 
 const { data: userStats, error: getUserStatsError } = useFetch<
   UserStats,
@@ -196,7 +196,7 @@ defineShortcuts({
           >
             <UCard
               :ui="{ body: 'space-y-2' }"
-              class="shadow-md transition-all hover:translate-x-2"
+              class="shadow-md transition-all hover:scale-101"
               variant="subtle"
               @click="navigate"
             >

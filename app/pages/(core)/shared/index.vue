@@ -84,7 +84,7 @@ defineShortcuts({
 
     <div
       v-if="paginated && paginated.metadata.totalRecords > 0"
-      class="flex flex-col gap-4"
+      class="flex flex-col gap-3"
     >
       <TransitionGroup name="list" appear>
         <NuxtLink
@@ -96,7 +96,7 @@ defineShortcuts({
         >
           <UCard
             :ui="{ body: 'flex flex-col gap-2' }"
-            class="shadow-md transition-all hover:translate-x-3"
+            class="shadow-md transition-all hover:scale-101"
             variant="subtle"
             @click="navigate"
           >

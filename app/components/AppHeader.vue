@@ -123,12 +123,38 @@ defineShortcuts({
             </UChip>
 
             <template #content>
-              <div class="m-4 max-h-96 overflow-y-auto">
-                <p v-if="notifications.length === 0">No notifications</p>
-                <pre v-for="n in notifications" :key="(n as any).id">
-                  {{ JSON.stringify(n, null, 2) }}
-                </pre>
-              </div>
+              <UCard
+                :ui="{
+                  header: 'text-sm p-2 sm:p-2',
+                  body: 'text-sm p-2 sm:p-2',
+                  footer: 'text-sm p-2 sm:p-1 flex',
+                }"
+              >
+                <template #header>
+                  <p class="font-medium">Notifications (2)</p>
+                </template>
+
+                <template #default>
+                  <div class="max-h-96 overflow-y-auto">
+                    <p v-if="notifications.length === 0">No notifications</p>
+                    <pre v-for="n in notifications" :key="(n as any).id">
+                      {{ JSON.stringify(n, null, 2) }}
+                    </pre>
+                  </div>
+                </template>
+
+                <template #footer>
+                  <div class="flex gap-1 place-items-center mx-auto">
+                    <p
+                      class="hover:underline cursor-pointer hover:underline-offset-2"
+                    >
+                      View all
+                    </p>
+
+                    <UIcon name="i-lucide-move-right" />
+                  </div>
+                </template>
+              </UCard>
             </template>
           </UPopover>
 
