@@ -8,62 +8,63 @@ const { status, data: user } = useAuthState();
 const { signOut } = useAuth();
 const colorMode = useColorMode();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
+const { notifications } = storeToRefs(useNotificationStore());
 
 const isDarkMode = computed(() => colorMode.value === "dark");
 
 const items = computed<NavigationMenuItem[]>(() => [
-	{
-		label: "Library",
-		to: "/library",
-	},
-	{
-		label: "Shared",
-		to: "/shared",
-	},
-	{
-		label: "About me",
-		to: "#",
-	},
+  {
+    label: "Library",
+    to: "/library",
+  },
+  {
+    label: "Shared",
+    to: "/shared",
+  },
+  {
+    label: "About me",
+    to: "#",
+  },
 ]);
 
 const avatarItems = computed<DropdownMenuItem[][]>(() => [
-	[
-		{
-			label: "Profile",
-			icon: "i-lucide-user",
-			to: "/profile",
-		},
-		{
-			label: isDarkMode.value ? "Light Mode" : "Dark Mode",
-			icon: isDarkMode.value ? "i-lucide-sun" : "i-lucide-moon",
-			class: "cursor-pointer sm:hidden",
-			onSelect: toggleColorMode,
-		},
-		{
-			label: "Settings",
-			icon: "i-lucide-cog",
-			to: "/settings",
-		},
-	],
-	[
-		{
-			label: "Logout",
-			icon: "i-lucide-log-out",
-			onSelect: onSignOut,
-		},
-	],
+  [
+    {
+      label: "Profile",
+      icon: "i-lucide-user",
+      to: "/profile",
+    },
+    {
+      label: isDarkMode.value ? "Light Mode" : "Dark Mode",
+      icon: isDarkMode.value ? "i-lucide-sun" : "i-lucide-moon",
+      class: "cursor-pointer sm:hidden",
+      onSelect: toggleColorMode,
+    },
+    {
+      label: "Settings",
+      icon: "i-lucide-cog",
+      to: "/settings",
+    },
+  ],
+  [
+    {
+      label: "Logout",
+      icon: "i-lucide-log-out",
+      onSelect: onSignOut,
+    },
+  ],
 ]);
 
 function toggleColorMode() {
-	colorMode.preference = isDarkMode.value ? "light" : "dark";
+  colorMode.preference = isDarkMode.value ? "light" : "dark";
 }
 
 async function onSignOut() {
-	await signOut({ callbackUrl: "/login" });
+  await signOut({ callbackUrl: "/login" });
 }
 
 defineShortcuts({
-	[ShortcutKey.TOGGLE_COLOR_MODE]: toggleColorMode,
+  [ShortcutKey.TOGGLE_COLOR_MODE]: toggleColorMode,
 });
 </script>
 
@@ -112,7 +113,7 @@ defineShortcuts({
           <UColorModeButton v-if="smAndLarger" class="cursor-pointer" />
 
           <UPopover>
-            <UChip inset>
+            <UChip inset :show="notifications.length !== 0">
               <UButton
                 class="cursor-pointer"
                 icon="i-lucide-bell"
@@ -121,16 +122,21 @@ defineShortcuts({
               />
             </UChip>
 
-            <!-- <template #content>
-              <Placeholder class="m-4 inline-flex size-48" />
-            </template> -->
+            <template #content>
+              <div class="m-4 max-h-96 overflow-y-auto">
+                <p v-if="notifications.length === 0">No notifications</p>
+                <pre v-for="n in notifications" :key="(n as any).id">
+                  {{ JSON.stringify(n, null, 2) }}
+                </pre>
+              </div>
+            </template>
           </UPopover>
 
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UAvatar
               v-if="user"
               :src="user.avatarUrl || ''"
-              class="ml-2 cursor-pointer rounded-full"
+              class="cursor-pointer rounded-full"
               icon="i-lucide-user"
               size="sm"
             />
