@@ -2,34 +2,15 @@ export const useSocketIOStore = defineStore("socket-io", () => {
   const { $socket } = useNuxtApp();
   const { token, data: user } = useAuth();
 
-  const isConnected = ref(false);
+  const isSocketConnected = ref(false);
   const connectionError = ref<string | null>(null);
 
-  // --- Socket actions ---
   function connect() {
     if ($socket.connected) return;
     $socket.io.opts.extraHeaders = { Authorization: token.value ?? "" };
     $socket.connect();
   }
 
-  // --- Handlers ---
-  function handleConnect() {
-    isConnected.value = true;
-    connectionError.value = null;
-    console.log("Connected to Socket.IO server.");
-  }
-
-  function handleDisconnect(reason: string) {
-    isConnected.value = false;
-    console.log("Disconnected:", reason);
-  }
-
-  function handleConnectError(err: Error) {
-    connectionError.value = err.message;
-    console.error("Socket.IO connection error:", err.message);
-  }
-
-  // --- Setup / Teardown ---
   function setup() {
     $socket.on("connect", handleConnect);
     $socket.on("disconnect", handleDisconnect);
@@ -52,8 +33,24 @@ export const useSocketIOStore = defineStore("socket-io", () => {
     $socket.disconnect();
   }
 
+  function handleConnect() {
+    isSocketConnected.value = true;
+    connectionError.value = null;
+    console.log("Connected to Socket.IO server.");
+  }
+
+  function handleDisconnect(reason: string) {
+    isSocketConnected.value = false;
+    console.log("Disconnected:", reason);
+  }
+
+  function handleConnectError(err: Error) {
+    connectionError.value = err.message;
+    console.error("Socket.IO connection error:", err.message);
+  }
+
   return {
-    isConnected,
+    isSocketConnected,
     connectionError,
     connect,
     setup,

@@ -4,11 +4,11 @@ import { breakpointsTailwind } from "@vueuse/core";
 import { UAvatar } from "#components";
 import { ShortcutKey } from "~/shared/enums";
 
-const { status, data: user } = useAuthState();
-const { signOut } = useAuth();
 const colorMode = useColorMode();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
-const { notifications } = storeToRefs(useNotificationStore());
+const { status, data: user } = useAuthState();
+const { signOut } = useAuth();
+const { notifications, unreadCount } = storeToRefs(useNotificationStore());
 
 const isDarkMode = computed(() => colorMode.value === "dark");
 
@@ -131,7 +131,9 @@ defineShortcuts({
                 }"
               >
                 <template #header>
-                  <p class="font-medium">Notifications (2)</p>
+                  <p class="font-medium">
+                    Notifications {{ unreadCount ? `(${unreadCount})` : "" }}
+                  </p>
                 </template>
 
                 <template #default>

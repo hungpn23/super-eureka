@@ -16,3 +16,8 @@ export type Notification = {
 };
 
 export type NotificationType = "clone";
+
+export type GetNotificationsResponse = {
+  data: Notification[];
+  totalRecords: number;
+};
