@@ -33,7 +33,7 @@ async function handleReadAllNotifications() {
 <template>
   <ClientOnly>
     <UPopover>
-      <UChip inset :show="notifications.length !== 0">
+      <UChip inset :show="unreadCount !== 0">
         <UButton
           class="cursor-pointer"
           icon="i-lucide-bell"
@@ -50,10 +50,11 @@ async function handleReadAllNotifications() {
             <p class="font-semibold px-2">Notifications</p>
 
             <UButton
-              :label="`Read all ${unreadCount ? `(${unreadCount})` : ``}`"
               class="cursor-pointer transition-all text-default hover:text-primary"
               variant="link"
               color="neutral"
+              :label="`Read all ${unreadCount ? `(${unreadCount})` : ``}`"
+              :disabled="unreadCount === 0"
               @click="handleReadAllNotifications"
             />
           </div>
