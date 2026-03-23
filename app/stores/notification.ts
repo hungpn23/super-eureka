@@ -1,77 +1,65 @@
 import type {
-	GetNotificationsResponse,
-	Notification,
+  GetNotificationsResponse,
+  Notification,
 } from "~/features/notification";
-import type { ErrorResponse } from "~/shared/types";
 
 export const useNotificationStore = defineStore("notification", () => {
-	const { token, data: user } = useAuth();
-	const { $socket } = useNuxtApp();
-	const { isSocketConnected } = storeToRefs(useSocketIOStore());
+  const { token, data: user } = useAuth();
+  const { $socket } = useNuxtApp();
+  const { isSocketConnected } = storeToRefs(useSocketIOStore());
 
-	const notifications = ref<Notification[]>([]);
-	const unreadCount = ref(0);
+  const notifications = ref<Notification[]>([]);
+  const unreadCount = ref(0);
 
-	const {
-		data: res,
-		error,
-		execute,
-	} = useFetch<GetNotificationsResponse, ErrorResponse>(
-		"/api/notifications?limit=20",
-		{
-			method: "GET",
-			headers: { Authorization: token.value || "" },
-			immediate: false,
-			watch: false,
-		},
-	);
+  async function getRecentNotifications() {
+    if (!token.value) return;
 
-	async function getRecentNotifications() {
-		if (!token.value) return;
+    await $fetch<GetNotificationsResponse>("/api/notifications?limit=20", {
+      method: "GET",
+      headers: { Authorization: token.value || "" },
+    })
+      .then((res) => {
+        notifications.value = res.data;
+        unreadCount.value = res.data.filter((n) => !n.readAt).length;
+      })
+      .catch(() => {
+        notifications.value = [];
+        unreadCount.value = 0;
+      });
+  }
 
-		await execute();
+  function setup() {
+    $socket.on("notificationAdded", handleNotificationAdded);
 
-		if (res.value) {
-			notifications.value = res.value.data;
-			unreadCount.value = res.value.data.filter((n) => !n.readAt).length;
-		}
+    watch(isSocketConnected, (connected) => {
+      if (!connected) notifications.value = [];
+    });
 
-		if (error.value) {
-			notifications.value = [];
-			unreadCount.value = 0;
-		}
-	}
+    watch([token, user], async ([newToken, newUser], [_, oldUser]) => {
+      if (newUser && oldUser && newUser.id === oldUser.id) return; // refresh token case
+      if (!newToken || !newUser?.id) return; // logout case
 
-	function setup() {
-		$socket.on("notificationAdded", handleNotificationAdded);
+      await getRecentNotifications();
+    });
 
-		watch(isSocketConnected, (connected) => {
-			if (!connected) notifications.value = [];
-		});
+    if (token.value) getRecentNotifications();
+  }
 
-		watch([token, user], async ([newToken, newUser], [oldToken, oldUser]) => {
-			if (newToken === oldToken || newUser?.id === oldUser?.id) return;
-			await getRecentNotifications();
-		});
+  function teardown() {
+    $socket.off("notificationAdded", handleNotificationAdded);
+  }
 
-		if (token.value) getRecentNotifications();
-	}
+  function handleNotificationAdded(data: Notification) {
+    notifications.value.unshift(data);
+    unreadCount.value++;
+    if (notifications.value.length > 20) notifications.value.pop();
+  }
 
-	function teardown() {
-		$socket.off("notificationAdded", handleNotificationAdded);
-	}
-
-	function handleNotificationAdded(data: Notification) {
-		notifications.value.unshift(data);
-		unreadCount.value++;
-		if (notifications.value.length > 20) notifications.value.pop();
-	}
-
-	return {
-		notifications,
-		unreadCount,
-		getRecentNotifications,
-		setup,
-		teardown,
-	};
+  return {
+    notifications,
+    unreadCount,
+    getRecentNotifications,
+    setup,
+    teardown,
+  };
 });
