@@ -8,7 +8,6 @@ const colorMode = useColorMode();
 const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const { status, data: user } = useAuthState();
 const { signOut } = useAuth();
-const { notifications, unreadCount } = storeToRefs(useNotificationStore());
 
 const isDarkMode = computed(() => colorMode.value === "dark");
 
@@ -112,53 +111,7 @@ defineShortcuts({
 
           <UColorModeButton v-if="smAndLarger" class="cursor-pointer" />
 
-          <UPopover>
-            <UChip inset :show="notifications.length !== 0">
-              <UButton
-                class="cursor-pointer"
-                icon="i-lucide-bell"
-                variant="ghost"
-                color="neutral"
-              />
-            </UChip>
-
-            <template #content>
-              <UCard
-                :ui="{
-                  header: 'text-sm p-2 sm:p-2',
-                  body: 'text-sm p-2 sm:p-2',
-                  footer: 'text-sm p-2 sm:p-1 flex',
-                }"
-              >
-                <template #header>
-                  <p class="font-medium">
-                    Notifications {{ unreadCount ? `(${unreadCount})` : "" }}
-                  </p>
-                </template>
-
-                <template #default>
-                  <div class="max-h-96 overflow-y-auto">
-                    <p v-if="notifications.length === 0">No notifications</p>
-                    <pre v-for="n in notifications" :key="(n as any).id">
-                      {{ JSON.stringify(n, null, 2) }}
-                    </pre>
-                  </div>
-                </template>
-
-                <template #footer>
-                  <div class="flex gap-1 place-items-center mx-auto">
-                    <p
-                      class="hover:underline cursor-pointer hover:underline-offset-2"
-                    >
-                      View all
-                    </p>
-
-                    <UIcon name="i-lucide-move-right" />
-                  </div>
-                </template>
-              </UCard>
-            </template>
-          </UPopover>
+          <AppNotification />
 
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UAvatar

@@ -42,12 +42,6 @@ export const useNotificationStore = defineStore("notification", () => {
     }
   }
 
-  function handleNotificationAdded(data: Notification) {
-    notifications.value.unshift(data);
-    unreadCount.value++;
-    if (notifications.value.length > 20) notifications.value.pop();
-  }
-
   function setup() {
     $socket.on("notificationAdded", handleNotificationAdded);
 
@@ -65,6 +59,12 @@ export const useNotificationStore = defineStore("notification", () => {
 
   function teardown() {
     $socket.off("notificationAdded", handleNotificationAdded);
+  }
+
+  function handleNotificationAdded(data: Notification) {
+    notifications.value.unshift(data);
+    unreadCount.value++;
+    if (notifications.value.length > 20) notifications.value.pop();
   }
 
   return {
