@@ -546,9 +546,9 @@ function handleAddExample(index: number) {
 
           <h3 class="font-semibold sm:text-lg">
             Preview
-            <span class="text-base font-normal"
-              >{{ parsedCards.length }} cards</span
-            >
+            <span class="text-base font-normal">
+              {{ parsedCards.length }} cards
+            </span>
           </h3>
 
           <div class="flex flex-col gap-4">

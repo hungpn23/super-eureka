@@ -12,28 +12,28 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
-    <AppHeader />
+	<div>
+		<AppHeader />
 
-    <UMain>
-      <UContainer>
-        <UPage>
-          <UError
-            :error="error"
-            :clear="{
+		<UMain>
+			<UContainer>
+				<UPage>
+					<UError
+						:error="error"
+						:clear="{
               class: 'rounded-full cursor-pointer',
               color: 'neutral',
               size: 'xl',
               icon: 'i-lucide-arrow-left',
             }"
-            redirect="/library"
-          />
-        </UPage>
-      </UContainer>
-    </UMain>
+						redirect="/library"
+					/>
+				</UPage>
+			</UContainer>
+		</UMain>
 
-    <AppFooter />
+		<AppFooter />
 
-    <UToaster />
-  </div>
+		<UToaster />
+	</div>
 </template>

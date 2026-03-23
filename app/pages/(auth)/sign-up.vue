@@ -55,15 +55,15 @@ const requestMutation = useFetch<SuccessResponse, ErrorResponse>(
 	},
 );
 
-const confirmMutation = useFetch<ConfirmEmailVerificationResponse, ErrorResponse>(
-	"/api/auth/email-verification/confirm",
-	{
-		method: "POST",
-		body: computed(() => ({ email: state.email, otp: state.otp })),
-		immediate: false,
-		watch: false,
-	},
-);
+const confirmMutation = useFetch<
+	ConfirmEmailVerificationResponse,
+	ErrorResponse
+>("/api/auth/email-verification/confirm", {
+	method: "POST",
+	body: computed(() => ({ email: state.email, otp: state.otp })),
+	immediate: false,
+	watch: false,
+});
 
 const signUpMutation = useFetch<TokenPairResponse, ErrorResponse>(
 	"/api/auth/sign-up",
@@ -128,45 +128,45 @@ async function handleSignUpSubmit(
 </script>
 
 <template>
-  <UAuthForm v-if="state.isRequested && state.isEmailVerified"
-    :fields="pickFields(['username', 'password', 'confirmPassword'])"
-    :schema="schema"
-    title="Sign up to Vocabify"
-    description="Let's create your account"
-    @submit="handleSignUpSubmit"
-  >
+	<UAuthForm
+		v-if="state.isRequested && state.isEmailVerified"
+		:fields="pickFields(['username', 'password', 'confirmPassword'])"
+		:schema="schema"
+		title="Sign up to Vocabify"
+		description="Let's create your account"
+		@submit="handleSignUpSubmit"
+	>
+		<template #footer>
+			Already have an account?
+			<ULink to="/login" class="text-primary font-medium">Login</ULink>
+		</template>
+	</UAuthForm>
 
-    <template #footer>
-      Already have an account?
-      <ULink to="/login" class="text-primary font-medium">Login</ULink>
-    </template>
-  </UAuthForm>
+	<UAuthForm
+		v-else-if="state.isRequested"
+		:fields="pickFields(['otp'])"
+		:schema="otpSchema"
+		title="Sign up to Vocabify"
+		description="Let's verify your email"
+		@submit="handleOtpSubmit"
+	>
+		<template #footer>
+			Already have an account?
+			<ULink to="/login" class="text-primary font-medium">Login</ULink>
+		</template>
+	</UAuthForm>
 
-  <UAuthForm v-else-if="state.isRequested"
-    :fields="pickFields(['otp'])"
-    :schema="otpSchema"
-    title="Sign up to Vocabify"
-    description="Let's verify your email"
-    @submit="handleOtpSubmit"
-  >
-
-    <template #footer>
-      Already have an account?
-      <ULink to="/login" class="text-primary font-medium">Login</ULink>
-    </template>
-  </UAuthForm>
-
-  <UAuthForm v-else
-    :fields="pickFields(['email'])"
-    :schema="emailSchema"
-    title="Sign up to Vocabify"
-    description="Let's verify your email"
-    @submit="handleEmailSubmit"
-  >
-
-    <template #footer>
-      Already have an account?
-      <ULink to="/login" class="text-primary font-medium">Login</ULink>
-    </template>
-  </UAuthForm>
+	<UAuthForm
+		v-else
+		:fields="pickFields(['email'])"
+		:schema="emailSchema"
+		title="Sign up to Vocabify"
+		description="Let's verify your email"
+		@submit="handleEmailSubmit"
+	>
+		<template #footer>
+			Already have an account?
+			<ULink to="/login" class="text-primary font-medium">Login</ULink>
+		</template>
+	</UAuthForm>
 </template>

@@ -3,8 +3,8 @@ const store = useDeckStore();
 </script>
 
 <template>
-  <UEmpty
-    :actions="[
+	<UEmpty
+		:actions="[
       {
         to: '/library',
         icon: 'i-lucide-house',
@@ -22,12 +22,12 @@ const store = useDeckStore();
         onClick: store.handleRestartDeck,
       },
     ]"
-    variant="naked"
-    icon="i-lucide-party-popper"
-    title="You're all caught up — nothing to review now."
-    description="Optimize your retention by strictly adhering to the next review date."
-    size="xl"
-  />
+		variant="naked"
+		icon="i-lucide-party-popper"
+		title="You're all caught up — nothing to review now."
+		description="Optimize your retention by strictly adhering to the next review date."
+		size="xl"
+	/>
 </template>
 
 <style></style>

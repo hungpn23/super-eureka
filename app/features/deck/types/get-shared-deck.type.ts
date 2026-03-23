@@ -4,27 +4,26 @@ import type { Paginated } from "~/shared/types";
 import type { Deck } from "./common.type";
 
 export type GetSharedDecksData = Pick<
-  Deck,
-  | "id"
-  | "name"
-  | "slug"
-  | "visibility"
-  | "viewCount"
-  | "learnerCount"
-  | "createdAt"
+	Deck,
+	| "id"
+	| "name"
+	| "slug"
+	| "visibility"
+	| "viewCount"
+	| "learnerCount"
+	| "createdAt"
 > & {
-  totalCards: number;
-  owner: Owner;
+	totalCards: number;
+	owner: Owner;
 };
 
 export type GetSharedDecksResponse = Paginated<GetSharedDecksData>;
 
 export type GetSharedDeckResponse = Pick<
-  Deck,
-  "id" | "name" | "description" | "visibility"
+	Deck,
+	"id" | "name" | "description" | "visibility"
 > & {
-  totalCards: number;
-  owner: Owner;
-  cards: PreviewCard[];
+	totalCards: number;
+	owner: Owner;
+	cards: PreviewCard[];
 };
-
