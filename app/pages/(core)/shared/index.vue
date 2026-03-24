@@ -61,7 +61,7 @@ defineShortcuts({
 
 <template>
 	<UContainer class="mt-4 space-y-2">
-		<h1 class="mb-4 text-xl font-medium sm:text-2xl">
+		<h1 class="mb-4 text-lg sm:text-xl font-medium">
 			Browse decks shared by community
 		</h1>
 
@@ -96,19 +96,19 @@ defineShortcuts({
 				>
 					<UCard
 						:ui="{ body: 'flex flex-col gap-2' }"
-						class="shadow-md transition-all hover:scale-101"
-						variant="subtle"
+						class="hover:shadow-md transition-all hover:ring hover:ring-primary"
+						variant="outline"
 						@click="navigate"
 					>
 						<div
 							class="flex flex-col sm:flex-row sm:place-items-center sm:gap-8"
 						>
 							<div class="flex min-w-0 flex-1 place-items-center gap-1.5">
-								<h4 class="truncate font-medium sm:text-lg">{{ d.name }}</h4>
+								<h4 class="truncate font-medium">{{ d.name }}</h4>
 
 								<UIcon
+									class="shrink-0"
 									:name="getVisibilityIcon(d.visibility)"
-									class="shrink-0 sm:size-5"
 								/>
 							</div>
 
@@ -166,11 +166,11 @@ defineShortcuts({
 							/>
 
 							<UButton
-								:ui="{ label: 'hidden sm:inline' }"
 								class="cursor-pointer transition-all active:scale-90"
 								label="Add to library"
 								icon="i-lucide-plus"
-								variant="subtle"
+								variant="soft"
+								size="sm"
 								@click.stop="() => handleAddToLibrary(d)"
 							/>
 						</div>

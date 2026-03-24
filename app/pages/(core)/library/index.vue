@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { formatTimeAgo } from "@vueuse/core";
+import { breakpointsTailwind, formatTimeAgo } from "@vueuse/core";
 import {
 	type GetDecksData,
 	type GetDecksResponse,
@@ -15,6 +15,7 @@ import { focusInput, getVisibilityIcon } from "~/shared/utils";
 
 const toast = useDeckToasts();
 const studyToast = useStudyToasts();
+const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 const { token, data: user } = useAuth();
 const searchRef = useTemplateRef("searchInput");
 const { page, limit, filter, filterItems, search, searchApiParams } =
@@ -89,7 +90,7 @@ defineShortcuts({
 	<UContainer>
 		<UPageHeader
 			:ui="{
-        title: 'text-xl sm:text-2xl font-medium',
+        title: 'text-lg sm:text-xl font-medium',
         description: 'mt-0 text-base sm:text-lg',
         container: 'space-y-4',
       }"
@@ -111,7 +112,7 @@ defineShortcuts({
         </ProseBlockquote>
       </template> -->
 
-			<div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
+			<div class="grid grid-cols-3 gap-2 sm:flex sm:flex-row sm:gap-4">
 				<UPageCard
 					v-for="(item, index) in userStatistics"
 					:key="index"
@@ -124,13 +125,17 @@ defineShortcuts({
 					<div class="flex place-content-between place-items-center gap-2">
 						<h3 class="lg:text-lg">{{ item.title }}</h3>
 
-						<UIcon :name="item.icon" class="size-5 sm:size-6 lg:size-7" />
+						<UIcon
+							v-if="smAndLarger"
+							:name="item.icon"
+							class="size-5 sm:size-6 lg:size-7"
+						/>
 					</div>
 
 					<div class="flex place-content-between place-items-end">
-						<p :class="`text-xl font-medium lg:text-2xl`">{{ item.value }}</p>
+						<p :class="`font-medium lg:text-xl`">{{ item.value }}</p>
 
-						<span v-if="item.bonus" class="text-muted font-medium">
+						<span v-if="item.bonus" class="text-muted font-medium text-sm">
 							Longest: {{ item.bonus }}
 						</span>
 					</div>
@@ -139,18 +144,16 @@ defineShortcuts({
 		</UPageHeader>
 
 		<UPageBody class="mt-2 space-y-4 sm:mt-4">
-			<div
-				class="flex flex-col place-content-between gap-2 sm:flex-row sm:gap-6"
-			>
-				<div class="flex place-items-center gap-4">
-					<h2 class="text-xl text-nowrap sm:text-2xl">
+			<div class="flex flex-col place-content-between gap-4 sm:flex-row">
+				<div class="flex place-items-center place-content-between gap-4">
+					<h2 class="text-lg text-nowrap sm:text-xl">
 						Decks ({{ paginatedDecks?.data.length || 0 }})
 					</h2>
 
 					<UButton
 						class="cursor-pointer place-self-start transition-all"
-						label="Add a new deck"
-						variant="subtle"
+						label="Create deck"
+						variant="solid"
 						icon="i-lucide-plus"
 						to="/create-deck"
 					>
@@ -161,7 +164,7 @@ defineShortcuts({
 				</div>
 
 				<div
-					class="flex w-full basis-2/3 place-content-end gap-2 place-self-end sm:gap-4"
+					class="flex w-full basis-2/3 place-content-end gap-2 place-self-end"
 				>
 					<UInput
 						ref="searchInput"
@@ -182,7 +185,7 @@ defineShortcuts({
 
 			<div
 				v-if="paginatedDecks && paginatedDecks.metadata.totalRecords > 0"
-				class="flex flex-col gap-2 sm:gap-4"
+				class="grid gap-2 sm:grid-cols-2 sm:gap-3"
 			>
 				<TransitionGroup name="list" appear>
 					<NuxtLink
@@ -193,78 +196,77 @@ defineShortcuts({
 						custom
 					>
 						<UCard
-							:ui="{ body: 'space-y-2' }"
-							class="shadow-md transition-all hover:scale-101"
-							variant="subtle"
+							:ui="{ body: 'space-y-2 p-3 sm:p-4' }"
+							class="group hover:shadow-md transition-all hover:ring hover:ring-primary"
+							variant="outline"
 							@click="navigate"
 						>
 							<!-- Title -->
-							<div
-								class="flex flex-col sm:flex-row sm:place-items-center sm:gap-8"
-							>
+							<div class="flex place-items-center gap-4">
 								<div class="flex min-w-0 flex-1 place-items-center gap-1.5">
-									<h4 class="truncate font-medium sm:text-lg">{{ d.name }}</h4>
+									<h4 class="truncate font-medium">{{ d.name }}</h4>
 
 									<UIcon
+										class="shrink-0"
 										:name="getVisibilityIcon(d.visibility)"
-										class="shrink-0 sm:size-5"
 									/>
 								</div>
 
-								<div class="text-muted text-start text-sm sm:text-end">
+								<UDropdownMenu
+									:items="[
+                          [
+                            { label: 'Học ngay', icon: 'i-lucide-play'},
+                            { label: 'Chỉnh sửa', icon: 'i-lucide-pencil'},
+                          ],
+                          [
+                            { label: 'Xoá', icon: 'i-lucide-trash', color: 'error' as const},
+                          ]
+                        ]"
+								>
+									<UButton
+										icon="i-lucide-settings"
+										color="neutral"
+										variant="ghost"
+										size="sm"
+										:class="`${smAndLarger ? 'opacity-0' : 'opacity-100'} group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer`"
+									/>
+								</UDropdownMenu>
+							</div>
+
+							<div class="space-y-1">
+								<div class="flex place-content-between text-xs text-muted">
+									<span>
+										{{ d.stats.known }}/{{ d.stats.total }}
+										cards
+									</span>
+
+									<span class="font-medium text-muted">
+										{{ getDeckProgress(d) }}%
+									</span>
+								</div>
+
+								<UProgress size="xs" :model-value="getDeckProgress(d)" />
+							</div>
+
+							<div class="flex place-items-center place-content-between">
+								<div
+									class="text-muted text-start text-xs sm:text-sm sm:text-end"
+								>
 									{{ d.openedAt
                       ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
                       : "Never opened" }}
 								</div>
+
+								<UButton
+									class="cursor-pointer"
+									color="primary"
+									variant="soft"
+									icon="i-lucide-play"
+									size="sm"
+								>
+									Learn
+								</UButton>
 							</div>
-
-							<div class="mt-4 flex place-items-center gap-2">
-								<UTooltip :delay-duration="200" text="Total cards">
-									<UBadge
-										:ui="{ base: 'flex place-content-center' }"
-										:label="d.stats.total"
-										class="min-w-12"
-										variant="outline"
-										color="neutral"
-										icon="i-lucide-gallery-horizontal-end"
-									/>
-								</UTooltip>
-
-								<UTooltip :delay-duration="200" text="Known cards">
-									<UBadge
-										:ui="{ base: 'flex place-content-center' }"
-										:label="d.stats.known"
-										class="min-w-12"
-										variant="outline"
-										color="success"
-										icon="i-lucide-graduation-cap"
-									/>
-								</UTooltip>
-
-								<UTooltip :delay-duration="200" text="Learning cards">
-									<UBadge
-										:ui="{ base: 'flex place-content-center' }"
-										:label="d.stats.learning"
-										class="min-w-12"
-										variant="outline"
-										color="warning"
-										icon="i-lucide-circle-dashed"
-									/>
-								</UTooltip>
-
-								<UTooltip :delay-duration="200" text="New cards">
-									<UBadge
-										:ui="{ base: 'flex place-content-center' }"
-										:label="d.stats.new"
-										class="min-w-12"
-										variant="outline"
-										color="info"
-										icon="i-lucide-sparkles"
-									/>
-								</UTooltip>
-							</div>
-
-							<UProgress :model-value="getDeckProgress(d)" />
 						</UCard>
 					</NuxtLink>
 				</TransitionGroup>

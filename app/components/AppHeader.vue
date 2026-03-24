@@ -22,7 +22,7 @@ const items = computed<NavigationMenuItem[]>(() => [
 	},
 	{
 		label: "About me",
-		to: "#",
+		to: "/profile2",
 	},
 ]);
 
