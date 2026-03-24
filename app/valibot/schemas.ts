@@ -6,7 +6,7 @@ import type { UUID } from "~/shared/types";
 
 export const AUTH_SCHEMA = v.object({
   username: v.message(
-    v.pipe(v.string(), v.minLength(1)),
+    v.pipe(v.string(), v.nonEmpty()),
     "Username is required.",
   ),
   email: v.message(
@@ -106,6 +106,26 @@ export const UPLOAD_AVATAR_SCHEMA = v.object({
   ),
 });
 
+export const UPDATE_PROFILE_SCHEMA = v.object({
+  username: AUTH_SCHEMA.entries.username, // tái sử dụng trực tiếp
+});
+
+export const CHANGE_PASSWORD_SCHEMA = v.pipe(
+  v.object({
+    oldPassword: AUTH_SCHEMA.entries.password, // tái sử dụng logic validate password
+    newPassword: AUTH_SCHEMA.entries.password,
+    confirmPassword: AUTH_SCHEMA.entries.confirmPassword,
+  }),
+  v.forward(
+    v.partialCheck(
+      [["newPassword"], ["confirmPassword"]],
+      (input) => input.newPassword === input.confirmPassword,
+      "Passwords do not match",
+    ),
+    ["confirmPassword"],
+  ),
+);
+
 export type CloneDeckSchema = v.InferOutput<typeof CLONE_DECK_SCHEMA>;
 export type CreateCardSchema = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
 export type UpdateCardSchema = v.InferOutput<typeof UPDATE_CARD_SCHEMA>;
@@ -116,3 +136,5 @@ export type UpdateVisibilitySchema = v.InferOutput<
 >;
 export type ImportCardsSchema = v.InferOutput<typeof IMPORT_CARD_SCHEMA>;
 export type UploadAvatarSchema = v.InferOutput<typeof UPLOAD_AVATAR_SCHEMA>;
+export type UpdateProfileSchema = v.InferOutput<typeof UPDATE_PROFILE_SCHEMA>;
+export type ChangePasswordSchema = v.InferOutput<typeof CHANGE_PASSWORD_SCHEMA>;

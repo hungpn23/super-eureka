@@ -1,28 +1,30 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
+import { useUserSettingToasts } from "~/features/user/composables";
 import {
+  CHANGE_PASSWORD_SCHEMA,
+  type ChangePasswordSchema,
+  UPDATE_PROFILE_SCHEMA,
   UPLOAD_AVATAR_SCHEMA,
+  type UpdateProfileSchema,
   type UploadAvatarSchema,
 } from "~/valibot/schemas";
 
-const toast = useToast();
+const toast = useUserSettingToasts();
 const { token, data: user, getSession } = useAuth();
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// ─── Section: Avatar ──────────────────────────────────────────────────────────
 const isUploading = ref(false);
-const state = reactive<Partial<UploadAvatarSchema>>({});
+const avatarState = reactive<Partial<UploadAvatarSchema>>({});
 
 function createObjectUrl(file: File) {
   return URL.createObjectURL(file);
 }
 
-// ─── Submit ───────────────────────────────────────────────────────────────────
-async function onSubmit() {
-  if (!state.avatar) return;
-
+async function onAvatarSubmit() {
+  if (!avatarState.avatar) return;
   const formData = new FormData();
-  formData.append("avatar", state.avatar);
-
+  formData.append("avatar", avatarState.avatar);
   isUploading.value = true;
   try {
     await $fetch("/api/users/avatar", {
@@ -30,62 +32,94 @@ async function onSubmit() {
       headers: { Authorization: token.value || "" },
       body: formData,
     });
-
     await getSession();
-    toast.add({ title: "Avatar updated", color: "success" });
+    toast.uploadAvatarSuccess();
   } catch {
-    toast.add({
-      title: "Upload failed",
-      description: "Please try again.",
-      color: "error",
-    });
+    toast.uploadAvatarFailed();
   } finally {
     isUploading.value = false;
   }
 }
 
-// ─── State: Password ──────────────────────────────────────────────────────────
-const passwordForm = reactive({
-  current: "",
-  next: "",
-  confirm: "",
-});
-const showPasswords = reactive({ current: false, next: false, confirm: false });
+// ─── Section: Profile ─────────────────────────────────────────────────────────
+const isUpdatingProfile = ref(false);
 
-const passwordStrength = computed(() => {
-  const p = passwordForm.next;
-  if (!p) return null;
-  if (p.length < 6)
-    return { label: "Weak", color: "error" as const, value: 25 };
-  if (p.length < 10 || !/[A-Z]/.test(p) || !/[0-9]/.test(p))
-    return { label: "Fair", color: "warning" as const, value: 60 };
-  return { label: "Strong", color: "success" as const, value: 100 };
+const profileFields = computed<AuthFormField[]>(() => {
+  return [
+    {
+      name: "username",
+      type: "text",
+      label: "Display name",
+      placeholder: "Your username",
+      defaultValue: user.value?.username,
+      required: true,
+    },
+  ];
 });
 
-const passwordMismatch = computed(
-  () => passwordForm.confirm && passwordForm.next !== passwordForm.confirm,
-);
-
-// ─── Handlers ─────────────────────────────────────────────────────────────────
-function saveProfile() {
-  toast.add({
-    title: "Profile saved",
-    description: "Your profile has been updated.",
-    color: "success",
-  });
+async function onProfileSubmit(payload: FormSubmitEvent<UpdateProfileSchema>) {
+  isUpdatingProfile.value = true;
+  try {
+    await $fetch("/api/users/profile", {
+      method: "PATCH",
+      headers: { Authorization: token.value || "" },
+      body: payload.data,
+    });
+    await getSession();
+    toast.updateProfileSuccess();
+  } catch {
+    toast.updateProfileFailed();
+  } finally {
+    isUpdatingProfile.value = false;
+  }
 }
 
-function changePassword() {
-  if (passwordMismatch.value) return;
-  if (!passwordForm.current || !passwordForm.next) return;
-  toast.add({
-    title: "Password changed",
-    description: "Use your new password next time you sign in.",
-    color: "success",
-  });
-  passwordForm.current = "";
-  passwordForm.next = "";
-  passwordForm.confirm = "";
+// ─── Section: Change Password ─────────────────────────────────────────────────
+const isChangingPassword = ref(false);
+
+const passwordFields: AuthFormField[] = [
+  {
+    name: "oldPassword",
+    type: "password",
+    label: "Current password",
+    placeholder: "Enter your current password",
+    required: true,
+  },
+  {
+    name: "newPassword",
+    type: "password",
+    label: "New password",
+    placeholder: "At least 8 characters",
+    required: true,
+  },
+  {
+    name: "confirmPassword",
+    type: "password",
+    label: "Confirm new password",
+    placeholder: "Re-enter your new password",
+    required: true,
+  },
+];
+
+async function onPasswordSubmit(
+  payload: FormSubmitEvent<ChangePasswordSchema>,
+) {
+  isChangingPassword.value = true;
+  try {
+    await $fetch("/api/auth/password/change", {
+      method: "POST",
+      headers: { Authorization: token.value || "" },
+      body: {
+        oldPassword: payload.data.oldPassword,
+        newPassword: payload.data.newPassword,
+      },
+    });
+    toast.changePasswordSuccess();
+  } catch {
+    toast.changePasswordFailed();
+  } finally {
+    isChangingPassword.value = false;
+  }
 }
 </script>
 
@@ -108,8 +142,8 @@ function changePassword() {
         <UAvatar
           class="mt-4"
           :src="
-            state.avatar
-              ? createObjectUrl(state.avatar)
+            avatarState.avatar
+              ? createObjectUrl(avatarState.avatar)
               : user.avatar?.url || undefined
           "
           :alt="user.username"
@@ -120,13 +154,13 @@ function changePassword() {
         <UForm
           class="flex-1 space-y-4"
           :schema="UPLOAD_AVATAR_SCHEMA"
-          :state="state"
-          @submit="onSubmit"
+          :state="avatarState"
+          @submit="onAvatarSubmit"
         >
           <UFormField name="avatar" :ui="{ error: 'text-center sm:text-left' }">
             <UFileUpload
               v-slot="{ open, removeFile }"
-              v-model="state.avatar"
+              v-model="avatarState.avatar"
               accept="image/*"
             >
               <div class="flex-1 space-y-2 text-center sm:text-left">
@@ -134,7 +168,6 @@ function changePassword() {
                   JPG, PNG or GIF. Max <span class="font-medium">2MB</span>.
                   This image will be shown on your profile and comments.
                 </p>
-
                 <div
                   class="flex flex-wrap gap-2 place-content-center sm:place-content-start"
                 >
@@ -146,9 +179,8 @@ function changePassword() {
                   >
                     Choose an image
                   </UButton>
-
                   <UButton
-                    v-if="state.avatar"
+                    v-if="avatarState.avatar"
                     icon="i-lucide-trash-2"
                     color="error"
                     variant="ghost"
@@ -157,9 +189,8 @@ function changePassword() {
                     Remove
                   </UButton>
                 </div>
-
-                <p v-if="state.avatar" class="text-xs text-muted">
-                  {{ state.avatar.name }}
+                <p v-if="avatarState.avatar" class="text-xs text-muted">
+                  {{ avatarState.avatar.name }}
                 </p>
               </div>
             </UFileUpload>
@@ -172,14 +203,14 @@ function changePassword() {
               color="primary"
               label="Upload"
               :loading="isUploading"
-              :disabled="!state.avatar"
+              :disabled="!avatarState.avatar"
             />
           </div>
         </UForm>
       </div>
     </UCard>
 
-    <!-- ── Section: Profile Info ──────────────────────────────────────────── -->
+    <!-- ── Section: Personal information ─────────────────────────────────────── -->
     <UCard class="shadow-sm">
       <template #header>
         <div class="flex place-items-center gap-2">
@@ -188,16 +219,8 @@ function changePassword() {
         </div>
       </template>
 
-      <div class="space-y-4">
-        <UFormField label="Display name" name="displayName">
-          <UInput
-            v-model="user.username"
-            placeholder="Your name"
-            icon="i-lucide-user"
-            class="w-full"
-          />
-        </UFormField>
-
+      <!-- email hiển thị read-only bên ngoài form vì không được update -->
+      <div class="mb-4">
         <UFormField label="Email" name="email">
           <UTooltip
             text="Email cannot be changed"
@@ -205,9 +228,8 @@ function changePassword() {
             :content="{ align: 'start' }"
           >
             <UInput
-              v-model="user.email"
+              :model-value="user.email"
               type="email"
-              placeholder="email@example.com"
               icon="i-lucide-mail"
               class="w-full"
               disabled
@@ -216,16 +238,16 @@ function changePassword() {
         </UFormField>
       </div>
 
-      <template #footer>
-        <div class="flex justify-end">
-          <UButton icon="i-lucide-check" color="primary" @click="saveProfile">
-            Save changes
-          </UButton>
-        </div>
-      </template>
+      <UAuthForm
+        :fields="profileFields"
+        :schema="UPDATE_PROFILE_SCHEMA"
+        :loading="isUpdatingProfile"
+        :submit="{ label: 'Save changes', icon: 'i-lucide-check' }"
+        @submit="onProfileSubmit"
+      />
     </UCard>
 
-    <!-- ── Section: Change Password ──────────────────────────────────────── -->
+    <!-- ── Section: Change password ───────────────────────────────────────────── -->
     <UCard class="shadow-sm">
       <template #header>
         <div class="flex place-items-center gap-2">
@@ -234,115 +256,26 @@ function changePassword() {
         </div>
       </template>
 
-      <div class="space-y-4">
-        <UFormField label="Current password" name="currentPassword">
-          <UInput
-            v-model="passwordForm.current"
-            :type="showPasswords.current ? 'text' : 'password'"
-            placeholder="Enter your current password"
-            icon="i-lucide-lock"
-            class="w-full"
-          >
-            <template #trailing>
-              <UButton
-                :icon="
-                  showPasswords.current ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                "
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                @click="showPasswords.current = !showPasswords.current"
-              />
-            </template>
-          </UInput>
-        </UFormField>
-
-        <UFormField label="New password" name="newPassword">
-          <UInput
-            v-model="passwordForm.next"
-            :type="showPasswords.next ? 'text' : 'password'"
-            placeholder="At least 8 characters"
-            icon="i-lucide-key"
-            class="w-full"
-          >
-            <template #trailing>
-              <UButton
-                :icon="showPasswords.next ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                @click="showPasswords.next = !showPasswords.next"
-              />
-            </template>
-          </UInput>
-
-          <!-- Strength indicator -->
-          <div v-if="passwordStrength" class="mt-2 flex items-center gap-2">
-            <UProgress
-              :value="passwordStrength.value"
-              :color="passwordStrength.color"
-              size="xs"
-              class="flex-1"
-            />
-            <UBadge :color="passwordStrength.color" variant="soft" size="xs">
-              {{ passwordStrength.label }}
-            </UBadge>
-          </div>
-        </UFormField>
-
-        <UFormField
-          label="Confirm new password"
-          name="confirmPassword"
-          :error="passwordMismatch ? 'Passwords do not match' : undefined"
-        >
-          <UInput
-            v-model="passwordForm.confirm"
-            :type="showPasswords.confirm ? 'text' : 'password'"
-            placeholder="Re-enter your new password"
-            icon="i-lucide-shield-check"
-            :color="passwordMismatch ? 'error' : undefined"
-            class="w-full"
-          >
-            <template #trailing>
-              <UButton
-                :icon="
-                  showPasswords.confirm ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                "
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                @click="showPasswords.confirm = !showPasswords.confirm"
-              />
-            </template>
-          </UInput>
-        </UFormField>
-
-        <UAlert
-          icon="i-lucide-info"
-          color="info"
-          variant="soft"
-          title="Tips for a strong password"
-          description="Use at least 8 characters with a mix of uppercase, lowercase, numbers and special characters."
-        />
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end">
-          <UButton
-            icon="i-lucide-lock"
-            color="primary"
-            :disabled="
-              !passwordForm.current || !passwordForm.next || !!passwordMismatch
-            "
-            @click="changePassword"
-          >
-            Update password
-          </UButton>
-        </div>
-      </template>
+      <UAuthForm
+        :fields="passwordFields"
+        :schema="CHANGE_PASSWORD_SCHEMA"
+        :loading="isChangingPassword"
+        :submit="{ label: 'Update password', icon: 'i-lucide-lock' }"
+        @submit="onPasswordSubmit"
+      >
+        <template #validation>
+          <UAlert
+            icon="i-lucide-info"
+            color="info"
+            variant="soft"
+            title="Tips for a strong password"
+            description="Use at least 8 characters with a mix of uppercase, lowercase, numbers and special characters."
+          />
+        </template>
+      </UAuthForm>
     </UCard>
 
-    <!-- ── Section: Danger Zone ───────────────────────────────────────────── -->
+    <!-- ── Section: Danger Zone ───────────────────────────────────────────────── -->
     <UCard class="shadow-sm ring-2 ring-error">
       <template #header>
         <div class="flex place-items-center gap-2 text-error">
@@ -358,23 +291,19 @@ function changePassword() {
           <p class="font-medium text-gray-900 dark:text-white text-sm">
             Delete account
           </p>
+
           <p class="text-sm text-gray-500 mt-0.5">
             All your data, decks and learning progress will be permanently
             deleted.
           </p>
         </div>
+
         <UButton
           color="error"
           variant="soft"
           icon="i-lucide-trash-2"
           class="shrink-0"
-          @click="
-            toast.add({
-              title: 'Not available',
-              description: 'Please contact support.',
-              color: 'error',
-            })
-          "
+          @click="console.error('Not available yet')"
         >
           Delete account
         </UButton>
