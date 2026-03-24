@@ -1,126 +1,29 @@
 <script setup lang="ts">
-import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
-import { useUserSettingToasts } from "~/features/user/composables";
+import {
+  useAvatarUpload,
+  usePasswordChange,
+  useProfileUpdate,
+} from "~/features/user";
 import {
   CHANGE_PASSWORD_SCHEMA,
-  type ChangePasswordSchema,
   UPDATE_PROFILE_SCHEMA,
   UPLOAD_AVATAR_SCHEMA,
-  type UpdateProfileSchema,
-  type UploadAvatarSchema,
 } from "~/valibot/schemas";
 
-const toast = useUserSettingToasts();
-const { token, data: user, getSession } = useAuth();
+const { data: user } = useAuth();
 
-// ─── Section: Avatar ──────────────────────────────────────────────────────────
-const isUploading = ref(false);
-const avatarState = reactive<Partial<UploadAvatarSchema>>({});
+const {
+  isUploadingAvatar,
+  uploadAvatarState,
+  createObjectUrl,
+  handleUploadAvatar,
+} = useAvatarUpload();
 
-function createObjectUrl(file: File) {
-  return URL.createObjectURL(file);
-}
+const { isUpdatingProfile, profileFields, handleUpdateProfile } =
+  useProfileUpdate();
 
-async function onAvatarSubmit() {
-  if (!avatarState.avatar) return;
-  const formData = new FormData();
-  formData.append("avatar", avatarState.avatar);
-  isUploading.value = true;
-  try {
-    await $fetch("/api/users/avatar", {
-      method: "POST",
-      headers: { Authorization: token.value || "" },
-      body: formData,
-    });
-    await getSession();
-    toast.uploadAvatarSuccess();
-  } catch {
-    toast.uploadAvatarFailed();
-  } finally {
-    isUploading.value = false;
-  }
-}
-
-// ─── Section: Profile ─────────────────────────────────────────────────────────
-const isUpdatingProfile = ref(false);
-
-const profileFields = computed<AuthFormField[]>(() => {
-  return [
-    {
-      name: "username",
-      type: "text",
-      label: "Display name",
-      placeholder: "Your username",
-      defaultValue: user.value?.username,
-      required: true,
-    },
-  ];
-});
-
-async function onProfileSubmit(payload: FormSubmitEvent<UpdateProfileSchema>) {
-  isUpdatingProfile.value = true;
-  try {
-    await $fetch("/api/users/profile", {
-      method: "PATCH",
-      headers: { Authorization: token.value || "" },
-      body: payload.data,
-    });
-    await getSession();
-    toast.updateProfileSuccess();
-  } catch {
-    toast.updateProfileFailed();
-  } finally {
-    isUpdatingProfile.value = false;
-  }
-}
-
-// ─── Section: Change Password ─────────────────────────────────────────────────
-const isChangingPassword = ref(false);
-
-const passwordFields: AuthFormField[] = [
-  {
-    name: "oldPassword",
-    type: "password",
-    label: "Current password",
-    placeholder: "Enter your current password",
-    required: true,
-  },
-  {
-    name: "newPassword",
-    type: "password",
-    label: "New password",
-    placeholder: "At least 8 characters",
-    required: true,
-  },
-  {
-    name: "confirmPassword",
-    type: "password",
-    label: "Confirm new password",
-    placeholder: "Re-enter your new password",
-    required: true,
-  },
-];
-
-async function onPasswordSubmit(
-  payload: FormSubmitEvent<ChangePasswordSchema>,
-) {
-  isChangingPassword.value = true;
-  try {
-    await $fetch("/api/auth/password/change", {
-      method: "POST",
-      headers: { Authorization: token.value || "" },
-      body: {
-        oldPassword: payload.data.oldPassword,
-        newPassword: payload.data.newPassword,
-      },
-    });
-    toast.changePasswordSuccess();
-  } catch {
-    toast.changePasswordFailed();
-  } finally {
-    isChangingPassword.value = false;
-  }
-}
+const { isChangingPassword, passwordFields, handleChangePassword } =
+  usePasswordChange();
 </script>
 
 <template>
@@ -142,8 +45,8 @@ async function onPasswordSubmit(
         <UAvatar
           class="mt-4"
           :src="
-            avatarState.avatar
-              ? createObjectUrl(avatarState.avatar)
+            uploadAvatarState.avatar
+              ? createObjectUrl(uploadAvatarState.avatar)
               : user.avatar?.url || undefined
           "
           :alt="user.username"
@@ -154,13 +57,13 @@ async function onPasswordSubmit(
         <UForm
           class="flex-1 space-y-4"
           :schema="UPLOAD_AVATAR_SCHEMA"
-          :state="avatarState"
-          @submit="onAvatarSubmit"
+          :state="uploadAvatarState"
+          @submit="handleUploadAvatar"
         >
           <UFormField name="avatar" :ui="{ error: 'text-center sm:text-left' }">
             <UFileUpload
               v-slot="{ open, removeFile }"
-              v-model="avatarState.avatar"
+              v-model="uploadAvatarState.avatar"
               accept="image/*"
             >
               <div class="flex-1 space-y-2 text-center sm:text-left">
@@ -180,7 +83,7 @@ async function onPasswordSubmit(
                     Choose an image
                   </UButton>
                   <UButton
-                    v-if="avatarState.avatar"
+                    v-if="uploadAvatarState.avatar"
                     icon="i-lucide-trash-2"
                     color="error"
                     variant="ghost"
@@ -189,8 +92,8 @@ async function onPasswordSubmit(
                     Remove
                   </UButton>
                 </div>
-                <p v-if="avatarState.avatar" class="text-xs text-muted">
-                  {{ avatarState.avatar.name }}
+                <p v-if="uploadAvatarState.avatar" class="text-xs text-muted">
+                  {{ uploadAvatarState.avatar.name }}
                 </p>
               </div>
             </UFileUpload>
@@ -202,8 +105,8 @@ async function onPasswordSubmit(
               icon="i-lucide-upload"
               color="primary"
               label="Upload"
-              :loading="isUploading"
-              :disabled="!avatarState.avatar"
+              :loading="isUploadingAvatar"
+              :disabled="!uploadAvatarState.avatar"
             />
           </div>
         </UForm>
@@ -243,7 +146,7 @@ async function onPasswordSubmit(
         :schema="UPDATE_PROFILE_SCHEMA"
         :loading="isUpdatingProfile"
         :submit="{ label: 'Save changes', icon: 'i-lucide-check' }"
-        @submit="onProfileSubmit"
+        @submit="handleUpdateProfile"
       />
     </UCard>
 
@@ -261,7 +164,7 @@ async function onPasswordSubmit(
         :schema="CHANGE_PASSWORD_SCHEMA"
         :loading="isChangingPassword"
         :submit="{ label: 'Update password', icon: 'i-lucide-lock' }"
-        @submit="onPasswordSubmit"
+        @submit="handleChangePassword"
       >
         <template #validation>
           <UAlert
