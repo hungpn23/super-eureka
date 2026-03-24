@@ -20,7 +20,7 @@ export function usePasswordChange() {
       name: "newPassword",
       type: "password",
       label: "New password",
-      placeholder: "At least 8 characters",
+      placeholder: "Enter your new password",
       required: true,
     },
     {
@@ -45,6 +45,7 @@ export function usePasswordChange() {
           newPassword: payload.data.newPassword,
         },
       });
+
       toast.changePasswordSuccess();
     } catch {
       toast.changePasswordFailed();
