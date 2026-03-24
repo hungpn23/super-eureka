@@ -40,18 +40,20 @@ defineShortcuts({
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="homeUrl"
-        label="Home"
-        class="mt-2 cursor-pointer px-0 text-base"
+        class="px-0"
         variant="link"
+        label="Home"
         icon="i-lucide-move-left"
+        size="lg"
       />
 
       <UButton
         :to="learnUrl"
-        label="Learn"
-        class="mt-2 cursor-pointer px-0 text-base"
+        class="px-0"
         variant="link"
+        label="Learn"
         trailing-icon="i-lucide-move-right"
+        size="lg"
       />
     </div>
 

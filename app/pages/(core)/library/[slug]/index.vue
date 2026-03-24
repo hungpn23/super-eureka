@@ -136,11 +136,12 @@ defineShortcuts({
 <template>
   <UContainer v-if="flashcardSession.currentCard">
     <UButton
+      class="px-0"
       to="/library"
-      class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
       variant="link"
-      icon="i-lucide-move-left"
       label="Library"
+      icon="i-lucide-move-left"
+      size="lg"
     />
 
     <UForm
