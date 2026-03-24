@@ -1,12 +1,48 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
+import {
+  UPLOAD_AVATAR_SCHEMA,
+  type UploadAvatarSchema,
+} from "~/valibot/schemas";
 
-const { data: user } = useAuth();
+const toast = useToast();
+const { token, data: user, getSession } = useAuth();
 
-// ─── State: Profile ───────────────────────────────────────────────────────────
-const avatarUrl = ref<string | null>(null);
-const avatarFile = ref<File | null>(null);
-const avatarInputRef = ref<HTMLInputElement | null>(null);
+// ─── State ────────────────────────────────────────────────────────────────────
+const isUploading = ref(false);
+const state = reactive<Partial<UploadAvatarSchema>>({});
+
+function createObjectUrl(file: File) {
+  return URL.createObjectURL(file);
+}
+
+// ─── Submit ───────────────────────────────────────────────────────────────────
+async function onSubmit() {
+  if (!state.avatar) return;
+
+  const formData = new FormData();
+  formData.append("avatar", state.avatar);
+
+  isUploading.value = true;
+  try {
+    await $fetch("/api/users/avatar", {
+      method: "POST",
+      headers: { Authorization: token.value || "" },
+      body: formData,
+    });
+
+    await getSession();
+    toast.add({ title: "Avatar updated", color: "success" });
+  } catch {
+    toast.add({
+      title: "Upload failed",
+      description: "Please try again.",
+      color: "error",
+    });
+  } finally {
+    isUploading.value = false;
+  }
+}
 
 // ─── State: Password ──────────────────────────────────────────────────────────
 const passwordForm = reactive({
@@ -31,34 +67,6 @@ const passwordMismatch = computed(
 );
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
-const toast = useToast();
-
-function triggerAvatarUpload() {
-  avatarInputRef.value?.click();
-}
-
-function onAvatarChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    toast.add({
-      title: "Image too large",
-      description: "Please choose an image under 2MB.",
-      color: "error",
-    });
-    return;
-  }
-  avatarFile.value = file;
-  avatarUrl.value = URL.createObjectURL(file);
-  toast.add({ title: "Avatar updated", color: "success" });
-}
-
-function removeAvatar() {
-  avatarUrl.value = null;
-  avatarFile.value = null;
-  if (avatarInputRef.value) avatarInputRef.value.value = "";
-}
-
 function saveProfile() {
   toast.add({
     title: "Profile saved",
@@ -85,7 +93,7 @@ function changePassword() {
   <UContainer v-if="user" class="max-w-3xl space-y-4 mt-4">
     <h1 class="text-lg font-semibold">Settings</h1>
 
-    <!-- ── Section: Profile Picture ──────────────────────────────────────────── -->
+    <!-- ── Section: Profile picture ──────────────────────────────────────────── -->
     <UCard class="shadow-sm">
       <template #header>
         <div class="flex place-items-center gap-2">
@@ -94,47 +102,80 @@ function changePassword() {
         </div>
       </template>
 
-      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <div
+        class="flex flex-col sm:flex-row place-items-center sm:place-items-start gap-4"
+      >
         <UAvatar
-          :src="avatarUrl ?? undefined"
+          class="mt-4"
+          :src="
+            state.avatar
+              ? createObjectUrl(state.avatar)
+              : user.avatar?.url || undefined
+          "
           :alt="user.username"
           :text="user.username.charAt(0)"
           size="3xl"
-          class="ring-4 ring-gray-100 dark:ring-gray-800 shrink-0"
         />
 
-        <div class="flex-1 space-y-3 text-center sm:text-left">
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            JPG, PNG or GIF. Max <strong>2MB</strong>. This image will be shown
-            on your profile and comments.
-          </p>
-          <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+        <UForm
+          class="flex-1 space-y-4"
+          :schema="UPLOAD_AVATAR_SCHEMA"
+          :state="state"
+          @submit="onSubmit"
+        >
+          <UFormField name="avatar" :ui="{ error: 'text-center sm:text-left' }">
+            <UFileUpload
+              v-slot="{ open, removeFile }"
+              v-model="state.avatar"
+              accept="image/*"
+            >
+              <div class="flex-1 space-y-2 text-center sm:text-left">
+                <p class="text-sm text-muted">
+                  JPG, PNG or GIF. Max <span class="font-medium">2MB</span>.
+                  This image will be shown on your profile and comments.
+                </p>
+
+                <div
+                  class="flex flex-wrap gap-2 place-content-center sm:place-content-start"
+                >
+                  <UButton
+                    icon="i-lucide-image"
+                    color="primary"
+                    variant="soft"
+                    @click="open()"
+                  >
+                    Choose an image
+                  </UButton>
+
+                  <UButton
+                    v-if="state.avatar"
+                    icon="i-lucide-trash-2"
+                    color="error"
+                    variant="ghost"
+                    @click="removeFile()"
+                  >
+                    Remove
+                  </UButton>
+                </div>
+
+                <p v-if="state.avatar" class="text-xs text-muted">
+                  {{ state.avatar.name }}
+                </p>
+              </div>
+            </UFileUpload>
+          </UFormField>
+
+          <div class="flex place-content-end">
             <UButton
+              type="submit"
               icon="i-lucide-upload"
               color="primary"
-              variant="soft"
-              @click="triggerAvatarUpload"
-            >
-              Upload image
-            </UButton>
-            <UButton
-              v-if="avatarUrl"
-              icon="i-lucide-trash-2"
-              color="error"
-              variant="ghost"
-              @click="removeAvatar"
-            >
-              Remove
-            </UButton>
+              label="Upload"
+              :loading="isUploading"
+              :disabled="!state.avatar"
+            />
           </div>
-          <input
-            ref="avatarInputRef"
-            type="file"
-            accept="image/*"
-            class="hidden"
-            @change="onAvatarChange"
-          />
-        </div>
+        </UForm>
       </div>
     </UCard>
 
@@ -158,13 +199,20 @@ function changePassword() {
         </UFormField>
 
         <UFormField label="Email" name="email">
-          <UInput
-            v-model="user.email"
-            type="email"
-            placeholder="email@example.com"
-            icon="i-lucide-mail"
-            class="w-full"
-          />
+          <UTooltip
+            text="Email cannot be changed"
+            :delay-duration="0"
+            :content="{ align: 'start' }"
+          >
+            <UInput
+              v-model="user.email"
+              type="email"
+              placeholder="email@example.com"
+              icon="i-lucide-mail"
+              class="w-full"
+              disabled
+            />
+          </UTooltip>
         </UFormField>
       </div>
 
