@@ -128,7 +128,7 @@ defineShortcuts({
             :to="`/shared/${deck.owner.username}`"
             :name="deck.owner.username"
             :avatar="{
-              src: deck.owner.avatarUrl || '',
+              src: deck.owner.avatar?.url || '',
               alt: deck.owner.username,
               loading: 'lazy',
               icon: 'i-lucide-user',

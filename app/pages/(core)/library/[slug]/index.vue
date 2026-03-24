@@ -352,7 +352,7 @@ defineShortcuts({
                   description="Owner"
                   :name="user.username"
                   :avatar="{
-                    src: user.avatarUrl || '',
+                    src: user.avatar?.url || '',
                     alt: user.username,
                     loading: 'lazy',
                     icon: 'i-lucide-user',

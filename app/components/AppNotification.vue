@@ -75,7 +75,7 @@ async function handleReadAllNotifications() {
                 description: 'text-xs text-muted',
               }"
               :avatar="{
-                src: n.actor.avatarUrl ?? '',
+                src: n.actor.avatar?.url ?? '',
                 alt: n.actor.username,
                 icon: 'i-lucide-user',
                 size: 'sm',

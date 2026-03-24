@@ -115,7 +115,7 @@ defineShortcuts({
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UButton
               v-if="user"
-              :avatar="{ src: user.avatarUrl || '', class: 'size-8' }"
+              :avatar="{ src: user.avatar?.url || '', class: 'size-8' }"
               class="rounded-full cursor-pointer"
               variant="link"
               color="neutral"
