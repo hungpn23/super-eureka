@@ -244,7 +244,7 @@ defineShortcuts({
                   header: 'p-0 sm:px-0',
                   body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
                 }"
-                class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
+                class="bg-elevated flex min-h-[50dvh] flex-col divide-none"
                 variant="subtle"
                 @click="handleFlipCard"
               >
@@ -796,10 +796,10 @@ defineShortcuts({
 
 /* Flip từ front → back */
 .flip-enter-active {
-  animation: flip-in 0.3s ease-out;
+  animation: flip-in 0.25s ease-out;
 }
 .flip-leave-active {
-  animation: flip-out 0.3s ease-in;
+  animation: flip-out 0.25s ease-in;
 }
 
 @keyframes flip-out {

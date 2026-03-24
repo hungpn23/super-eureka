@@ -19,10 +19,11 @@ const showPasswords = reactive({ current: false, next: false, confirm: false });
 const passwordStrength = computed(() => {
   const p = passwordForm.next;
   if (!p) return null;
-  if (p.length < 6) return { label: "Yếu", color: "error" as const, value: 25 };
+  if (p.length < 6)
+    return { label: "Weak", color: "error" as const, value: 25 };
   if (p.length < 10 || !/[A-Z]/.test(p) || !/[0-9]/.test(p))
-    return { label: "Trung bình", color: "warning" as const, value: 60 };
-  return { label: "Mạnh", color: "success" as const, value: 100 };
+    return { label: "Fair", color: "warning" as const, value: 60 };
+  return { label: "Strong", color: "success" as const, value: 100 };
 });
 
 const passwordMismatch = computed(
@@ -41,15 +42,15 @@ function onAvatarChange(e: Event) {
   if (!file) return;
   if (file.size > 2 * 1024 * 1024) {
     toast.add({
-      title: "Ảnh quá lớn",
-      description: "Vui lòng chọn ảnh dưới 2MB",
+      title: "Image too large",
+      description: "Please choose an image under 2MB.",
       color: "error",
     });
     return;
   }
   avatarFile.value = file;
   avatarUrl.value = URL.createObjectURL(file);
-  toast.add({ title: "Đã cập nhật avatar", color: "success" });
+  toast.add({ title: "Avatar updated", color: "success" });
 }
 
 function removeAvatar() {
@@ -60,8 +61,8 @@ function removeAvatar() {
 
 function saveProfile() {
   toast.add({
-    title: "Đã lưu thông tin",
-    description: "Hồ sơ của bạn đã được cập nhật.",
+    title: "Profile saved",
+    description: "Your profile has been updated.",
     color: "success",
   });
 }
@@ -70,8 +71,8 @@ function changePassword() {
   if (passwordMismatch.value) return;
   if (!passwordForm.current || !passwordForm.next) return;
   toast.add({
-    title: "Đổi mật khẩu thành công",
-    description: "Hãy dùng mật khẩu mới cho lần đăng nhập tiếp theo.",
+    title: "Password changed",
+    description: "Use your new password next time you sign in.",
     color: "success",
   });
   passwordForm.current = "";
@@ -84,6 +85,7 @@ function changePassword() {
   <UContainer v-if="user" class="max-w-3xl space-y-4 mt-4">
     <h1 class="text-lg font-semibold">Settings</h1>
 
+    <!-- ── Section: Profile Picture ──────────────────────────────────────────── -->
     <UCard class="shadow-sm">
       <template #header>
         <div class="flex place-items-center gap-2">
@@ -103,8 +105,8 @@ function changePassword() {
 
         <div class="flex-1 space-y-3 text-center sm:text-left">
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            Ảnh JPG, PNG hoặc GIF. Tối đa <strong>2MB</strong>. Ảnh sẽ được hiển
-            thị ở hồ sơ và bình luận của bạn.
+            JPG, PNG or GIF. Max <strong>2MB</strong>. This image will be shown
+            on your profile and comments.
           </p>
           <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
             <UButton
@@ -113,7 +115,7 @@ function changePassword() {
               variant="soft"
               @click="triggerAvatarUpload"
             >
-              Tải ảnh lên
+              Upload image
             </UButton>
             <UButton
               v-if="avatarUrl"
@@ -122,7 +124,7 @@ function changePassword() {
               variant="ghost"
               @click="removeAvatar"
             >
-              Xoá
+              Remove
             </UButton>
           </div>
           <input
@@ -139,19 +141,17 @@ function changePassword() {
     <!-- ── Section: Profile Info ──────────────────────────────────────────── -->
     <UCard class="shadow-sm">
       <template #header>
-        <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-user" class="w-4 h-4 text-indigo-500" />
-          <h2 class="font-semibold text-gray-900 dark:text-white">
-            Thông tin cá nhân
-          </h2>
+        <div class="flex place-items-center gap-2">
+          <UIcon class="size-5" name="i-lucide-user" />
+          <h2 class="font-medium">Personal information</h2>
         </div>
       </template>
 
       <div class="space-y-4">
-        <UFormField label="Tên hiển thị" name="displayName">
+        <UFormField label="Display name" name="displayName">
           <UInput
             v-model="user.username"
-            placeholder="Tên của bạn"
+            placeholder="Your name"
             icon="i-lucide-user"
             class="w-full"
           />
@@ -166,21 +166,12 @@ function changePassword() {
             class="w-full"
           />
         </UFormField>
-
-        <!-- <UFormField label="Giới thiệu bản thân" name="bio">
-          <UTextarea
-            v-model="user.emailVerified"
-            placeholder="Viết vài dòng về bạn..."
-            :rows="3"
-            class="w-full"
-          />
-        </UFormField> -->
       </div>
 
       <template #footer>
         <div class="flex justify-end">
           <UButton icon="i-lucide-check" color="primary" @click="saveProfile">
-            Lưu thay đổi
+            Save changes
           </UButton>
         </div>
       </template>
@@ -189,20 +180,18 @@ function changePassword() {
     <!-- ── Section: Change Password ──────────────────────────────────────── -->
     <UCard class="shadow-sm">
       <template #header>
-        <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-lock" class="w-4 h-4 text-indigo-500" />
-          <h2 class="font-semibold text-gray-900 dark:text-white">
-            Đổi mật khẩu
-          </h2>
+        <div class="flex place-items-center gap-2">
+          <UIcon class="size-5" name="i-lucide-lock" />
+          <h2 class="font-medium">Change password</h2>
         </div>
       </template>
 
       <div class="space-y-4">
-        <UFormField label="Mật khẩu hiện tại" name="currentPassword">
+        <UFormField label="Current password" name="currentPassword">
           <UInput
             v-model="passwordForm.current"
             :type="showPasswords.current ? 'text' : 'password'"
-            placeholder="Nhập mật khẩu hiện tại"
+            placeholder="Enter your current password"
             icon="i-lucide-lock"
             class="w-full"
           >
@@ -220,11 +209,11 @@ function changePassword() {
           </UInput>
         </UFormField>
 
-        <UFormField label="Mật khẩu mới" name="newPassword">
+        <UFormField label="New password" name="newPassword">
           <UInput
             v-model="passwordForm.next"
             :type="showPasswords.next ? 'text' : 'password'"
-            placeholder="Ít nhất 8 ký tự"
+            placeholder="At least 8 characters"
             icon="i-lucide-key"
             class="w-full"
           >
@@ -254,14 +243,14 @@ function changePassword() {
         </UFormField>
 
         <UFormField
-          label="Xác nhận mật khẩu mới"
+          label="Confirm new password"
           name="confirmPassword"
-          :error="passwordMismatch ? 'Mật khẩu không khớp' : undefined"
+          :error="passwordMismatch ? 'Passwords do not match' : undefined"
         >
           <UInput
             v-model="passwordForm.confirm"
             :type="showPasswords.confirm ? 'text' : 'password'"
-            placeholder="Nhập lại mật khẩu mới"
+            placeholder="Re-enter your new password"
             icon="i-lucide-shield-check"
             :color="passwordMismatch ? 'error' : undefined"
             class="w-full"
@@ -284,8 +273,8 @@ function changePassword() {
           icon="i-lucide-info"
           color="info"
           variant="soft"
-          title="Gợi ý tạo mật khẩu mạnh"
-          description="Dùng ít nhất 8 ký tự, kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt."
+          title="Tips for a strong password"
+          description="Use at least 8 characters with a mix of uppercase, lowercase, numbers and special characters."
         />
       </div>
 
@@ -299,20 +288,18 @@ function changePassword() {
             "
             @click="changePassword"
           >
-            Cập nhật mật khẩu
+            Update password
           </UButton>
         </div>
       </template>
     </UCard>
 
     <!-- ── Section: Danger Zone ───────────────────────────────────────────── -->
-    <UCard class="shadow-sm border border-red-200 dark:border-red-900">
+    <UCard class="shadow-sm ring-2 ring-error">
       <template #header>
-        <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-triangle-alert" class="w-4 h-4 text-red-500" />
-          <h2 class="font-semibold text-red-600 dark:text-red-400">
-            Vùng nguy hiểm
-          </h2>
+        <div class="flex place-items-center gap-2 text-error">
+          <UIcon class="size-5" name="i-lucide-triangle-alert" />
+          <h2 class="font-medium">Danger zone</h2>
         </div>
       </template>
 
@@ -321,10 +308,11 @@ function changePassword() {
       >
         <div>
           <p class="font-medium text-gray-900 dark:text-white text-sm">
-            Xoá tài khoản
+            Delete account
           </p>
           <p class="text-sm text-gray-500 mt-0.5">
-            Toàn bộ dữ liệu, bộ thẻ và tiến trình học sẽ bị xoá vĩnh viễn.
+            All your data, decks and learning progress will be permanently
+            deleted.
           </p>
         </div>
         <UButton
@@ -334,13 +322,13 @@ function changePassword() {
           class="shrink-0"
           @click="
             toast.add({
-              title: 'Tính năng chưa khả dụng',
-              description: 'Vui lòng liên hệ hỗ trợ.',
+              title: 'Not available',
+              description: 'Please contact support.',
               color: 'error',
             })
           "
         >
-          Xoá tài khoản
+          Delete account
         </UButton>
       </div>
     </UCard>

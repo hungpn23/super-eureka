@@ -184,93 +184,85 @@ defineShortcuts({
         class="grid gap-2 sm:grid-cols-2 sm:gap-3"
       >
         <TransitionGroup name="list" appear>
-          <NuxtLink
+          <UCard
             v-for="d in paginatedDecks.data"
-            v-slot="{ navigate }"
             :key="d.id"
-            :to="`/library/${d.slug}?deckId=${d.id}`"
-            custom
+            :ui="{ body: 'space-y-2 p-3 sm:p-4' }"
+            class="group hover:shadow-md transition-all hover:ring hover:ring-primary"
+            variant="outline"
           >
-            <UCard
-              :ui="{ body: 'space-y-2 p-3 sm:p-4' }"
-              class="group hover:shadow-md transition-all hover:ring hover:ring-primary"
-              variant="outline"
-              @click="navigate"
-            >
-              <!-- Title -->
-              <div class="flex place-items-center gap-4">
-                <div class="flex min-w-0 flex-1 place-items-center gap-1.5">
-                  <h4 class="truncate font-medium">{{ d.name }}</h4>
+            <!-- Title -->
+            <div class="flex place-items-center gap-4">
+              <div class="flex min-w-0 flex-1 place-items-center gap-1.5">
+                <h4 class="truncate font-medium">{{ d.name }}</h4>
 
-                  <UIcon
-                    class="shrink-0"
-                    :name="getVisibilityIcon(d.visibility)"
-                  />
-                </div>
-
-                <UDropdownMenu
-                  :items="[
-                    [
-                      { label: 'Học ngay', icon: 'i-lucide-play' },
-                      { label: 'Chỉnh sửa', icon: 'i-lucide-pencil' },
-                    ],
-                    [
-                      {
-                        label: 'Xoá',
-                        icon: 'i-lucide-trash',
-                        color: 'error' as const,
-                      },
-                    ],
-                  ]"
-                >
-                  <UButton
-                    icon="i-lucide-settings"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    :class="`${smAndLarger ? 'opacity-0' : 'opacity-100'} group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer`"
-                  />
-                </UDropdownMenu>
+                <UIcon
+                  class="shrink-0"
+                  :name="getVisibilityIcon(d.visibility)"
+                />
               </div>
 
-              <div class="space-y-1">
-                <div class="flex place-content-between text-xs text-muted">
-                  <span>
-                    {{ d.stats.known }}/{{ d.stats.total }}
-                    cards
-                  </span>
-
-                  <span class="font-medium text-muted">
-                    {{ getDeckProgress(d) }}%
-                  </span>
-                </div>
-
-                <UProgress size="xs" :model-value="getDeckProgress(d)" />
-              </div>
-
-              <div class="flex place-items-center place-content-between">
-                <div
-                  class="text-muted text-start text-xs sm:text-sm sm:text-end"
-                >
-                  {{
-                    d.openedAt
-                      ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
-                      : "Never opened"
-                  }}
-                </div>
-
+              <UDropdownMenu
+                :items="[
+                  [
+                    { label: 'Học ngay', icon: 'i-lucide-play' },
+                    { label: 'Chỉnh sửa', icon: 'i-lucide-pencil' },
+                  ],
+                  [
+                    {
+                      label: 'Xoá',
+                      icon: 'i-lucide-trash',
+                      color: 'error' as const,
+                    },
+                  ],
+                ]"
+              >
                 <UButton
-                  class="cursor-pointer"
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-play"
+                  icon="i-lucide-settings"
+                  color="neutral"
+                  variant="ghost"
                   size="sm"
-                >
-                  Learn
-                </UButton>
+                  :class="`${smAndLarger ? 'opacity-0' : 'opacity-100'} group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer`"
+                />
+              </UDropdownMenu>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex place-content-between text-xs text-muted">
+                <span>
+                  {{ d.stats.known }}/{{ d.stats.total }}
+                  cards
+                </span>
+
+                <span class="font-medium text-muted">
+                  {{ getDeckProgress(d) }}%
+                </span>
               </div>
-            </UCard>
-          </NuxtLink>
+
+              <UProgress size="xs" :model-value="getDeckProgress(d)" />
+            </div>
+
+            <div class="flex place-items-center place-content-between">
+              <div class="text-muted text-start text-xs sm:text-sm sm:text-end">
+                {{
+                  d.openedAt
+                    ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
+                    : "Never opened"
+                }}
+              </div>
+
+              <UButton
+                class="cursor-pointer"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-play"
+                size="sm"
+                :to="`/library/${d.slug}?deckId=${d.id}`"
+              >
+                Learn
+              </UButton>
+            </div>
+          </UCard>
         </TransitionGroup>
       </div>
 

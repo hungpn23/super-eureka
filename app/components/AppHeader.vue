@@ -113,20 +113,12 @@ defineShortcuts({
           <AppNotification />
 
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
-            <!-- <UAvatar
-              v-if="user"
-              :src="user.avatarUrl || ''"
-              class="cursor-pointer rounded-full"
-              icon="i-lucide-user"
-              size="sm"
-            /> -->
             <UButton
               v-if="user"
-              :avatar="{ src: user.avatarUrl || '' }"
+              :avatar="{ src: user.avatarUrl || '', class: 'size-8' }"
               class="rounded-full cursor-pointer"
-              variant="ghost"
+              variant="link"
               color="neutral"
-              icon="i-lucide-user"
             />
           </UDropdownMenu>
         </ClientOnly>
