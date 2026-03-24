@@ -7,7 +7,6 @@ export const createCard = (): CreateCardSchema => ({
 	definition: "",
 	termLanguage: "en",
 	definitionLanguage: "vi",
-	examples: [""],
 });
 
 export const getVisibilityDesc = (visibility: Visibility) => {

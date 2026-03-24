@@ -3,9 +3,9 @@ import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
   CARD_SEPARATOR_ITEMS,
   CONTENT_SEPARATOR_ITEMS,
+  createCard,
   CreateDeckFormId,
   type CreateDeckResponse,
-  createCard,
   DEFINITION_LANGUAGE_ITEMS,
   getVisibilityDesc,
   getVisibilityLabel,
@@ -538,14 +538,13 @@ function handleAddExample(index: number) {
                 <UInput
                   v-model="importState.customCardSeparator"
                   class="mt-1"
-                  placeholder="eg. \"
+                  placeholder="eg. \\n"
                 />
               </UFormField>
             </div>
           </div>
 
           <h3 class="font-semibold sm:text-lg">
-            Preview
             <span class="text-base font-normal">
               {{ parsedCards.length }} cards
             </span>
@@ -622,5 +621,3 @@ function handleAddExample(index: number) {
     </UModal>
   </UContainer>
 </template>
-
-<style scoped></style>
