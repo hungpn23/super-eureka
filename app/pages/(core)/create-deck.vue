@@ -10,6 +10,7 @@ import {
 	getVisibilityDesc,
 	getVisibilityLabel,
 	TERM_LANGUAGE_ITEMS,
+	type TextareaRef,
 	useCardSuggestion,
 	useCardsImport,
 	useContentSuggestion,
@@ -29,10 +30,12 @@ const toast = useCreateDeckToasts();
 const { token } = useAuth();
 
 const passcodeRef = useTemplateRef("passcodeInput");
+const termRefs = useTemplateRef<TextareaRef[]>("termInput");
 const definitionRefs = useTemplateRef("definitionInput");
 
 const isVisibilityModalOpen = ref(false);
 const formErrorMsg = ref("");
+const createDeckFormKey = ref(0);
 
 const createState = reactive<CreateDeckSchema>({
 	name: "",
@@ -54,7 +57,6 @@ const {
 	suggestContent,
 	isSuggestingThisCard,
 	hasContentSuggestion,
-	applyContentSuggestion,
 	isWord,
 } = useContentSuggestion(definitionRefs);
 
@@ -75,6 +77,10 @@ const {
 	body: createState,
 	immediate: false,
 	watch: false,
+});
+
+onMounted(() => {
+	createDeckFormKey.value++;
 });
 
 async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
@@ -171,19 +177,87 @@ function applyCardSuggestion(
 	index: number,
 ) {
 	const nextCard = getSuggestedCard(card, index);
-	if (!nextCard) return;
+	if (!nextCard) return false;
 
 	const { id: _id, ...suggestedCard } = nextCard;
 	Object.assign(card, suggestedCard);
-	focusInput(definitionRefs.value?.[index]?.textareaRef);
+	return true;
 }
 
-function handleCardSuggestionAccept(
+function blurTermInput(index: number) {
+	termRefs.value?.[index]?.textareaRef?.blur();
+}
+
+function applyContentSuggestionWithoutFocus(
 	card: CreateDeckSchema["cards"][number],
 	index: number,
 ) {
-	applyContentSuggestion(card, index);
-	applyCardSuggestion(card, index);
+	if (!hasContentSuggestion(card) || !isSuggestingThisCard(index)) return false;
+
+	const { currentCardIndex: _currentCardIndex, ...contentSuggestion } =
+		suggestion;
+	Object.assign(card, contentSuggestion);
+	return true;
+}
+
+function getNextSuggestedCardIndex(index: number) {
+	for (
+		let nextIndex = index + 1;
+		nextIndex < createState.cards.length;
+		nextIndex++
+	) {
+		const nextCard = createState.cards[nextIndex];
+		if (nextCard && hasSuggestedCard(nextCard, nextIndex)) {
+			return nextIndex;
+		}
+	}
+
+	return -1;
+}
+
+function focusNextTermInput(index: number) {
+	const nextIndex = index + 1;
+	const nextTermRef = termRefs.value?.[nextIndex]?.textareaRef;
+
+	if (nextTermRef) {
+		focusInput(nextTermRef);
+		return true;
+	}
+
+	return false;
+}
+
+function handleTermTab(
+	event: KeyboardEvent,
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	if (applyContentSuggestionWithoutFocus(card, index)) {
+		event.preventDefault();
+		suggestCards(card, index);
+		if (!focusNextTermInput(index)) {
+			blurTermInput(index);
+		}
+		return;
+	}
+
+	if (cardSuggestion.currentCardIndex === index) {
+		const nextSuggestedCardIndex = getNextSuggestedCardIndex(index);
+
+		if (nextSuggestedCardIndex >= 0) {
+			event.preventDefault();
+			focusInput(termRefs.value?.[nextSuggestedCardIndex]?.textareaRef);
+			return;
+		}
+	}
+
+	if (applyCardSuggestion(card, index)) {
+		event.preventDefault();
+		suggestCards(card, index);
+		if (!focusNextTermInput(index)) {
+			blurTermInput(index);
+		}
+	}
 }
 
 function getTermPlaceholder(
@@ -341,10 +415,12 @@ function shouldShowAcceptSuggestion(
 
 		<!-- Create Deck Form -->
 		<UForm
+			:key="createDeckFormKey"
 			:id="CreateDeckFormId.CREATE_DECK"
 			:schema="CREATE_DECK_SCHEMA"
 			:state="createState"
 			class="mt-4 flex flex-col gap-2"
+			autocomplete="off"
 			@submit="handleSubmit"
 			@error="onValidationError"
 		>
@@ -417,17 +493,19 @@ function shouldShowAcceptSuggestion(
 
 								<UFormField class="flex-1" :name="`cards.${cIndex}.term`">
 									<UTextarea
+										ref="termInput"
 										v-model="card.term"
 										:rows="1"
 										:maxrows="10"
 										:ui="{ base: 'text-base' }"
 										class="w-full"
 										:placeholder="getTermPlaceholder(card, cIndex)"
+										autocomplete="off"
 										autoresize
 										@update:model-value="() => handleTermChange(card, cIndex)"
-										@keydown.tab.prevent="
-                      () => handleCardSuggestionAccept(card, cIndex)
-                    "
+										@keydown.tab="
+											(event: KeyboardEvent) => handleTermTab(event, card, cIndex)
+										"
 									/>
 								</UFormField>
 
@@ -498,6 +576,7 @@ function shouldShowAcceptSuggestion(
 										:ui="{ base: 'text-base' }"
 										:placeholder="getDefinitionPlaceholder(card, cIndex)"
 										class="w-full"
+										autocomplete="off"
 										autoresize
 										@update:model-value="() => handleDefinitionChange(card, cIndex)"
 									/>
