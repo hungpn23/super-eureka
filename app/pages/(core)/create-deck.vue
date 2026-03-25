@@ -10,6 +10,7 @@ import {
 	getVisibilityDesc,
 	getVisibilityLabel,
 	TERM_LANGUAGE_ITEMS,
+	useCardSuggestion,
 	useCardsImport,
 	useContentSuggestion,
 	useCreateDeckToasts,
@@ -56,6 +57,12 @@ const {
 	applyContentSuggestion,
 	isWord,
 } = useContentSuggestion(definitionRefs);
+
+const {
+	suggestion: cardSuggestion,
+	suggestCards,
+	hasCardSuggestion,
+} = useCardSuggestion();
 
 const {
 	execute: createDeck,
@@ -109,12 +116,137 @@ function handleAddExample(index: number) {
 	card.examples.push("");
 }
 
+function handleTermChange(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	suggestContent(card, index);
+	suggestCards(card, index);
+}
+
+function handleDefinitionChange(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	suggestCards(card, index);
+}
+
+function isEmptyCard(card: CreateDeckSchema["cards"][number]) {
+	return (
+		!card.term &&
+		!card.definition &&
+		!card.pronunciation &&
+		!card.partOfSpeech &&
+		!card.usageOrGrammar &&
+		!card.examples?.length
+	);
+}
+
+function getSuggestedCard(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	if (
+		!hasCardSuggestion(cardSuggestion.currentCardIndex) ||
+		!isEmptyCard(card)
+	) {
+		return undefined;
+	}
+
+	const sourceIndex = cardSuggestion.currentCardIndex;
+	if (index <= sourceIndex) return undefined;
+
+	return cardSuggestion.cards[index - sourceIndex - 1];
+}
+
+function hasSuggestedCard(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return !!getSuggestedCard(card, index);
+}
+
+function applyCardSuggestion(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	const nextCard = getSuggestedCard(card, index);
+	if (!nextCard) return;
+
+	const { id: _id, ...suggestedCard } = nextCard;
+	Object.assign(card, suggestedCard);
+	focusInput(definitionRefs.value?.[index]?.textareaRef);
+}
+
+function handleCardSuggestionAccept(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	applyContentSuggestion(card, index);
+	applyCardSuggestion(card, index);
+}
+
+function getTermPlaceholder(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return getSuggestedCard(card, index)?.term || "Enter your term...";
+}
+
+function getDefinitionPlaceholder(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return (
+		getSuggestedCard(card, index)?.definition ||
+		(isSuggestingThisCard(index) ? suggestion.definition : undefined) ||
+		"Enter your definition..."
+	);
+}
+
+function getPartOfSpeechPlaceholder(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return (
+		getSuggestedCard(card, index)?.partOfSpeech ||
+		(isSuggestingThisCard(index) ? suggestion.partOfSpeech : undefined) ||
+		"eg. noun"
+	);
+}
+
+function getPronunciationPlaceholder(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return (
+		getSuggestedCard(card, index)?.pronunciation ||
+		(isSuggestingThisCard(index) ? suggestion.pronunciation : undefined) ||
+		"eg. /heˈloʊ/"
+	);
+}
+
+function getUsageOrGrammarPlaceholder(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return (
+		getSuggestedCard(card, index)?.usageOrGrammar ||
+		(isSuggestingThisCard(index) ? suggestion.usageOrGrammar : undefined) ||
+		"Enter your usage or grammar notes"
+	);
+}
+
 function getRenderableExampleCount(
 	card: CreateDeckSchema["cards"][number],
 	index: number,
 ) {
 	const exampleCount = card.examples?.length ?? 0;
 	if (exampleCount > 0) return exampleCount;
+
+	if (getSuggestedCard(card, index)?.examples?.length) {
+		return getSuggestedCard(card, index)?.examples?.length || 0;
+	}
 
 	if (isSuggestingThisCard(index) && suggestion.examples?.length) {
 		return suggestion.examples.length;
@@ -130,9 +262,11 @@ function handleExampleInput(
 	value: string,
 ) {
 	if (!card.examples?.length) {
-		const suggestionExampleCount = isSuggestingThisCard(cardIndex)
-			? (suggestion.examples?.length ?? 0)
-			: 0;
+		const suggestionExampleCount =
+			getSuggestedCard(card, cardIndex)?.examples?.length ||
+			(isSuggestingThisCard(cardIndex)
+				? (suggestion.examples?.length ?? 0)
+				: 0);
 
 		card.examples = Array.from(
 			{ length: Math.max(suggestionExampleCount, exampleIndex + 1, 1) },
@@ -141,6 +275,30 @@ function handleExampleInput(
 	}
 
 	card.examples[exampleIndex] = value;
+}
+
+function getExamplePlaceholder(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+	exampleIndex: number,
+) {
+	return (
+		getSuggestedCard(card, index)?.examples?.[exampleIndex] ||
+		(isSuggestingThisCard(index)
+			? suggestion.examples?.[exampleIndex]
+			: undefined) ||
+		"eg. Hello, how are you?"
+	);
+}
+
+function shouldShowAcceptSuggestion(
+	card: CreateDeckSchema["cards"][number],
+	index: number,
+) {
+	return (
+		(isSuggestingThisCard(index) && hasContentSuggestion(card)) ||
+		hasSuggestedCard(card, index)
+	);
 }
 </script>
 
@@ -264,11 +422,11 @@ function handleExampleInput(
 										:maxrows="10"
 										:ui="{ base: 'text-base' }"
 										class="w-full"
-										placeholder="Enter your term..."
+										:placeholder="getTermPlaceholder(card, cIndex)"
 										autoresize
-										@update:model-value="() => suggestContent(card, cIndex)"
+										@update:model-value="() => handleTermChange(card, cIndex)"
 										@keydown.tab.prevent="
-                      () => applyContentSuggestion(card, cIndex)
+                      () => handleCardSuggestionAccept(card, cIndex)
                     "
 									/>
 								</UFormField>
@@ -281,11 +439,7 @@ function handleExampleInput(
 										<UInput
 											v-model="card.partOfSpeech"
 											class="w-full"
-											:placeholder="
-                        isSuggestingThisCard(cIndex)
-                          ? suggestion.partOfSpeech
-                          : 'eg. noun'
-                      "
+											:placeholder="getPartOfSpeechPlaceholder(card, cIndex)"
 											@vue:before-unmount="card.partOfSpeech = undefined"
 										/>
 									</UFormField>
@@ -297,11 +451,7 @@ function handleExampleInput(
 										<UInput
 											v-model="card.pronunciation"
 											class="w-full"
-											:placeholder="
-                        isSuggestingThisCard(cIndex)
-                          ? suggestion.pronunciation
-                          : 'eg. /heˈloʊ/'
-                      "
+											:placeholder="getPronunciationPlaceholder(card, cIndex)"
 											@vue:before-unmount="card.pronunciation = undefined"
 										/>
 									</UFormField>
@@ -315,20 +465,14 @@ function handleExampleInput(
 										<UInput
 											v-model="card.usageOrGrammar"
 											class="w-full"
-											:placeholder="
-                        isSuggestingThisCard(cIndex)
-                          ? suggestion.usageOrGrammar
-                          : 'Enter your usage or grammar notes'
-                      "
+											:placeholder="getUsageOrGrammarPlaceholder(card, cIndex)"
 											@vue:before-unmount="card.usageOrGrammar = undefined"
 										/>
 									</UFormField>
 								</div>
 
 								<span
-									v-if="
-                    isSuggestingThisCard(cIndex) && hasContentSuggestion(card)
-                  "
+									v-if="shouldShowAcceptSuggestion(card, cIndex)"
 									class="text-muted text-sm"
 								>
 									Press <UKbd size="lg">tab</UKbd> to accept suggestion.
@@ -352,13 +496,10 @@ function handleExampleInput(
 										:rows="1"
 										:maxrows="10"
 										:ui="{ base: 'text-base' }"
-										:placeholder="
-                      isSuggestingThisCard(cIndex)
-                        ? suggestion.definition
-                        : 'Enter your definition...'
-                    "
+										:placeholder="getDefinitionPlaceholder(card, cIndex)"
 										class="w-full"
 										autoresize
+										@update:model-value="() => handleDefinitionChange(card, cIndex)"
 									/>
 								</UFormField>
 
@@ -370,11 +511,7 @@ function handleExampleInput(
 									<UInput
 										:model-value="card.examples?.[eIndex] ?? ''"
 										class="w-full"
-										:placeholder="
-                      isSuggestingThisCard(cIndex) && suggestion.examples
-                        ? suggestion.examples[eIndex]
-                        : 'eg. Hello, how are you?'
-                    "
+										:placeholder="getExamplePlaceholder(card, cIndex, eIndex)"
 										@update:model-value="
                       (value) =>
                         handleExampleInput(card, cIndex, eIndex, value)
