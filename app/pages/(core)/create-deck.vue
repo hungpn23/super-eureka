@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
-	CARD_SEPARATOR_ITEMS,
-	CONTENT_SEPARATOR_ITEMS,
 	CreateDeckFormId,
 	type CreateDeckResponse,
 	createCard,
@@ -12,18 +10,18 @@ import {
 	TERM_LANGUAGE_ITEMS,
 	type TextareaRef,
 	useCardSuggestion,
-	useCardsImport,
 	useContentSuggestion,
 	useCreateDeckToasts,
 	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
+import CreateDeckImportModal from "~/features/create-deck/components/CreateDeckImportModal.vue";
 import { Visibility } from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
 import { focusInput, getVisibilityIcon } from "~/shared/utils";
 import {
 	CREATE_DECK_SCHEMA,
+	type CreateCardSchema,
 	type CreateDeckSchema,
-	IMPORT_CARD_SCHEMA,
 } from "~/valibot/schemas";
 
 const toast = useCreateDeckToasts();
@@ -34,6 +32,7 @@ const termRefs = useTemplateRef<TextareaRef[]>("termInput");
 const definitionRefs = useTemplateRef("definitionInput");
 
 const isVisibilityModalOpen = ref(false);
+const isImportModalOpen = ref(false);
 const formErrorMsg = ref("");
 const createDeckFormKey = ref(0);
 
@@ -42,15 +41,6 @@ const createState = reactive<CreateDeckSchema>({
 	visibility: Visibility.PUBLIC,
 	cards: [createCard(), createCard(), createCard(), createCard()],
 });
-
-const {
-	isImportModalOpen,
-	importState,
-	contentSeparatorPreview,
-	cardSeparatorPreview,
-	parsedCards,
-	onImportSubmit,
-} = useCardsImport(createState);
 
 const {
 	suggestion,
@@ -108,6 +98,14 @@ async function onValidationError(event: FormErrorEvent) {
 	formErrorMsg.value = cardError
 		? cardError.message
 		: "Please fill in all required fields.";
+}
+
+function handleImportCards(importCards: CreateCardSchema[]) {
+	const currentCards = createState.cards.filter(
+		(card) => card.term.trim().length > 0 || card.definition.trim().length > 0,
+	);
+
+	createState.cards = [...currentCards, ...importCards];
 }
 
 function handleAddExample(index: number) {
@@ -382,7 +380,7 @@ function shouldShowAcceptSuggestion(
 			to="/library"
 			class="px-0"
 			variant="link"
-			label="Home"
+			label="Library"
 			icon="i-lucide-move-left"
 			size="lg"
 		/>
@@ -690,188 +688,9 @@ function shouldShowAcceptSuggestion(
 			</UModal>
 		</UForm>
 
-		<!-- Import Cards Modal -->
-		<UModal
+		<CreateDeckImportModal
 			v-model:open="isImportModalOpen"
-			:ui="{
-        title: 'text-xl sm:text-2xl',
-        content:
-          'sm:inset-x-16 sm:inset-y-8 lg:inset-x-32 lg:inset-y-16 sm:rounded-md',
-      }"
-			title="Import your cards"
-			description="Copy and Paste your data here (from Word, Excel, Google Docs, CSV Files, etc.)"
-			fullscreen
-		>
-			<template #body>
-				<!-- Import Cards Form -->
-				<UForm
-					:id="CreateDeckFormId.IMPORT_CARDS"
-					:schema="IMPORT_CARD_SCHEMA"
-					:state="importState"
-					class="flex flex-col gap-4"
-					@submit="onImportSubmit"
-				>
-					<UFormField name="input">
-						<UTextarea
-							v-model="importState.input"
-							:rows="7"
-							:maxrows="10"
-							class="w-full"
-							variant="subtle"
-							placeholder="Paste your data here..."
-							autoresize
-							autofocus
-						/>
-					</UFormField>
-
-					<div
-						class="flex flex-col place-items-start gap-3 sm:flex-row sm:gap-6"
-					>
-						<div class="flex place-items-center gap-2">
-							<UFormField
-								:ui="{
-                  help: 'whitespace-pre-wrap',
-                }"
-								:help="contentSeparatorPreview"
-								name="contentSeparator"
-							>
-								<USelect
-									v-model="importState.contentSeparator"
-									:items="CONTENT_SEPARATOR_ITEMS"
-									class="w-full"
-									variant="subtle"
-									value-key="id"
-								/>
-
-								<template #label>
-									<h3 class="truncate font-semibold sm:text-lg">
-										Content separator
-									</h3>
-								</template>
-							</UFormField>
-
-							<UFormField
-								v-if="importState.contentSeparator === 'custom'"
-								name="customContentSeparator"
-							>
-								<UInput
-									v-model="importState.customContentSeparator"
-									class="mt-1"
-									placeholder="eg. -"
-								/>
-							</UFormField>
-						</div>
-
-						<div class="flex place-items-center gap-2">
-							<UFormField
-								:ui="{
-                  help: 'whitespace-pre-wrap',
-                }"
-								:help="cardSeparatorPreview"
-								name="cardSeparator"
-							>
-								<USelect
-									v-model="importState.cardSeparator"
-									:items="CARD_SEPARATOR_ITEMS"
-									class="w-full"
-									variant="subtle"
-									value-key="id"
-								/>
-
-								<template #label>
-									<h3 class="truncate font-semibold sm:text-lg">
-										Card separator
-									</h3>
-								</template>
-							</UFormField>
-
-							<UFormField
-								v-if="importState.cardSeparator === 'custom'"
-								name="customCardSeparator"
-							>
-								<UInput
-									v-model="importState.customCardSeparator"
-									class="mt-1"
-									placeholder="eg. \\n"
-								/>
-							</UFormField>
-						</div>
-					</div>
-
-					<h3 class="font-semibold sm:text-lg">
-						<span class="text-base font-normal">
-							{{ parsedCards.length }} cards
-						</span>
-					</h3>
-
-					<div class="flex flex-col gap-4">
-						<UCard
-							v-for="(c, index) in parsedCards"
-							:key="index"
-							class="bg-elevated"
-							variant="subtle"
-						>
-							<div class="flex flex-col sm:flex-row">
-								<UTextarea
-									v-model="c.term"
-									:rows="1"
-									:maxrows="10"
-									:ui="{
-                    base: 'sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
-                  }"
-									class="w-full"
-									variant="ghost"
-									disabled
-									autoresize
-								/>
-
-								<USeparator class="m-2 sm:hidden" />
-
-								<USeparator
-									orientation="vertical"
-									class="m-2 hidden h-auto sm:block"
-								/>
-
-								<UTextarea
-									v-model="c.definition"
-									:rows="1"
-									:maxrows="10"
-									:ui="{
-                    base: 'sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
-                  }"
-									class="w-full"
-									variant="ghost"
-									disabled
-									autoresize
-								/>
-							</div>
-						</UCard>
-					</div>
-				</UForm>
-			</template>
-
-			<template #footer>
-				<div class="flex flex-1 place-content-end gap-2">
-					<UButton
-						class="cursor-pointer"
-						label="Cancel"
-						icon="i-lucide-x"
-						color="neutral"
-						variant="outline"
-						@click="isImportModalOpen = false"
-					/>
-
-					<UButton
-						:form="CreateDeckFormId.IMPORT_CARDS"
-						class="cursor-pointer"
-						label="Import"
-						icon="i-lucide-copy-plus"
-						variant="subtle"
-						size="lg"
-						type="submit"
-					/>
-				</div>
-			</template>
-		</UModal>
+			@import="handleImportCards"
+		/>
 	</UContainer>
 </template>
