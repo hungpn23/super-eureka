@@ -83,7 +83,7 @@ onMounted(() => {
 	createDeckFormKey.value++;
 });
 
-async function handleSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
+async function handleCreateDeck(event: FormSubmitEvent<CreateDeckSchema>) {
 	formErrorMsg.value = "";
 
 	Object.assign(createState, event.data);
@@ -380,15 +380,16 @@ function shouldShowAcceptSuggestion(
 	<UContainer class="space-y-2">
 		<UButton
 			to="/library"
-			class="cursor-pointer px-0 text-base"
+			class="px-0"
 			variant="link"
-			icon="i-lucide-move-left"
 			label="Home"
+			icon="i-lucide-move-left"
+			size="lg"
 		/>
 
 		<div class="space-y-2">
 			<div class="flex place-content-between place-items-center gap-2">
-				<h1 class="text-xl font-semibold text-nowrap sm:text-2xl">
+				<h1 class="text-lg font-semibold text-nowrap sm:text-xl">
 					Create a new deck
 				</h1>
 
@@ -421,13 +422,13 @@ function shouldShowAcceptSuggestion(
 			:state="createState"
 			class="mt-4 flex flex-col gap-2"
 			autocomplete="off"
-			@submit="handleSubmit"
+			@submit="handleCreateDeck"
 			@error="onValidationError"
 		>
 			<UFormField label="Name" name="name" required>
 				<UInput
 					v-model="createState.name"
-					:ui="{ base: 'sm:text-lg' }"
+					:ui="{ base: 'sm:text-base' }"
 					class="w-full"
 					placeholder="Enter a name, like “Biology - Chapter 22: Evolution”"
 				/>
@@ -438,7 +439,7 @@ function shouldShowAcceptSuggestion(
 					v-model="createState.description"
 					:rows="1"
 					:maxrows="5"
-					:ui="{ base: 'sm:text-lg' }"
+					:ui="{ base: 'sm:text-base' }"
 					class="w-full"
 					placeholder="Describe your deck (optional)"
 					autoresize
@@ -455,7 +456,7 @@ function shouldShowAcceptSuggestion(
 			/>
 
 			<div class="mt-2 flex place-content-between place-items-center gap-4">
-				<h2 class="font-medium sm:text-lg">
+				<h2 class="font-medium sm:text-base">
 					Cards ({{ createState.cards.length }})
 				</h2>
 
@@ -480,14 +481,13 @@ function shouldShowAcceptSuggestion(
 						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 							<div class="flex h-fit flex-col gap-2">
 								<div class="flex place-content-between place-items-center">
-									<span class="text-base font-medium sm:text-lg">
-										{{ cIndex + 1 }}
-									</span>
+									<span class="font-medium"> {{ cIndex + 1 }} </span>
 
 									<USelectMenu
 										v-model="card.termLanguage"
-										:items="TERM_LANGUAGE_ITEMS"
 										value-key="id"
+										:ui="{ base: 'text-xs' }"
+										:items="TERM_LANGUAGE_ITEMS"
 									/>
 								</div>
 
@@ -495,13 +495,12 @@ function shouldShowAcceptSuggestion(
 									<UTextarea
 										ref="termInput"
 										v-model="card.term"
-										:rows="1"
-										:maxrows="10"
-										:ui="{ base: 'text-base' }"
 										class="w-full"
-										:placeholder="getTermPlaceholder(card, cIndex)"
 										autocomplete="off"
 										autoresize
+										:rows="1"
+										:maxrows="10"
+										:placeholder="getTermPlaceholder(card, cIndex)"
 										@update:model-value="() => handleTermChange(card, cIndex)"
 										@keydown.tab="
 											(event: KeyboardEvent) => handleTermTab(event, card, cIndex)
@@ -563,8 +562,9 @@ function shouldShowAcceptSuggestion(
 								<USelectMenu
 									class="place-self-end"
 									v-model="card.definitionLanguage"
-									:items="DEFINITION_LANGUAGE_ITEMS"
 									value-key="id"
+									:ui="{ base: 'text-xs' }"
+									:items="DEFINITION_LANGUAGE_ITEMS"
 								/>
 
 								<UFormField class="flex-1" :name="`cards.${cIndex}.definition`">
@@ -573,7 +573,6 @@ function shouldShowAcceptSuggestion(
 										v-model="card.definition"
 										:rows="1"
 										:maxrows="10"
-										:ui="{ base: 'text-base' }"
 										:placeholder="getDefinitionPlaceholder(card, cIndex)"
 										class="w-full"
 										autocomplete="off"
@@ -620,14 +619,15 @@ function shouldShowAcceptSuggestion(
 							</div>
 						</div>
 
-						<UButton
-							class="flex place-self-end"
-							label="Remove"
-							icon="i-lucide-trash-2"
-							color="error"
-							variant="ghost"
-							@click="createState.cards.splice(cIndex, 1)"
-						/>
+						<div class="flex place-content-end">
+							<UButton
+								label="Remove"
+								icon="i-lucide-trash-2"
+								color="error"
+								variant="ghost"
+								@click="createState.cards.splice(cIndex, 1)"
+							/>
+						</div>
 					</UCard>
 				</TransitionGroup>
 
