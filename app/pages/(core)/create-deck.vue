@@ -4,16 +4,15 @@ import {
 	CreateDeckFormId,
 	type CreateDeckResponse,
 	createCard,
-	getVisibilityDesc,
 	getVisibilityLabel,
 	useCreateDeckToasts,
-	VISIBILITY_ITEMS,
 } from "~/features/create-deck";
 import CardsEditor from "~/features/create-deck/components/CardsEditor.vue";
 import ImportCardsModal from "~/features/create-deck/components/ImportCardsModal.vue";
+import VisibilityModal from "~/features/create-deck/components/VisibilityModal.vue";
 import { Visibility } from "~/features/deck";
 import type { ErrorResponse } from "~/shared/types";
-import { focusInput, getVisibilityIcon } from "~/shared/utils";
+import { getVisibilityIcon } from "~/shared/utils";
 import {
 	CREATE_DECK_SCHEMA,
 	type CreateCardSchema,
@@ -22,8 +21,6 @@ import {
 
 const toast = useCreateDeckToasts();
 const { token } = useAuth();
-
-const passcodeRef = useTemplateRef("passcodeInput");
 
 const isVisibilityModalOpen = ref(false);
 const isImportModalOpen = ref(false);
@@ -185,49 +182,11 @@ function handleImportCards(importCards: CreateCardSchema[]) {
 
 			<CardsEditor v-model:cards="createState.cards" />
 
-			<!-- Visibility Modal -->
-			<UModal
+			<VisibilityModal
 				v-model:open="isVisibilityModalOpen"
-				:ui="{ title: 'text-base sm:text-lg font-medium' }"
-				title="Manage your deck access"
-			>
-				<template #body>
-					<UFormField
-						:help="getVisibilityDesc(createState.visibility)"
-						label="Visibility"
-						name="visibility"
-					>
-						<USelect
-							v-model="createState.visibility"
-							:items="VISIBILITY_ITEMS"
-							:icon="getVisibilityIcon(createState.visibility)"
-							:ui="{ content: 'min-w-fit' }"
-							value-key="id"
-							@change="
-                createState.passcode =
-                  createState.visibility === Visibility.PROTECTED
-                    ? ''
-                    : undefined
-              "
-						/>
-					</UFormField>
-
-					<UFormField
-						v-if="createState.visibility === Visibility.PROTECTED"
-						class="mt-2"
-						label="Passcode"
-						name="passcode"
-						required
-					>
-						<UInput
-							ref="passcodeInput"
-							v-model="createState.passcode"
-							@keydown.enter="isVisibilityModalOpen = false"
-							@vue:mounted="focusInput(passcodeRef?.inputRef)"
-						/>
-					</UFormField>
-				</template>
-			</UModal>
+				v-model:visibility="createState.visibility"
+				v-model:passcode="createState.passcode"
+			/>
 		</UForm>
 
 		<ImportCardsModal
