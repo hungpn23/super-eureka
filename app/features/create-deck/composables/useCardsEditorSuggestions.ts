@@ -202,9 +202,8 @@ export function useCardsEditorSuggestions(
 		const exampleCount = card.examples?.length ?? 0;
 		if (exampleCount > 0) return exampleCount;
 
-		if (getSuggestedCard(card, index)?.examples?.length) {
-			return getSuggestedCard(card, index)?.examples?.length || 0;
-		}
+		const suggestedCardCount = getSuggestedCard(card, index)?.examples?.length;
+		if (suggestedCardCount) return suggestedCardCount;
 
 		if (isSuggestingThisCard(index) && suggestion.examples?.length) {
 			return suggestion.examples.length;
