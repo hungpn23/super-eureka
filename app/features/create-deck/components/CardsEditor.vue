@@ -14,7 +14,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(event: "update:cards", value: CreateDeckCardFormState[]): void;
-	(event: "update:card-image", payload: { cardId: string; file?: File }): void;
+	(
+		event: "update:card-image",
+		payload: { cardId: string; file?: File | null },
+	): void;
 }>();
 
 const cards = computed({
@@ -51,15 +54,6 @@ function removeCard(index: number) {
 	nextCards.splice(index, 1);
 	cards.value = nextCards;
 }
-
-function handleCardImageSelect(cardId: string, file?: File) {
-	emit("update:card-image", { cardId, file });
-}
-
-function handleCardImageRemove(cardId: string, removeFile: () => void) {
-	removeFile();
-	emit("update:card-image", { cardId, file: undefined });
-}
 </script>
 
 <template>
@@ -68,21 +62,18 @@ function handleCardImageRemove(cardId: string, removeFile: () => void) {
 			<UCard
 				v-for="(card, cIndex) in cards"
 				:key="card.clientId"
-				class="bg-elevated"
+				class="group"
 				variant="subtle"
 			>
 				<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 					<div class="flex h-fit flex-col gap-2">
-						<div class="flex place-content-between place-items-center">
-							<span class="font-medium"> {{ cIndex + 1 }} </span>
-
-							<USelectMenu
-								v-model="card.termLanguage"
-								value-key="id"
-								:ui="{ base: 'text-xs' }"
-								:items="TERM_LANGUAGE_ITEMS"
-							/>
-						</div>
+						<USelectMenu
+							class="place-self-start"
+							v-model="card.termLanguage"
+							value-key="id"
+							:ui="{ base: 'text-xs' }"
+							:items="TERM_LANGUAGE_ITEMS"
+						/>
 
 						<UFormField class="flex-1" :name="`cards.${cIndex}.term`">
 							<UTextarea
@@ -149,13 +140,24 @@ function handleCardImageRemove(cardId: string, removeFile: () => void) {
 					<USeparator class="sm:hidden" />
 
 					<div class="flex h-fit flex-col gap-2">
-						<USelectMenu
-							class="place-self-end"
-							v-model="card.definitionLanguage"
-							value-key="id"
-							:ui="{ base: 'text-xs' }"
-							:items="DEFINITION_LANGUAGE_ITEMS"
-						/>
+						<div class="flex place-content-between place-items-center">
+							<USelectMenu
+								class="place-self-start"
+								v-model="card.definitionLanguage"
+								value-key="id"
+								:ui="{ base: 'text-xs' }"
+								:items="DEFINITION_LANGUAGE_ITEMS"
+							/>
+
+							<UButton
+								class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer"
+								icon="i-lucide-trash-2"
+								color="error"
+								variant="ghost"
+								size="sm"
+								@click="removeCard(cIndex)"
+							/>
+						</div>
 
 						<UFormField class="flex-1" :name="`cards.${cIndex}.definition`">
 							<UTextarea
@@ -187,6 +189,7 @@ function handleCardImageRemove(cardId: string, removeFile: () => void) {
 								<template #trailing>
 									<UButton
 										v-if="card.examples?.length"
+										class="p-1"
 										icon="i-lucide-x"
 										variant="ghost"
 										color="error"
@@ -209,100 +212,21 @@ function handleCardImageRemove(cardId: string, removeFile: () => void) {
 				</div>
 
 				<UFormField
-					class="mt-4"
+					class="mt-4 place-self-center"
 					:name="`cards.${cIndex}.fileId`"
-					label="Card image"
 				>
 					<UFileUpload
-						v-slot="{ open, removeFile }"
 						v-model="card.imageFile"
-						accept="image/*"
+						class="w-64"
+						accept="image/png, image/jpeg, image/jpg, image/webp"
+						label="Drop your image here"
+						description="PNG, JPG, JPEG or WEBP (max. 5MB)"
+						color="neutral"
 						@update:model-value="
-							(file) => handleCardImageSelect(card.clientId, file || undefined)
+							(file) => emit('update:card-image', { cardId: card.clientId, file })
 						"
-					>
-						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
-							<div
-								class="bg-muted flex h-28 w-full items-center justify-center overflow-hidden rounded-lg border sm:w-40"
-							>
-								<img
-									v-if="card.imageUrl"
-									:src="card.imageUrl"
-									:alt="`Card ${cIndex + 1} image preview`"
-									class="h-full w-full object-cover"
-								>
-
-								<div
-									v-else
-									class="text-muted flex flex-col items-center gap-2 text-sm"
-								>
-									<UIcon
-										:name="
-											card.isUploadingImage
-												? 'i-lucide-loader-circle'
-												: 'i-lucide-image'
-										"
-										class="size-6"
-										:class="{ 'animate-spin': card.isUploadingImage }"
-									/>
-									<span>
-										{{ card.isUploadingImage
-												? "Uploading image..."
-												: "No image selected" }}
-									</span>
-								</div>
-							</div>
-
-							<div class="flex flex-1 flex-col gap-2">
-								<p class="text-muted text-sm">
-									Upload an image for this card if needed. When upload succeeds,
-									the returned `fileId` will be sent when creating the deck.
-								</p>
-
-								<div class="flex flex-wrap gap-2">
-									<UButton
-										icon="i-lucide-image"
-										color="primary"
-										variant="soft"
-										:loading="card.isUploadingImage"
-										@click="open()"
-									>
-										Choose an image
-									</UButton>
-
-									<UButton
-										v-if="card.imageFile || card.imageUrl"
-										icon="i-lucide-trash-2"
-										color="error"
-										variant="ghost"
-										@click="
-											handleCardImageRemove(card.clientId, removeFile)
-										"
-									>
-										Remove
-									</UButton>
-								</div>
-
-								<p
-									v-if="card.imageFile?.name"
-									class="text-muted truncate text-xs"
-								>
-									{{ card.imageFile.name }}
-								</p>
-							</div>
-						</div>
-					</UFileUpload>
-				</UFormField>
-
-				<div class="flex place-content-end">
-					<UButton
-						label="Remove"
-						icon="i-lucide-trash-2"
-						color="error"
-						variant="ghost"
-						@click="removeCard(cIndex)"
 					/>
-				</div>
+				</UFormField>
 			</UCard>
 		</TransitionGroup>
 

@@ -105,7 +105,10 @@ function resetCardImage(cardId: string) {
 	card.imageUploadRequestId = crypto.randomUUID();
 }
 
-async function handleUpdateCardImage(payload: { cardId: string; file?: File }) {
+async function handleUpdateCardImage(payload: {
+	cardId: string;
+	file?: File | null;
+}) {
 	if (!payload.file) {
 		resetCardImage(payload.cardId);
 		return;
