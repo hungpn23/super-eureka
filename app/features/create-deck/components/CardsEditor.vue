@@ -1,25 +1,25 @@
 <script lang="ts" setup>
 import {
-	createCard,
+	type CreateDeckCardFormState,
+	createDeckCardFormState,
 	DEFINITION_LANGUAGE_ITEMS,
 	TERM_LANGUAGE_ITEMS,
 	type TextareaRef,
 	useCardsEditorSuggestions,
 } from "~/features/create-deck";
-import type { CreateDeckSchema } from "~/valibot/schemas";
 
 const props = defineProps<{
-	cards: CreateDeckSchema["cards"];
+	cards: CreateDeckCardFormState[];
 }>();
 
-const emit =
-	defineEmits<
-		(event: "update:cards", value: CreateDeckSchema["cards"]) => void
-	>();
+const emit = defineEmits<{
+	(event: "update:cards", value: CreateDeckCardFormState[]): void;
+	(event: "update:card-image", payload: { cardId: string; file?: File }): void;
+}>();
 
 const cards = computed({
 	get: () => props.cards,
-	set: (value: CreateDeckSchema["cards"]) => emit("update:cards", value),
+	set: (value: CreateDeckCardFormState[]) => emit("update:cards", value),
 });
 
 const termRefs = useTemplateRef<TextareaRef[]>("termInput");
@@ -43,13 +43,22 @@ const {
 } = useCardsEditorSuggestions(cards, termRefs, definitionRefs);
 
 function addCard() {
-	cards.value = [...cards.value, createCard()];
+	cards.value = [...cards.value, createDeckCardFormState()];
 }
 
 function removeCard(index: number) {
 	const nextCards = [...cards.value];
 	nextCards.splice(index, 1);
 	cards.value = nextCards;
+}
+
+function handleCardImageSelect(cardId: string, file?: File) {
+	emit("update:card-image", { cardId, file });
+}
+
+function handleCardImageRemove(cardId: string, removeFile: () => void) {
+	removeFile();
+	emit("update:card-image", { cardId, file: undefined });
 }
 </script>
 
@@ -58,7 +67,7 @@ function removeCard(index: number) {
 		<TransitionGroup name="list">
 			<UCard
 				v-for="(card, cIndex) in cards"
-				:key="cIndex"
+				:key="card.clientId"
 				class="bg-elevated"
 				variant="subtle"
 			>
@@ -198,6 +207,92 @@ function removeCard(index: number) {
 						/>
 					</div>
 				</div>
+
+				<UFormField
+					class="mt-4"
+					:name="`cards.${cIndex}.fileId`"
+					label="Card image"
+				>
+					<UFileUpload
+						v-slot="{ open, removeFile }"
+						v-model="card.imageFile"
+						accept="image/*"
+						@update:model-value="
+							(file) => handleCardImageSelect(card.clientId, file || undefined)
+						"
+					>
+						<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+							<div
+								class="bg-muted flex h-28 w-full items-center justify-center overflow-hidden rounded-lg border sm:w-40"
+							>
+								<img
+									v-if="card.imageUrl"
+									:src="card.imageUrl"
+									:alt="`Card ${cIndex + 1} image preview`"
+									class="h-full w-full object-cover"
+								>
+
+								<div
+									v-else
+									class="text-muted flex flex-col items-center gap-2 text-sm"
+								>
+									<UIcon
+										:name="
+											card.isUploadingImage
+												? 'i-lucide-loader-circle'
+												: 'i-lucide-image'
+										"
+										class="size-6"
+										:class="{ 'animate-spin': card.isUploadingImage }"
+									/>
+									<span>
+										{{ card.isUploadingImage
+												? "Uploading image..."
+												: "No image selected" }}
+									</span>
+								</div>
+							</div>
+
+							<div class="flex flex-1 flex-col gap-2">
+								<p class="text-muted text-sm">
+									Upload an image for this card if needed. When upload succeeds,
+									the returned `fileId` will be sent when creating the deck.
+								</p>
+
+								<div class="flex flex-wrap gap-2">
+									<UButton
+										icon="i-lucide-image"
+										color="primary"
+										variant="soft"
+										:loading="card.isUploadingImage"
+										@click="open()"
+									>
+										Choose an image
+									</UButton>
+
+									<UButton
+										v-if="card.imageFile || card.imageUrl"
+										icon="i-lucide-trash-2"
+										color="error"
+										variant="ghost"
+										@click="
+											handleCardImageRemove(card.clientId, removeFile)
+										"
+									>
+										Remove
+									</UButton>
+								</div>
+
+								<p
+									v-if="card.imageFile?.name"
+									class="text-muted truncate text-xs"
+								>
+									{{ card.imageFile.name }}
+								</p>
+							</div>
+						</div>
+					</UFileUpload>
+				</UFormField>
 
 				<div class="flex place-content-end">
 					<UButton

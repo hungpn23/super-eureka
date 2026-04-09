@@ -1,12 +1,49 @@
-import type { CreateCardSchema } from "~/valibot/schemas";
+import type { CreateCardSchema, CreateDeckSchema } from "~/valibot/schemas";
 import { Visibility } from "../deck/enums";
-import type { CardSeparator, ContentSeparator } from "./types";
+import type {
+	CardSeparator,
+	ContentSeparator,
+	CreateDeckCardFormState,
+	CreateDeckFormState,
+} from "./types";
 
 export const createCard = (): CreateCardSchema => ({
 	term: "",
 	definition: "",
 	termLanguage: "en",
 	definitionLanguage: "vi",
+});
+
+export const createDeckCardFormState = (
+	card: Partial<CreateCardSchema> = {},
+): CreateDeckCardFormState => ({
+	clientId: crypto.randomUUID(),
+	fileId: undefined,
+	imageFile: undefined,
+	imageUrl: undefined,
+	isUploadingImage: false,
+	...createCard(),
+	...card,
+});
+
+export const buildCreateDeckPayload = (
+	state: CreateDeckFormState,
+): CreateDeckSchema => ({
+	name: state.name,
+	description: state.description,
+	visibility: state.visibility,
+	passcode: state.passcode,
+	cards: state.cards.map((card) => ({
+		term: card.term,
+		termLanguage: card.termLanguage,
+		definition: card.definition,
+		definitionLanguage: card.definitionLanguage,
+		pronunciation: card.pronunciation,
+		partOfSpeech: card.partOfSpeech,
+		usageOrGrammar: card.usageOrGrammar,
+		examples: card.examples,
+		...(card.fileId ? { fileId: card.fileId } : {}),
+	})),
 });
 
 export const getVisibilityDesc = (visibility: Visibility) => {

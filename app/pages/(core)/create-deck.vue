@@ -1,17 +1,19 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
+	buildCreateDeckPayload,
 	CreateDeckFormId,
+	type CreateDeckFormState,
 	type CreateDeckResponse,
-	createCard,
+	createDeckCardFormState,
 	getVisibilityLabel,
+	type UploadCardImageResponse,
 	useCreateDeckToasts,
 } from "~/features/create-deck";
 import CardsEditor from "~/features/create-deck/components/CardsEditor.vue";
 import ImportCardsModal from "~/features/create-deck/components/ImportCardsModal.vue";
 import VisibilityModal from "~/features/create-deck/components/VisibilityModal.vue";
 import { Visibility } from "~/features/deck";
-import type { ErrorResponse } from "~/shared/types";
 import { getVisibilityIcon } from "~/shared/utils";
 import {
 	CREATE_DECK_SCHEMA,
@@ -26,55 +28,59 @@ const isVisibilityModalOpen = ref(false);
 const isImportModalOpen = ref(false);
 const formErrorMsg = ref("");
 const createDeckFormKey = ref(0);
+const isCreating = ref(false);
 
-const createState = reactive<CreateDeckSchema>({
+const createState = reactive<CreateDeckFormState>({
 	name: "",
 	visibility: Visibility.PUBLIC,
-	cards: [createCard(), createCard(), createCard(), createCard()],
+	cards: [
+		createDeckCardFormState(),
+		createDeckCardFormState(),
+		createDeckCardFormState(),
+		createDeckCardFormState(),
+	],
 });
 
-const {
-	execute: createDeck,
-	pending: isCreating,
-	data: newDeck,
-	error,
-} = useFetch<CreateDeckResponse, ErrorResponse>("/api/decks", {
-	method: "POST",
-	headers: { Authorization: token.value || "" },
-	body: createState,
-	immediate: false,
-	watch: false,
-});
+const isUploadingCardImage = computed(() =>
+	createState.cards.some((card) => card.isUploadingImage),
+);
 
 onMounted(() => {
 	createDeckFormKey.value++;
 });
 
-async function handleCreateDeck(event: FormSubmitEvent<CreateDeckSchema>) {
-	formErrorMsg.value = "";
-
-	Object.assign(createState, event.data);
-	await createDeck();
-
-	const newDeckSlug = newDeck.value?.slug;
-	const newDeckId = newDeck.value?.id;
-
-	if (newDeckSlug && newDeckId) {
-		navigateTo(`/library/${newDeckSlug}?deckId=${newDeckId}`);
-		toast.createDeckSuccess();
+async function handleCreateDeck(_event: FormSubmitEvent<CreateDeckSchema>) {
+	if (isUploadingCardImage.value) {
+		formErrorMsg.value = "Please wait until all card images finish uploading.";
+		return;
 	}
 
-	if (error.value) {
+	formErrorMsg.value = "";
+	isCreating.value = true;
+
+	try {
+		const payload = buildCreateDeckPayload(createState);
+		const newDeck = await $fetch<CreateDeckResponse>("/api/decks", {
+			method: "POST",
+			headers: { Authorization: token.value || "" },
+			body: payload,
+		});
+
+		if (newDeck.slug && newDeck.id) {
+			navigateTo(`/library/${newDeck.slug}?deckId=${newDeck.id}`);
+		}
+
+		toast.createDeckSuccess();
+	} catch {
 		toast.createDeckFailed();
+	} finally {
+		isCreating.value = false;
 	}
 }
 
 async function onValidationError(event: FormErrorEvent) {
-	const cardError = event.errors.find((e) => e.name === "input");
-
-	formErrorMsg.value = cardError
-		? cardError.message
-		: "Please fill in all required fields.";
+	formErrorMsg.value =
+		event.errors[0]?.message || "Please fill in all required fields.";
 }
 
 function handleImportCards(importCards: CreateCardSchema[]) {
@@ -82,7 +88,81 @@ function handleImportCards(importCards: CreateCardSchema[]) {
 		(card) => card.term.trim().length > 0 || card.definition.trim().length > 0,
 	);
 
-	createState.cards = [...currentCards, ...importCards];
+	createState.cards = [
+		...currentCards,
+		...importCards.map((card) => createDeckCardFormState(card)),
+	];
+}
+
+function resetCardImage(cardId: string) {
+	const card = createState.cards.find((item) => item.clientId === cardId);
+	if (!card) return;
+
+	card.fileId = undefined;
+	card.imageFile = undefined;
+	card.imageUrl = undefined;
+	card.isUploadingImage = false;
+	card.imageUploadRequestId = crypto.randomUUID();
+}
+
+async function handleUpdateCardImage(payload: { cardId: string; file?: File }) {
+	if (!payload.file) {
+		resetCardImage(payload.cardId);
+		return;
+	}
+
+	const card = createState.cards.find(
+		(item) => item.clientId === payload.cardId,
+	);
+	if (!card) return;
+
+	const requestId = crypto.randomUUID();
+	const formData = new FormData();
+
+	formData.append("card-image", payload.file);
+	card.fileId = undefined;
+	card.imageFile = payload.file;
+	card.imageUrl = undefined;
+	card.isUploadingImage = true;
+	card.imageUploadRequestId = requestId;
+
+	try {
+		const response = await $fetch<UploadCardImageResponse>(
+			"/api/decks/card-image",
+			{
+				method: "POST",
+				headers: { Authorization: token.value || "" },
+				body: formData,
+			},
+		);
+		const currentCard = createState.cards.find(
+			(item) => item.clientId === payload.cardId,
+		);
+
+		if (!currentCard || currentCard.imageUploadRequestId !== requestId) return;
+
+		currentCard.fileId = response.fileId;
+		currentCard.imageUrl = response.url;
+	} catch {
+		const currentCard = createState.cards.find(
+			(item) => item.clientId === payload.cardId,
+		);
+
+		if (!currentCard || currentCard.imageUploadRequestId !== requestId) return;
+
+		currentCard.fileId = undefined;
+		currentCard.imageUrl = undefined;
+		toast.uploadCardImageFailed();
+	} finally {
+		const currentCard = createState.cards.find(
+			(item) => item.clientId === payload.cardId,
+		);
+
+		if (currentCard && currentCard.imageUploadRequestId === requestId) {
+			currentCard.isUploadingImage = false;
+			currentCard.imageUploadRequestId = undefined;
+		}
+	}
 }
 </script>
 
@@ -105,7 +185,7 @@ function handleImportCards(importCards: CreateCardSchema[]) {
 
 				<UButton
 					:form="CreateDeckFormId.CREATE_DECK"
-					:disabled="isCreating"
+					:disabled="isCreating || isUploadingCardImage"
 					class="cursor-pointer"
 					icon="i-lucide-plus"
 					label="Create"
@@ -180,7 +260,10 @@ function handleImportCards(importCards: CreateCardSchema[]) {
 				/>
 			</div>
 
-			<CardsEditor v-model:cards="createState.cards" />
+			<CardsEditor
+				v-model:cards="createState.cards"
+				@update:card-image="handleUpdateCardImage"
+			/>
 
 			<VisibilityModal
 				v-model:open="isVisibilityModalOpen"

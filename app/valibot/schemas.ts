@@ -44,6 +44,11 @@ export const CREATE_CARD_SCHEMA = v.object({
   ),
 });
 
+export const CREATE_DECK_CARD_SCHEMA = v.object({
+  ...CREATE_CARD_SCHEMA.entries,
+  fileId: v.optional(v.pipe(v.string(), v.nonEmpty("Card image is invalid"))),
+});
+
 export const UPDATE_CARD_SCHEMA = v.object({
   ...CREATE_CARD_SCHEMA.entries,
   id: v.pipe(
@@ -74,7 +79,7 @@ export const CREATE_DECK_SCHEMA = v.object({
     ),
   ),
   cards: v.pipe(
-    v.array(CREATE_CARD_SCHEMA),
+    v.array(CREATE_DECK_CARD_SCHEMA),
     v.minLength(4, "At least 4 cards are required"),
   ),
 });
@@ -128,6 +133,9 @@ export const CHANGE_PASSWORD_SCHEMA = v.pipe(
 
 export type CloneDeckSchema = v.InferOutput<typeof CLONE_DECK_SCHEMA>;
 export type CreateCardSchema = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
+export type CreateDeckCardSchema = v.InferOutput<
+  typeof CREATE_DECK_CARD_SCHEMA
+>;
 export type UpdateCardSchema = v.InferOutput<typeof UPDATE_CARD_SCHEMA>;
 export type CreateDeckSchema = v.InferOutput<typeof CREATE_DECK_SCHEMA>;
 export type UpdateDeckSchema = v.InferOutput<typeof UPDATE_DECK_SCHEMA>;

@@ -31,5 +31,11 @@ export function useCreateDeckToasts() {
 				description: message || "Imported card is invalid.",
 			});
 		},
+		uploadCardImageFailed: () => {
+			toast.add({
+				...DEFAULT_TOAST_OPTIONS.FAIL,
+				title: "Failed to upload card image.",
+			});
+		},
 	};
 }

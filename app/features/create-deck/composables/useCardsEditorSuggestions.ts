@@ -1,14 +1,13 @@
 import type { ShallowRef } from "vue";
 import { focusInput } from "~/shared/utils";
-import type { CreateDeckSchema } from "~/valibot/schemas";
-import type { TextareaRef } from "../types";
+import type { CreateDeckCardFormState, TextareaRef } from "../types";
 import { useCardSuggestion } from "./useCardSuggestion";
 import { useContentSuggestion } from "./useContentSuggestion";
 
-type CreateDeckCard = CreateDeckSchema["cards"][number];
+type CreateDeckCard = CreateDeckCardFormState;
 
 export function useCardsEditorSuggestions(
-	cards: Readonly<ShallowRef<CreateDeckSchema["cards"]>>,
+	cards: Readonly<ShallowRef<CreateDeckCard[]>>,
 	termRefs: Readonly<ShallowRef<TextareaRef[] | null>>,
 	definitionRefs: Readonly<ShallowRef<TextareaRef[] | null>>,
 ) {
