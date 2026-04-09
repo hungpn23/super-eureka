@@ -22,5 +22,4 @@ export type ErrorResponse = FetchError<{
 export type MediaInfo = {
   url: string;
   fileId: string;
-  folder: string;
 };
