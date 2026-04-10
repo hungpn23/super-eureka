@@ -42,7 +42,7 @@ const createState = reactive<CreateDeckFormState>({
 });
 
 const isUploadingCardImage = computed(() =>
-	createState.cards.some((card) => card.isUploadingImage),
+	createState.cards.some((card) => card.isUploading),
 );
 
 onMounted(() => {
@@ -94,29 +94,33 @@ function handleImportCards(importCards: CreateCardSchema[]) {
 	];
 }
 
+function getCardById(cardId: string) {
+	return createState.cards.find((card) => card.tempId === cardId);
+}
+
+function getCurrentUploadingCard(cardId: string, requestId: string) {
+	const card = getCardById(cardId);
+	if (!card || card.currentRequestId !== requestId) return null;
+	return card;
+}
+
 function resetCardImage(cardId: string) {
-	const card = createState.cards.find((item) => item.clientId === cardId);
+	const card = getCardById(cardId);
 	if (!card) return;
 
 	card.fileId = undefined;
-	card.imageFile = undefined;
-	card.imageUrl = undefined;
-	card.isUploadingImage = false;
-	card.imageUploadRequestId = crypto.randomUUID();
+	card.image = undefined;
+	card.isUploading = false;
+	card.currentRequestId = crypto.randomUUID();
 }
 
 async function handleUpdateCardImage(payload: {
-	cardId: string;
+	tempId: string;
 	file?: File | null;
 }) {
-	if (!payload.file) {
-		resetCardImage(payload.cardId);
-		return;
-	}
+	if (!payload.file) return resetCardImage(payload.tempId);
 
-	const card = createState.cards.find(
-		(item) => item.clientId === payload.cardId,
-	);
+	const card = getCardById(payload.tempId);
 	if (!card) return;
 
 	const requestId = crypto.randomUUID();
@@ -124,10 +128,9 @@ async function handleUpdateCardImage(payload: {
 
 	formData.append("card-image", payload.file);
 	card.fileId = undefined;
-	card.imageFile = payload.file;
-	card.imageUrl = undefined;
-	card.isUploadingImage = true;
-	card.imageUploadRequestId = requestId;
+	card.image = payload.file;
+	card.isUploading = true;
+	card.currentRequestId = requestId;
 
 	try {
 		const response = await $fetch<UploadCardImageResponse>(
@@ -138,32 +141,24 @@ async function handleUpdateCardImage(payload: {
 				body: formData,
 			},
 		);
-		const currentCard = createState.cards.find(
-			(item) => item.clientId === payload.cardId,
-		);
 
-		if (!currentCard || currentCard.imageUploadRequestId !== requestId) return;
+		const currentCard = getCurrentUploadingCard(payload.tempId, requestId);
+		if (!currentCard) return;
 
 		currentCard.fileId = response.fileId;
-		currentCard.imageUrl = response.url;
 	} catch {
-		const currentCard = createState.cards.find(
-			(item) => item.clientId === payload.cardId,
-		);
-
-		if (!currentCard || currentCard.imageUploadRequestId !== requestId) return;
+		const currentCard = getCurrentUploadingCard(payload.tempId, requestId);
+		if (!currentCard) return;
 
 		currentCard.fileId = undefined;
-		currentCard.imageUrl = undefined;
+
 		toast.uploadCardImageFailed();
 	} finally {
-		const currentCard = createState.cards.find(
-			(item) => item.clientId === payload.cardId,
-		);
+		const currentCard = getCurrentUploadingCard(payload.tempId, requestId);
 
-		if (currentCard && currentCard.imageUploadRequestId === requestId) {
-			currentCard.isUploadingImage = false;
-			currentCard.imageUploadRequestId = undefined;
+		if (currentCard) {
+			currentCard.isUploading = false;
+			currentCard.currentRequestId = undefined;
 		}
 	}
 }

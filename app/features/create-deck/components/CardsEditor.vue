@@ -16,7 +16,7 @@ const emit = defineEmits<{
 	(event: "update:cards", value: CreateDeckCardFormState[]): void;
 	(
 		event: "update:card-image",
-		payload: { cardId: string; file?: File | null },
+		payload: { tempId: string; file?: File | null },
 	): void;
 }>();
 
@@ -61,7 +61,7 @@ function removeCard(index: number) {
 		<TransitionGroup name="list">
 			<UCard
 				v-for="(card, cIndex) in cards"
-				:key="card.clientId"
+				:key="card.tempId"
 				class="group"
 				variant="subtle"
 			>
@@ -216,14 +216,14 @@ function removeCard(index: number) {
 					:name="`cards.${cIndex}.fileId`"
 				>
 					<UFileUpload
-						v-model="card.imageFile"
+						v-model="card.image"
 						class="w-64"
 						accept="image/png, image/jpeg, image/jpg, image/webp"
 						label="Drop your image here"
 						description="PNG, JPG, JPEG or WEBP (max. 5MB)"
 						color="neutral"
 						@update:model-value="
-							(file) => emit('update:card-image', { cardId: card.clientId, file })
+							(file) => emit('update:card-image', { tempId: card.tempId, file })
 						"
 					/>
 				</UFormField>

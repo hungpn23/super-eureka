@@ -3,15 +3,14 @@ import type { MediaInfo } from "~/shared/types";
 import type { CreateCardSchema, CreateDeckSchema } from "~/valibot/schemas";
 
 export type CreateDeckResponse = Pick<Deck, "id" | "slug">;
-export type UploadCardImageResponse = Pick<MediaInfo, "url" | "fileId">;
+export type UploadCardImageResponse = Pick<MediaInfo, "fileId">;
 
 export type CreateDeckCardFormState = CreateCardSchema & {
-  clientId: string;
+  tempId: string;
   fileId?: string;
-  imageFile?: File;
-  imageUrl?: string;
-  isUploadingImage: boolean;
-  imageUploadRequestId?: string;
+  image?: File;
+  isUploading: boolean;
+  currentRequestId?: string;
 };
 
 export type CreateDeckFormState = Omit<CreateDeckSchema, "cards"> & {
