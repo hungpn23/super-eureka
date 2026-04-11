@@ -14,7 +14,7 @@ export const createCard = (): CreateCardBody => ({
   definitionLanguage: "vi",
 });
 
-export const createDeckCardFormState = (
+export const buildCreateCardState = (
   card: Partial<CreateCardBody> = {},
 ): CreateCardState => ({
   tempId: crypto.randomUUID(),
@@ -25,7 +25,7 @@ export const createDeckCardFormState = (
   ...card,
 });
 
-export const buildCreateDeckPayload = (
+export const buildCreateDeckBody = (
   state: CreateDeckState,
 ): CreateDeckBody => ({
   name: state.name,

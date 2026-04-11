@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {
+	buildCreateCardState,
 	type CreateCardState,
-	createDeckCardFormState,
 	DEFINITION_LANGUAGE_ITEMS,
 	TERM_LANGUAGE_ITEMS,
 	type TextareaRef,
@@ -46,7 +46,7 @@ const {
 } = useCardsEditorSuggestions(cards, termRefs, definitionRefs);
 
 function addCard() {
-	cards.value = [...cards.value, createDeckCardFormState()];
+	cards.value = [...cards.value, buildCreateCardState()];
 }
 
 function removeCard(index: number) {

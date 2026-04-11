@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
-	buildCreateDeckPayload,
-	type CardImageState,
+	buildCreateCardState,
+	buildCreateDeckBody,
 	type CreateCardState,
 	CreateDeckFormId,
 	type CreateDeckResponse,
 	type CreateDeckState,
-	createDeckCardFormState,
 	getVisibilityLabel,
 	type UploadCardImageResponse,
 	useCreateDeckToasts,
@@ -36,10 +35,10 @@ const createState = reactive<CreateDeckState>({
 	name: "",
 	visibility: Visibility.PUBLIC,
 	cards: [
-		createDeckCardFormState(),
-		createDeckCardFormState(),
-		createDeckCardFormState(),
-		createDeckCardFormState(),
+		buildCreateCardState(),
+		buildCreateCardState(),
+		buildCreateCardState(),
+		buildCreateCardState(),
 	],
 });
 
@@ -64,7 +63,7 @@ async function handleCreateDeck(_event: FormSubmitEvent<CreateDeckBody>) {
 		const newDeck = await $fetch<CreateDeckResponse>("/api/decks", {
 			method: "POST",
 			headers: { Authorization: token.value || "" },
-			body: buildCreateDeckPayload(createState),
+			body: buildCreateDeckBody(createState),
 		});
 
 		if (newDeck.slug && newDeck.id) {
@@ -91,18 +90,8 @@ function handleImportCards(importCards: CreateCardBody[]) {
 
 	createState.cards = [
 		...currentCards,
-		...importCards.map((card) => createDeckCardFormState(card)),
+		...importCards.map((card) => buildCreateCardState(card)),
 	];
-}
-
-function getCurrentCard(cardId: string): CreateCardState | undefined {
-	return createState.cards.find((card) => card.tempId === cardId);
-}
-
-function applyImageState(cardId: string, patch: Partial<CardImageState>) {
-	const card = getCurrentCard(cardId);
-	if (!card) return;
-	Object.assign(card, patch);
 }
 
 function resetCardImage(card: CreateCardState) {
@@ -116,7 +105,9 @@ async function handleUpdateCardImage(payload: {
 	tempId: string;
 	file?: File | null;
 }) {
-	const card = getCurrentCard(payload.tempId);
+	const card = createState.cards.find(
+		({ tempId }) => tempId === payload.tempId,
+	);
 	if (!card) return;
 
 	if (!payload.file) return resetCardImage(card);
