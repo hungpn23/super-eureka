@@ -304,11 +304,9 @@ defineShortcuts({
 											</div>
 
 											<NuxtImg
-												width="200"
-												height="200"
-												class="rounded-md object-cover"
+												v-if="flashcardSession.currentCard.image"
 												alt="User avatar"
-												:src="flashcardSession.currentCard.image?.url || 'https://avatars.githubusercontent.com/u/177613774?v=4'"
+												:src="flashcardSession.currentCard.image.url"
 											/>
 										</div>
 
