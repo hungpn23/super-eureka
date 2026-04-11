@@ -5,6 +5,7 @@ import {
 	type GetSharedDeckResponse,
 	useDeckClone,
 	useDeckToasts,
+	Visibility,
 } from "~/features/deck";
 import { ShortcutKey } from "~/shared/enums";
 import type { ErrorResponse, UUID } from "~/shared/types";
@@ -174,6 +175,14 @@ defineShortcuts({
 					</div>
 				</UCard>
 			</TransitionGroup>
+
+			<div v-if="deck.visibility === Visibility.PUBLIC" class="pt-2">
+				<AppCusdis
+					:key="`shared-deck:${deck.id}`"
+					:page-id="`shared-deck:${deck.id}`"
+					:page-title="deck.name"
+				/>
+			</div>
 		</div>
 
 		<UModal

@@ -60,6 +60,9 @@ const {
 } = useChangePasscode();
 
 const passcodeRef = useTemplateRef("passcodeInput");
+const cardsSectionTriggerRef = useTemplateRef<HTMLElement>(
+	"cardsSectionTrigger",
+);
 
 const settings = computed<DropdownMenuItem[][]>(() => [
 	[
@@ -117,6 +120,79 @@ const studyOptions = computed(() => [
 		to: `#`,
 	},
 ]);
+
+const isCardsSectionExpanded = ref(true);
+const cardsSectionOpen = computed({
+	get: () => isEditing.value || isCardsSectionExpanded.value,
+	set: (value: boolean) => {
+		if (!isEditing.value) {
+			isCardsSectionExpanded.value = value;
+		}
+	},
+});
+
+const CARDS_SECTION_SCROLL_OFFSET = 16;
+const CARDS_SECTION_SCROLL_DURATION = 220;
+
+let cardsSectionScrollFrame: number | null = null;
+
+const stopCardsSectionScrollAnimation = () => {
+	if (cardsSectionScrollFrame !== null) {
+		cancelAnimationFrame(cardsSectionScrollFrame);
+		cardsSectionScrollFrame = null;
+	}
+};
+
+const smoothScrollToCardsSection = () => {
+	if (!import.meta.client) return;
+
+	const triggerEl = cardsSectionTriggerRef.value;
+
+	if (!triggerEl) return;
+
+	const targetTop = Math.max(
+		window.scrollY +
+			triggerEl.getBoundingClientRect().top -
+			CARDS_SECTION_SCROLL_OFFSET,
+		0,
+	);
+
+	if (window.scrollY <= targetTop + 4) return;
+
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		window.scrollTo({ top: targetTop, behavior: "auto" });
+		return;
+	}
+
+	stopCardsSectionScrollAnimation();
+
+	const startTop = window.scrollY;
+	const delta = targetTop - startTop;
+	const startTime = performance.now();
+
+	const tick = (currentTime: number) => {
+		const progress = Math.min(
+			(currentTime - startTime) / CARDS_SECTION_SCROLL_DURATION,
+			1,
+		);
+		const easedProgress = 1 - (1 - progress) ** 3;
+
+		window.scrollTo({
+			top: startTop + delta * easedProgress,
+			behavior: "auto",
+		});
+
+		if (progress < 1) {
+			cardsSectionScrollFrame = requestAnimationFrame(tick);
+			return;
+		}
+
+		cardsSectionScrollFrame = null;
+	};
+
+	cardsSectionScrollFrame = requestAnimationFrame(tick);
+};
+
 const isWord = (term: string) => !term.trim().includes(" ");
 
 watch(
@@ -125,6 +201,19 @@ watch(
 		syncSavedCards(flashcardSession.savedCards);
 	},
 );
+
+watch(cardsSectionOpen, (isOpen, wasOpen) => {
+	if (!isOpen && wasOpen) {
+		requestAnimationFrame(smoothScrollToCardsSection);
+		return;
+	}
+
+	stopCardsSectionScrollAnimation();
+});
+
+onBeforeUnmount(() => {
+	stopCardsSectionScrollAnimation();
+});
 
 defineShortcuts({
 	[ShortcutKey.FLASHCARD_FLIP_CARD]: handleFlipCard,
@@ -422,295 +511,344 @@ defineShortcuts({
 			</UPageHeader>
 
 			<UPageBody v-if="updateState.cards?.length" class="mt-4 pb-0">
-				<div class="flex flex-col gap-4">
-					<div class="flex place-content-between place-items-center gap-4">
-						<h2
-							class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
-						>
-							Cards ({{ updateState.cards?.length || 0 }})
-
-							<span v-if="!isEditing" class="inline-flex">
-								<UIcon
-									v-if="!isSavingAnswers"
-									class="text-success size-6"
-									name="i-lucide-check"
-								/>
-
-								<span
-									v-else
-									class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
-								>
-									Saving...
-								</span>
-							</span>
-						</h2>
-
-						<div v-if="isEditing" class="flex gap-2 place-self-end">
-							<UButton
-								class="cursor-pointer"
-								label="Cancel"
-								icon="i-lucide-x"
-								color="neutral"
-								variant="outline"
-								:disabled="isUpdating"
-								@click="handleCancelEditing()"
-							/>
-
-							<UButton
-								class="cursor-pointer"
-								icon="i-lucide-save"
-								loading-icon="i-lucide-loader-circle"
-								type="submit"
-								:form="DeckFormId.UPDATE_DECK"
-								:loading="isUpdating"
-								:disabled="isUpdating"
-								:label="isUpdating ? 'Saving...' : 'Save'"
-							/>
-						</div>
-					</div>
-
-					<UAlert
-						v-if="updateFormErrorMessage"
-						icon="i-lucide-alert-triangle"
-						color="error"
-						variant="soft"
-						title="Validation Error"
-						:description="updateFormErrorMessage"
-					/>
-
-					<UButton
-						v-if="isEditing"
-						:disabled="isUpdating"
-						class="cursor-pointer place-self-center px-4"
-						label="Add a card"
-						icon="i-lucide-plus"
-						variant="subtle"
-						size="xl"
-						@click="handleUnshiftCard"
-					/>
-
-					<TransitionGroup name="list" appear>
-						<UCard
-							v-for="(card, cIndex) in updateState.cards"
-							:key="card.id"
-							:ui="{ body: `${!isEditing ? 'px-2 sm:px-4' : ''}` }"
-							class="bg-elevated"
-							variant="subtle"
+				<UCollapsible
+					v-model:open="cardsSectionOpen"
+					:disabled="isEditing"
+					:unmount-on-hide="false"
+					:ui="{ content: '[overflow-anchor:none]' }"
+				>
+					<template #default="{ open }">
+						<div
+							ref="cardsSectionTrigger"
+							class="group flex place-content-between place-items-center gap-4"
 						>
 							<div
-								:class="`mb-1 flex place-content-between place-items-center gap-2 ${isEditing ? 'px-0' : 'px-2.5'}`"
+								:class="[
+                  'flex min-w-0 flex-1 place-content-between place-items-center gap-3 rounded-lg transition-all',
+                  isEditing
+                    ? 'cursor-default'
+                    : 'cursor-pointer hover:text-primary',
+                ]"
 							>
-								<CardStatusBadge :status="card.status" />
+								<h2
+									class="flex min-w-0 place-items-center gap-1 text-lg font-medium sm:text-xl"
+								>
+									<span class="truncate">
+										Cards ({{ updateState.cards?.length || 0 }})
+									</span>
 
+									<span v-if="!isEditing" class="inline-flex">
+										<UIcon
+											v-if="!isSavingAnswers"
+											class="text-success size-6"
+											name="i-lucide-check"
+										/>
+
+										<span
+											v-else
+											class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
+										>
+											Saving...
+										</span>
+									</span>
+								</h2>
+
+								<UIcon
+									:name="open ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+									class="size-5 shrink-0 group-data-[state=open]:rotate-180 transition-transform duration-200"
+								/>
+							</div>
+
+							<div v-if="isEditing" class="flex gap-2 place-self-end">
 								<UButton
-									v-if="isEditing"
 									class="cursor-pointer"
-									icon="i-lucide-trash-2"
-									color="error"
-									variant="ghost"
-									@click="handleRemoveCard(card.id)"
+									label="Cancel"
+									icon="i-lucide-x"
+									color="neutral"
+									variant="outline"
+									:disabled="isUpdating"
+									@click="handleCancelEditing()"
 								/>
 
-								<span
-									v-else-if="
-                    !isEditing && card.reviewDate && card.status === 'known'
-                  "
-									class="text-muted text-right text-sm text-balance"
+								<UButton
+									class="cursor-pointer"
+									icon="i-lucide-save"
+									loading-icon="i-lucide-loader-circle"
+									type="submit"
+									:form="DeckFormId.UPDATE_DECK"
+									:loading="isUpdating"
+									:disabled="isUpdating"
+									:label="isUpdating ? 'Saving...' : 'Save'"
+								/>
+							</div>
+						</div>
+					</template>
+
+					<template #content>
+						<div class="mt-4 flex flex-col gap-4">
+							<UAlert
+								v-if="updateFormErrorMessage"
+								icon="i-lucide-alert-triangle"
+								color="error"
+								variant="soft"
+								title="Validation Error"
+								:description="updateFormErrorMessage"
+							/>
+
+							<UButton
+								v-if="isEditing"
+								:disabled="isUpdating"
+								class="cursor-pointer place-self-center px-4"
+								label="Add a card"
+								icon="i-lucide-plus"
+								variant="subtle"
+								size="xl"
+								@click="handleUnshiftCard"
+							/>
+
+							<TransitionGroup name="list" appear>
+								<UCard
+									v-for="(card, cIndex) in updateState.cards"
+									:key="card.id"
+									:ui="{ body: `${!isEditing ? 'px-2 sm:px-4' : ''}` }"
+									class="bg-elevated mx-0.5 last:mb-0.5"
+									variant="subtle"
 								>
-									Next review
-
-									{{ formatDistanceToNowStrict(card.reviewDate, {
-                      addSuffix: true,
-                      unit: "day",
-                      roundingMethod: "ceil",
-                    }) }}
-								</span>
-							</div>
-
-							<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-								<div :class="`flex h-fit flex-col ${isEditing ? 'gap-1' : ''}`">
-									<USelectMenu
-										v-if="isEditing"
-										v-model="card.termLanguage"
-										:items="TERM_LANGUAGE_ITEMS"
-										class="place-self-end"
-										value-key="id"
-									/>
-
-									<UFormField class="flex-1" :name="`cards.${cIndex}.term`">
-										<UTextarea
-											v-model="card.term"
-											:rows="1"
-											:maxrows="10"
-											:disabled="!isEditing"
-											:ui="{
-                        base: `text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default ${!isEditing ? 'py-0' : ''}`,
-                      }"
-											:variant="isEditing ? 'outline' : 'ghost'"
-											class="w-full"
-											autoresize
-										/>
-									</UFormField>
-
-									<div v-if="isWord(card.term)" class="flex gap-1">
-										<UFormField
-											class="max-w-30"
-											:name="`cards.${cIndex}.partOfSpeech`"
-										>
-											<UInput
-												v-model="card.partOfSpeech"
-												class="w-full"
-												:placeholder="isEditing ? 'eg. noun' : undefined"
-												:ui="{
-                          base: !isEditing ? 'py-0' : '',
-                        }"
-												:disabled="!isEditing"
-												:variant="isEditing ? 'outline' : 'ghost'"
-												@vue:before-unmount="card.partOfSpeech = undefined"
-											/>
-										</UFormField>
-
-										<UFormField
-											class="grow"
-											:name="`cards.${cIndex}.pronunciation`"
-										>
-											<UInput
-												v-model="card.pronunciation"
-												class="w-full"
-												:placeholder="isEditing ? 'eg. /heˈloʊ/' : undefined"
-												:ui="{ base: !isEditing ? 'py-0' : '' }"
-												:disabled="!isEditing"
-												:variant="isEditing ? 'outline' : 'ghost'"
-												@vue:before-unmount="card.pronunciation = undefined"
-											/>
-										</UFormField>
-									</div>
-
-									<div v-else>
-										<UFormField
-											class="flex-1"
-											:name="`cards.${cIndex}.usageOrGrammar`"
-										>
-											<UInput
-												v-model="card.usageOrGrammar"
-												class="w-full"
-												:placeholder="
-                          isEditing
-                            ? 'Enter your usage or grammar notes'
-                            : undefined
-                        "
-												:ui="{ base: !isEditing ? 'py-0' : '' }"
-												:disabled="!isEditing"
-												:variant="isEditing ? 'outline' : 'ghost'"
-												@vue:before-unmount="card.usageOrGrammar = undefined"
-											/>
-										</UFormField>
-									</div>
-								</div>
-
-								<div :class="`flex h-fit flex-col ${isEditing ? 'gap-1' : ''}`">
-									<USelectMenu
-										v-if="isEditing"
-										v-model="card.definitionLanguage"
-										class="place-self-end"
-										value-key="id"
-										:items="DEFINITION_LANGUAGE_ITEMS"
-									/>
-
-									<UFormField
-										class="flex-1"
-										:name="`cards.${cIndex}.definition`"
+									<div
+										:class="`mb-1 flex place-content-between place-items-center gap-2 ${isEditing ? 'px-0' : 'px-2.5'}`"
 									>
-										<UTextarea
-											v-model="card.definition"
-											:rows="1"
-											:maxrows="10"
-											:disabled="!isEditing"
-											:ui="{
-                        base: `text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default ${!isEditing ? 'py-0' : ''}`,
-                      }"
-											:variant="isEditing ? 'outline' : 'ghost'"
-											class="w-full"
-											autoresize
-										/>
-									</UFormField>
+										<CardStatusBadge :status="card.status" />
 
-									<UFormField
-										v-if="card.examples"
-										v-for="(_, eIndex) in card.examples"
-										class="flex-1"
-										:name="`cards.${cIndex}.examples.${eIndex}`"
-									>
-										<UInput
-											v-model="card.examples[eIndex]"
-											class="w-full"
-											:placeholder="
-                        isEditing ? 'eg. Hello, how are you?' : undefined
+										<UButton
+											v-if="isEditing"
+											class="cursor-pointer"
+											icon="i-lucide-trash-2"
+											color="error"
+											variant="ghost"
+											@click="handleRemoveCard(card.id)"
+										/>
+
+										<span
+											v-else-if="
+                        !isEditing && card.reviewDate && card.status === 'known'
                       "
-											:ui="{ base: !isEditing ? 'py-0' : '' }"
-											:disabled="!isEditing"
-											:variant="isEditing ? 'outline' : 'ghost'"
+											class="text-muted text-right text-sm text-balance"
 										>
-											<template #trailing>
-												<UButton
-													v-if="isEditing"
-													icon="i-lucide-x"
-													variant="ghost"
-													color="error"
-													size="sm"
-													tabindex="-1"
-													@click="handleRemoveExample(cIndex, eIndex)"
+											Next review
+
+											{{ formatDistanceToNowStrict(card.reviewDate, {
+                          addSuffix: true,
+                          unit: "day",
+                          roundingMethod: "ceil",
+                        }) }}
+										</span>
+									</div>
+
+									<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+										<div
+											:class="`flex h-fit flex-col ${isEditing ? 'gap-1' : ''}`"
+										>
+											<USelectMenu
+												v-if="isEditing"
+												v-model="card.termLanguage"
+												:items="TERM_LANGUAGE_ITEMS"
+												class="place-self-end"
+												value-key="id"
+											/>
+
+											<UFormField class="flex-1" :name="`cards.${cIndex}.term`">
+												<UTextarea
+													v-model="card.term"
+													:rows="1"
+													:maxrows="10"
+													:disabled="!isEditing"
+													:ui="{
+                            base: `text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default ${!isEditing ? 'py-0' : ''}`,
+                          }"
+													:variant="isEditing ? 'outline' : 'ghost'"
+													class="w-full"
+													autoresize
 												/>
-											</template>
-										</UInput>
-									</UFormField>
+											</UFormField>
 
-									<UButton
-										v-if="isEditing"
-										class="w-fit"
-										icon="i-lucide-plus"
-										label="Add new example"
-										variant="ghost"
-										@click="handleAddExample(cIndex)"
-									/>
-								</div>
+											<div v-if="isWord(card.term)" class="flex gap-1">
+												<UFormField
+													class="max-w-30"
+													:name="`cards.${cIndex}.partOfSpeech`"
+												>
+													<UInput
+														v-model="card.partOfSpeech"
+														class="w-full"
+														:placeholder="isEditing ? 'eg. noun' : undefined"
+														:ui="{
+                              base: !isEditing ? 'py-0' : '',
+                            }"
+														:disabled="!isEditing"
+														:variant="isEditing ? 'outline' : 'ghost'"
+														@vue:before-unmount="card.partOfSpeech = undefined"
+													/>
+												</UFormField>
+
+												<UFormField
+													class="grow"
+													:name="`cards.${cIndex}.pronunciation`"
+												>
+													<UInput
+														v-model="card.pronunciation"
+														class="w-full"
+														:placeholder="
+                              isEditing ? 'eg. /heˈloʊ/' : undefined
+                            "
+														:ui="{ base: !isEditing ? 'py-0' : '' }"
+														:disabled="!isEditing"
+														:variant="isEditing ? 'outline' : 'ghost'"
+														@vue:before-unmount="card.pronunciation = undefined"
+													/>
+												</UFormField>
+											</div>
+
+											<div v-else>
+												<UFormField
+													class="flex-1"
+													:name="`cards.${cIndex}.usageOrGrammar`"
+												>
+													<UInput
+														v-model="card.usageOrGrammar"
+														class="w-full"
+														:placeholder="
+                              isEditing
+                                ? 'Enter your usage or grammar notes'
+                                : undefined
+                            "
+														:ui="{ base: !isEditing ? 'py-0' : '' }"
+														:disabled="!isEditing"
+														:variant="isEditing ? 'outline' : 'ghost'"
+														@vue:before-unmount="
+                              card.usageOrGrammar = undefined
+                            "
+													/>
+												</UFormField>
+											</div>
+										</div>
+
+										<div
+											:class="`flex h-fit flex-col ${isEditing ? 'gap-1' : ''}`"
+										>
+											<USelectMenu
+												v-if="isEditing"
+												v-model="card.definitionLanguage"
+												class="place-self-end"
+												value-key="id"
+												:items="DEFINITION_LANGUAGE_ITEMS"
+											/>
+
+											<UFormField
+												class="flex-1"
+												:name="`cards.${cIndex}.definition`"
+											>
+												<UTextarea
+													v-model="card.definition"
+													:rows="1"
+													:maxrows="10"
+													:disabled="!isEditing"
+													:ui="{
+                            base: `text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default ${!isEditing ? 'py-0' : ''}`,
+                          }"
+													:variant="isEditing ? 'outline' : 'ghost'"
+													class="w-full"
+													autoresize
+												/>
+											</UFormField>
+
+											<UFormField
+												v-if="card.examples"
+												v-for="(_, eIndex) in card.examples"
+												class="flex-1"
+												:name="`cards.${cIndex}.examples.${eIndex}`"
+											>
+												<UInput
+													v-model="card.examples[eIndex]"
+													class="w-full"
+													:placeholder="
+                            isEditing ? 'eg. Hello, how are you?' : undefined
+                          "
+													:ui="{ base: !isEditing ? 'py-0' : '' }"
+													:disabled="!isEditing"
+													:variant="isEditing ? 'outline' : 'ghost'"
+												>
+													<template #trailing>
+														<UButton
+															v-if="isEditing"
+															icon="i-lucide-x"
+															variant="ghost"
+															color="error"
+															size="sm"
+															tabindex="-1"
+															@click="handleRemoveExample(cIndex, eIndex)"
+														/>
+													</template>
+												</UInput>
+											</UFormField>
+
+											<UButton
+												v-if="isEditing"
+												class="w-fit"
+												icon="i-lucide-plus"
+												label="Add new example"
+												variant="ghost"
+												@click="handleAddExample(cIndex)"
+											/>
+										</div>
+									</div>
+								</UCard>
+							</TransitionGroup>
+
+							<UButton
+								v-if="isEditing"
+								:disabled="isUpdating"
+								class="cursor-pointer place-self-center px-4"
+								label="Add a card"
+								icon="i-lucide-plus"
+								variant="subtle"
+								size="xl"
+								@click="handlePushCard"
+							/>
+
+							<div v-if="isEditing" class="flex gap-2 place-self-end">
+								<UButton
+									class="cursor-pointer"
+									label="Cancel"
+									icon="i-lucide-x"
+									color="neutral"
+									variant="outline"
+									:disabled="isUpdating"
+									@click="handleCancelEditing()"
+								/>
+
+								<UButton
+									:loading="isUpdating"
+									:label="isUpdating ? 'Saving...' : 'Save Changes'"
+									class="cursor-pointer"
+									color="primary"
+									icon="i-lucide-save"
+									loading-icon="i-lucide-loader-circle"
+									type="submit"
+								/>
 							</div>
-						</UCard>
-					</TransitionGroup>
 
-					<UButton
-						v-if="isEditing"
-						:disabled="isUpdating"
-						class="cursor-pointer place-self-center px-4"
-						label="Add a card"
-						icon="i-lucide-plus"
-						variant="subtle"
-						size="xl"
-						@click="handlePushCard"
-					/>
-
-					<div v-if="isEditing" class="flex gap-2 place-self-end">
-						<UButton
-							class="cursor-pointer"
-							label="Cancel"
-							icon="i-lucide-x"
-							color="neutral"
-							variant="outline"
-							:disabled="isUpdating"
-							@click="handleCancelEditing()"
-						/>
-
-						<UButton
-							:loading="isUpdating"
-							:label="isUpdating ? 'Saving...' : 'Save Changes'"
-							class="cursor-pointer"
-							color="primary"
-							icon="i-lucide-save"
-							loading-icon="i-lucide-loader-circle"
-							type="submit"
-						/>
-					</div>
-				</div>
+							<div
+								v-if="store.deck?.visibility === Visibility.PUBLIC"
+								class="pt-2"
+							>
+								<AppCusdis
+									:key="`library-deck:${store.deckId}`"
+									:page-id="`library-deck:${store.deckId}`"
+									:page-title="updateState.name"
+								/>
+							</div>
+						</div>
+					</template>
+				</UCollapsible>
 			</UPageBody>
 		</UForm>
 
