@@ -57,9 +57,21 @@ const {
 	updateVisibilityState,
 	isUpdateVisibilityModalOpen,
 	handleUpdateVisibilitySubmit,
+	handleCancelUpdateVisibility,
 } = useChangePasscode();
 
 const passcodeRef = useTemplateRef("passcodeInput");
+type ClearableFormRef = {
+	clear: (path?: string | RegExp) => void;
+};
+
+const updateDeckSchema = UPDATE_DECK_SCHEMA;
+const updateVisibilitySchema = UPDATE_VISIBILITY_SCHEMA;
+
+const updateDeckFormRef = useTemplateRef<ClearableFormRef>("updateDeckForm");
+const updateVisibilityFormRef = useTemplateRef<ClearableFormRef>(
+	"updateVisibilityForm",
+);
 const cardsSectionTriggerRef = useTemplateRef<HTMLElement>(
 	"cardsSectionTrigger",
 );
@@ -195,6 +207,16 @@ const smoothScrollToCardsSection = () => {
 
 const isWord = (term: string) => !term.trim().includes(" ");
 
+function handleCancelDeckEditing() {
+	handleCancelEditing();
+	updateDeckFormRef.value?.clear();
+}
+
+function handleCancelVisibilityEditing() {
+	handleCancelUpdateVisibility();
+	updateVisibilityFormRef.value?.clear();
+}
+
 watch(
 	() => flashcardSession.savedCards,
 	() => {
@@ -234,8 +256,9 @@ defineShortcuts({
 		/>
 
 		<UForm
+			ref="updateDeckForm"
 			:id="DeckFormId.UPDATE_DECK"
-			:schema="UPDATE_DECK_SCHEMA"
+			:schema="updateDeckSchema"
 			:state="updateState"
 			@submit="handleUpdateSubmit"
 			@error="handleUpdateError"
@@ -567,7 +590,7 @@ defineShortcuts({
 									color="neutral"
 									variant="outline"
 									:disabled="isUpdating"
-									@click="handleCancelEditing()"
+									@click="handleCancelDeckEditing()"
 								/>
 
 								<UButton
@@ -822,7 +845,7 @@ defineShortcuts({
 									color="neutral"
 									variant="outline"
 									:disabled="isUpdating"
-									@click="handleCancelEditing()"
+									@click="handleCancelDeckEditing()"
 								/>
 
 								<UButton
@@ -860,8 +883,9 @@ defineShortcuts({
 		>
 			<template #body>
 				<UForm
+					ref="updateVisibilityForm"
 					:id="DeckFormId.UPDATE_VISIBILITY"
-					:schema="UPDATE_VISIBILITY_SCHEMA"
+					:schema="updateVisibilitySchema"
 					:state="updateVisibilityState"
 					class="flex flex-col gap-4"
 					@submit="handleUpdateVisibilitySubmit"
@@ -911,7 +935,7 @@ defineShortcuts({
 						icon="i-lucide-x"
 						color="neutral"
 						variant="outline"
-						@click="isUpdateVisibilityModalOpen = false"
+						@click="handleCancelVisibilityEditing()"
 					/>
 
 					<UButton

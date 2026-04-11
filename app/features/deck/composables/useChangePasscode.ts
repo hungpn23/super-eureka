@@ -31,6 +31,18 @@ export function useChangePasscode() {
 		},
 	);
 
+	watchImmediate(
+		() => store.deck,
+		() => resetUpdateVisibilityState(),
+	);
+
+	function resetUpdateVisibilityState() {
+		Object.assign(updateVisibilityState, {
+			visibility: store.deck?.visibility || Visibility.PRIVATE,
+			passcode: store.deck?.passcode,
+		});
+	}
+
 	async function handleUpdateVisibilitySubmit(
 		event: FormSubmitEvent<UpdateVisibilitySchema>,
 	) {
@@ -40,6 +52,8 @@ export function useChangePasscode() {
 		if (status.value === "success") {
 			isChanging.value = false;
 			await store.fetchDeck();
+			resetUpdateVisibilityState();
+			isUpdateVisibilityModalOpen.reset();
 			toast.updateVisibilitySuccess();
 		}
 
@@ -48,10 +62,16 @@ export function useChangePasscode() {
 		}
 	}
 
+	function handleCancelUpdateVisibility() {
+		resetUpdateVisibilityState();
+		isUpdateVisibilityModalOpen.reset();
+	}
+
 	return {
 		isUpdateVisibilityModalOpen,
 		isChanging,
 		updateVisibilityState,
 		handleUpdateVisibilitySubmit,
+		handleCancelUpdateVisibility,
 	};
 }
