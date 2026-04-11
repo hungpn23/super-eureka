@@ -145,36 +145,53 @@ defineShortcuts({
 
 		<USeparator class="my-6" />
 
-		<div class="space-y-4">
-			<h2 class="text-lg font-medium sm:text-xl">
-				Cards ({{ deck.totalCards }})
-			</h2>
+		<div class="mt-4 space-y-4">
+			<UCollapsible class="space-y-4" :default-open="false">
+				<template #default="{ open }">
+					<div
+						class="group flex place-content-between place-items-center gap-3 cursor-pointer hover:text-primary"
+					>
+						<h2 class="text-lg font-medium sm:text-xl">
+							Cards ({{ deck.totalCards }})
+						</h2>
 
-			<TransitionGroup name="list" appear>
-				<UCard
-					v-for="(card, index) in deck.cards"
-					:key="index"
-					class="bg-elevated"
-					variant="subtle"
-				>
-					<div class="flex flex-col sm:flex-row">
-						<p class="w-full text-base font-medium sm:text-lg">
-							{{ card.term }}
-						</p>
-
-						<USeparator class="m-2 sm:hidden" />
-
-						<USeparator
-							orientation="vertical"
-							class="m-2 hidden h-auto sm:block"
+						<UIcon
+							:name="open ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+							class="size-5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180"
 						/>
-
-						<p class="w-full text-base font-medium sm:text-lg">
-							{{ card.definition }}
-						</p>
 					</div>
-				</UCard>
-			</TransitionGroup>
+				</template>
+
+				<template #content>
+					<div class="space-y-4">
+						<TransitionGroup name="list" appear>
+							<UCard
+								v-for="(card, index) in deck.cards"
+								:key="index"
+								class="bg-elevated mx-0.5 first:mt-0.5 last:mb-0.5"
+								variant="subtle"
+							>
+								<div class="flex flex-col sm:flex-row">
+									<p class="w-full text-base font-medium sm:text-lg">
+										{{ card.term }}
+									</p>
+
+									<USeparator class="m-2 sm:hidden" />
+
+									<USeparator
+										orientation="vertical"
+										class="m-2 hidden h-auto sm:block"
+									/>
+
+									<p class="w-full text-base font-medium sm:text-lg">
+										{{ card.definition }}
+									</p>
+								</div>
+							</UCard>
+						</TransitionGroup>
+					</div>
+				</template>
+			</UCollapsible>
 
 			<div v-if="deck.visibility === Visibility.PUBLIC" class="pt-2">
 				<AppCusdis
