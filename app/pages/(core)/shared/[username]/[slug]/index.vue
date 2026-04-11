@@ -53,7 +53,7 @@ defineShortcuts({
 <template>
 	<UContainer v-if="deck">
 		<UButton
-			to="/library"
+			to="/shared"
 			class="px-0"
 			variant="link"
 			label="Shared"
@@ -61,102 +61,83 @@ defineShortcuts({
 			size="lg"
 		/>
 
-		<h1 class="text-lg font-semibold sm:text-xl">{{ deck.name }}</h1>
+		<div class="flex place-content-between place-items-center gap-4">
+			<h1 class="text-lg font-semibold sm:text-xl">{{ deck.name }}</h1>
+
+			<UButton label="Add to library" @click="addToLibrary(deck!.visibility)" />
+		</div>
 
 		<p class="text-muted">{{ deck.description }}</p>
 
-		<div class="my-4 flex flex-col gap-4">
-			<ClientOnly>
-				<UAlert
-					:actions="[
-            {
-              label: 'Add to Library',
-              variant: 'subtle',
-              icon: 'i-lucide-plus',
-              disabled: isCloning,
-              onClick: () => addToLibrary(deck!.visibility),
-            },
-          ]"
-					:orientation="smAndLarger ? 'horizontal' : 'vertical'"
-					:ui="{ icon: 'place-self-start' }"
-					title="Attention!"
-					description="Add this deck to your library for learning."
-					icon="i-lucide-terminal"
-					color="info"
-					variant="outline"
-				/>
-			</ClientOnly>
-
-			<div class="space-y-2">
-				<UCard
-					:ui="{
+		<div class="space-y-2 mt-4">
+			<UCard
+				:ui="{
             body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
           }"
-					class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
-					variant="subtle"
-					@click="throttledToggleFlip"
+				class="bg-elevated flex min-h-[50dvh] flex-col divide-none"
+				variant="subtle"
+				@click="throttledToggleFlip"
+			>
+				<div class="flex w-full place-content-between place-items-center">
+					<span class="flex place-items-center gap-1 font-medium">
+						<UButton
+							class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+							icon="i-lucide-volume-2"
+							variant="soft"
+							color="neutral"
+							@click.stop="console.log('TTS not implemented yet')"
+						/>
+
+						{{ !isFlipped ? "Term" : "Definition" }}
+					</span>
+				</div>
+
+				<div
+					v-if="deck.cards[0]"
+					class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl"
 				>
-					<div class="flex w-full place-content-between place-items-center">
-						<span class="flex place-items-center gap-1 font-medium">
-							<UButton
-								class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
-								icon="i-lucide-volume-2"
-								variant="soft"
-								color="neutral"
-								@click.stop="console.log('TTS not implemented yet')"
-							/>
+					{{ !isFlipped ? deck.cards[0].term : deck.cards[0].definition }}
+				</div>
 
-							{{ !isFlipped ? "Term" : "Definition" }}
-						</span>
-					</div>
+				<div />
+			</UCard>
 
-					<div
-						v-if="deck.cards[0]"
-						class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl"
-					>
-						{{ !isFlipped ? deck.cards[0].term : deck.cards[0].definition }}
-					</div>
-
-					<div />
-				</UCard>
-
-				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-					<UUser
-						v-if="deck.owner.id"
-						class="col-span-1"
-						target="_self"
-						description="Owner"
-						:to="`/shared/${deck.owner.username}`"
-						:name="deck.owner.username"
-						:avatar="{
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+				<UUser
+					v-if="deck.owner.id"
+					class="col-span-1"
+					target="_self"
+					description="Owner"
+					:to="`/shared/${deck.owner.username}`"
+					:name="deck.owner.username"
+					:avatar="{
               src: deck.owner.avatar?.url || '',
               alt: deck.owner.username,
               loading: 'lazy',
               icon: 'i-lucide-user',
             }"
+				/>
+
+				<div
+					class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
+				>
+					<UButton
+						label="Skip"
+						icon="i-lucide-x"
+						size="lg"
+						variant="subtle"
+						color="error"
+						disabled
 					/>
 
-					<div
-						class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
-					>
-						<UButton
-							label="Skip"
-							icon="i-lucide-x"
-							size="lg"
-							variant="subtle"
-							color="error"
-							disabled
-						/>
-
-						<UButton
-							label="Next"
-							icon="i-lucide-check-check"
-							size="lg"
-							variant="subtle"
-							color="success"
-							disabled
-						/>
-					</div>
+					<UButton
+						label="Next"
+						icon="i-lucide-check-check"
+						size="lg"
+						variant="subtle"
+						color="success"
+						disabled
+					/>
 				</div>
 			</div>
 		</div>
@@ -172,7 +153,7 @@ defineShortcuts({
 				<UCard
 					v-for="(card, index) in deck.cards"
 					:key="index"
-					class="bg-elevated shadow-md"
+					class="bg-elevated"
 					variant="subtle"
 				>
 					<div class="flex flex-col sm:flex-row">

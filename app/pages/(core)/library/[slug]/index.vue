@@ -594,7 +594,11 @@ defineShortcuts({
 											<UInput
 												v-model="card.usageOrGrammar"
 												class="w-full"
-												:placeholder="isEditing ? 'Enter your usage or grammar notes' : undefined"
+												:placeholder="
+                          isEditing
+                            ? 'Enter your usage or grammar notes'
+                            : undefined
+                        "
 												:ui="{ base: !isEditing ? 'py-0' : '' }"
 												:disabled="!isEditing"
 												:variant="isEditing ? 'outline' : 'ghost'"
@@ -640,7 +644,9 @@ defineShortcuts({
 										<UInput
 											v-model="card.examples[eIndex]"
 											class="w-full"
-											:placeholder="isEditing ? 'eg. Hello, how are you?' : undefined"
+											:placeholder="
+                        isEditing ? 'eg. Hello, how are you?' : undefined
+                      "
 											:ui="{ base: !isEditing ? 'py-0' : '' }"
 											:disabled="!isEditing"
 											:variant="isEditing ? 'outline' : 'ghost'"
