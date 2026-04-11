@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { breakpointsTailwind } from "@vueuse/core";
 import {
 	DeckFormId,
 	type GetSharedDeckResponse,
@@ -18,7 +17,6 @@ definePageMeta({
 const route = useRoute();
 const toast = useDeckToasts();
 const { token } = useAuth();
-const smAndLarger = useBreakpoints(breakpointsTailwind).greaterOrEqual("sm");
 
 const deckId = computed(() => route.query.deckId as UUID);
 
@@ -193,7 +191,7 @@ defineShortcuts({
 				</template>
 			</UCollapsible>
 
-			<div v-if="deck.visibility === Visibility.PUBLIC" class="pt-2">
+			<div v-if="deck.visibility !== Visibility.PRIVATE" class="pt-2">
 				<AppCusdis
 					:key="`shared-deck:${deck.id}`"
 					:page-id="`shared-deck:${deck.id}`"
