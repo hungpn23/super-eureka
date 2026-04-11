@@ -21,7 +21,7 @@ const items = computed<NavigationMenuItem[]>(() => [
 	},
 	{
 		label: "About me",
-		to: "/profile2",
+		to: "#",
 	},
 ]);
 
@@ -41,7 +41,7 @@ const avatarItems = computed<DropdownMenuItem[][]>(() => [
 		{
 			label: "Settings",
 			icon: "i-lucide-settings",
-			to: "/settings",
+			to: "#",
 		},
 	],
 	[
@@ -99,12 +99,12 @@ defineShortcuts({
 
 			<div v-else class="flex place-content-between place-items-center gap-1.5">
 				<ClientOnly>
-					<UButton
+					<!-- <UButton
 						class="cursor-pointer"
 						icon="i-lucide-search"
 						variant="ghost"
 						color="neutral"
-					/>
+					/> -->
 
 					<KeyboardShortcuts v-if="smAndLarger" class="cursor-pointer" />
 
