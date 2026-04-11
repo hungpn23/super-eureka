@@ -132,12 +132,12 @@ export const CHANGE_PASSWORD_SCHEMA = v.pipe(
 );
 
 export type CloneDeckSchema = v.InferOutput<typeof CLONE_DECK_SCHEMA>;
-export type CreateCardSchema = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
+export type CreateCardBody = v.InferOutput<typeof CREATE_CARD_SCHEMA>;
 export type CreateDeckCardSchema = v.InferOutput<
   typeof CREATE_DECK_CARD_SCHEMA
 >;
 export type UpdateCardSchema = v.InferOutput<typeof UPDATE_CARD_SCHEMA>;
-export type CreateDeckSchema = v.InferOutput<typeof CREATE_DECK_SCHEMA>;
+export type CreateDeckBody = v.InferOutput<typeof CREATE_DECK_SCHEMA>;
 export type UpdateDeckSchema = v.InferOutput<typeof UPDATE_DECK_SCHEMA>;
 export type UpdateVisibilitySchema = v.InferOutput<
   typeof UPDATE_VISIBILITY_SCHEMA

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {
-	type CreateDeckCardFormState,
+	type CreateCardState,
 	createDeckCardFormState,
 	DEFINITION_LANGUAGE_ITEMS,
 	TERM_LANGUAGE_ITEMS,
@@ -9,11 +9,11 @@ import {
 } from "~/features/create-deck";
 
 const props = defineProps<{
-	cards: CreateDeckCardFormState[];
+	cards: CreateCardState[];
 }>();
 
 const emit = defineEmits<{
-	(event: "update:cards", value: CreateDeckCardFormState[]): void;
+	(event: "update:cards", value: CreateCardState[]): void;
 	(
 		event: "update:card-image",
 		payload: { tempId: string; file?: File | null },
@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 const cards = computed({
 	get: () => props.cards,
-	set: (value: CreateDeckCardFormState[]) => emit("update:cards", value),
+	set: (value: CreateCardState[]) => emit("update:cards", value),
 });
 
 const termRefs = useTemplateRef<TextareaRef[]>("termInput");

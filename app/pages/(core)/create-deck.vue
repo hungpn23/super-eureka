@@ -2,9 +2,11 @@
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import {
 	buildCreateDeckPayload,
+	type CardImageState,
+	type CreateCardState,
 	CreateDeckFormId,
-	type CreateDeckFormState,
 	type CreateDeckResponse,
+	type CreateDeckState,
 	createDeckCardFormState,
 	getVisibilityLabel,
 	type UploadCardImageResponse,
@@ -17,8 +19,8 @@ import { Visibility } from "~/features/deck";
 import { getVisibilityIcon } from "~/shared/utils";
 import {
 	CREATE_DECK_SCHEMA,
-	type CreateCardSchema,
-	type CreateDeckSchema,
+	type CreateCardBody,
+	type CreateDeckBody,
 } from "~/valibot/schemas";
 
 const toast = useCreateDeckToasts();
@@ -30,7 +32,7 @@ const formErrorMsg = ref("");
 const createDeckFormKey = ref(0);
 const isCreating = ref(false);
 
-const createState = reactive<CreateDeckFormState>({
+const createState = reactive<CreateDeckState>({
 	name: "",
 	visibility: Visibility.PUBLIC,
 	cards: [
@@ -49,7 +51,7 @@ onMounted(() => {
 	createDeckFormKey.value++;
 });
 
-async function handleCreateDeck(_event: FormSubmitEvent<CreateDeckSchema>) {
+async function handleCreateDeck(_event: FormSubmitEvent<CreateDeckBody>) {
 	if (isUploadingCardImage.value) {
 		formErrorMsg.value = "Please wait until all card images finish uploading.";
 		return;
@@ -59,11 +61,10 @@ async function handleCreateDeck(_event: FormSubmitEvent<CreateDeckSchema>) {
 	isCreating.value = true;
 
 	try {
-		const payload = buildCreateDeckPayload(createState);
 		const newDeck = await $fetch<CreateDeckResponse>("/api/decks", {
 			method: "POST",
 			headers: { Authorization: token.value || "" },
-			body: payload,
+			body: buildCreateDeckPayload(createState),
 		});
 
 		if (newDeck.slug && newDeck.id) {
@@ -83,7 +84,7 @@ async function onValidationError(event: FormErrorEvent) {
 		event.errors[0]?.message || "Please fill in all required fields.";
 }
 
-function handleImportCards(importCards: CreateCardSchema[]) {
+function handleImportCards(importCards: CreateCardBody[]) {
 	const currentCards = createState.cards.filter(
 		(card) => card.term.trim().length > 0 || card.definition.trim().length > 0,
 	);
@@ -94,20 +95,17 @@ function handleImportCards(importCards: CreateCardSchema[]) {
 	];
 }
 
-function getCardById(cardId: string) {
+function getCurrentCard(cardId: string): CreateCardState | undefined {
 	return createState.cards.find((card) => card.tempId === cardId);
 }
 
-function getCurrentUploadingCard(cardId: string, requestId: string) {
-	const card = getCardById(cardId);
-	if (!card || card.currentRequestId !== requestId) return null;
-	return card;
+function applyImageState(cardId: string, patch: Partial<CardImageState>) {
+	const card = getCurrentCard(cardId);
+	if (!card) return;
+	Object.assign(card, patch);
 }
 
-function resetCardImage(cardId: string) {
-	const card = getCardById(cardId);
-	if (!card) return;
-
+function resetCardImage(card: CreateCardState) {
 	card.fileId = undefined;
 	card.image = undefined;
 	card.isUploading = false;
@@ -118,10 +116,10 @@ async function handleUpdateCardImage(payload: {
 	tempId: string;
 	file?: File | null;
 }) {
-	if (!payload.file) return resetCardImage(payload.tempId);
-
-	const card = getCardById(payload.tempId);
+	const card = getCurrentCard(payload.tempId);
 	if (!card) return;
+
+	if (!payload.file) return resetCardImage(card);
 
 	const requestId = crypto.randomUUID();
 	const formData = new FormData();
@@ -142,23 +140,17 @@ async function handleUpdateCardImage(payload: {
 			},
 		);
 
-		const currentCard = getCurrentUploadingCard(payload.tempId, requestId);
-		if (!currentCard) return;
-
-		currentCard.fileId = response.fileId;
+		if (card.currentRequestId !== requestId) return;
+		card.fileId = response.fileId;
 	} catch {
-		const currentCard = getCurrentUploadingCard(payload.tempId, requestId);
-		if (!currentCard) return;
-
-		currentCard.fileId = undefined;
+		if (card.currentRequestId !== requestId) return;
+		card.fileId = undefined;
 
 		toast.uploadCardImageFailed();
 	} finally {
-		const currentCard = getCurrentUploadingCard(payload.tempId, requestId);
-
-		if (currentCard) {
-			currentCard.isUploading = false;
-			currentCard.currentRequestId = undefined;
+		if (card.currentRequestId === requestId) {
+			card.isUploading = false;
+			card.currentRequestId = undefined;
 		}
 	}
 }

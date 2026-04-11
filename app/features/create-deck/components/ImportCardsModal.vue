@@ -12,12 +12,12 @@ import {
 } from "~/features/create-deck";
 import {
 	CREATE_CARD_SCHEMA,
-	type CreateCardSchema,
+	type CreateCardBody,
 	IMPORT_CARD_SCHEMA,
 	type ImportCardsSchema,
 } from "~/valibot/schemas";
 
-type ParsedImportCard = Pick<CreateCardSchema, "term" | "definition">;
+type ParsedImportCard = Pick<CreateCardBody, "term" | "definition">;
 
 const props = defineProps<{
 	open: boolean;
@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(event: "update:open", value: boolean): void;
-	(event: "import", cards: CreateCardSchema[]): void;
+	(event: "import", cards: CreateCardBody[]): void;
 }>();
 
 const toast = useCreateDeckToasts();
@@ -90,7 +90,7 @@ function parseInput(input: string): ParsedImportCard[] {
 }
 
 function validateParsedCards(cards: ParsedImportCard[]) {
-	const validatedCards: CreateCardSchema[] = [];
+	const validatedCards: CreateCardBody[] = [];
 
 	for (const card of cards) {
 		const parsedCard = v.safeParse(CREATE_CARD_SCHEMA, {

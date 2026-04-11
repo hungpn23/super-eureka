@@ -1,13 +1,13 @@
-import type { CreateCardSchema, CreateDeckSchema } from "~/valibot/schemas";
+import type { CreateCardBody, CreateDeckBody } from "~/valibot/schemas";
 import { Visibility } from "../deck/enums";
 import type {
   CardSeparator,
   ContentSeparator,
-  CreateDeckCardFormState,
-  CreateDeckFormState,
+  CreateCardState,
+  CreateDeckState,
 } from "./types";
 
-export const createCard = (): CreateCardSchema => ({
+export const createCard = (): CreateCardBody => ({
   term: "",
   definition: "",
   termLanguage: "en",
@@ -15,8 +15,8 @@ export const createCard = (): CreateCardSchema => ({
 });
 
 export const createDeckCardFormState = (
-  card: Partial<CreateCardSchema> = {},
-): CreateDeckCardFormState => ({
+  card: Partial<CreateCardBody> = {},
+): CreateCardState => ({
   tempId: crypto.randomUUID(),
   fileId: undefined,
   image: undefined,
@@ -26,8 +26,8 @@ export const createDeckCardFormState = (
 });
 
 export const buildCreateDeckPayload = (
-  state: CreateDeckFormState,
-): CreateDeckSchema => ({
+  state: CreateDeckState,
+): CreateDeckBody => ({
   name: state.name,
   description: state.description,
   visibility: state.visibility,

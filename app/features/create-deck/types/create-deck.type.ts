@@ -1,11 +1,11 @@
 import type { Deck } from "~/features/deck";
 import type { MediaInfo } from "~/shared/types";
-import type { CreateCardSchema, CreateDeckSchema } from "~/valibot/schemas";
+import type { CreateCardBody, CreateDeckBody } from "~/valibot/schemas";
 
 export type CreateDeckResponse = Pick<Deck, "id" | "slug">;
 export type UploadCardImageResponse = Pick<MediaInfo, "fileId">;
 
-export type CreateDeckCardFormState = CreateCardSchema & {
+export type CardImageState = {
   tempId: string;
   fileId?: string;
   image?: File;
@@ -13,6 +13,8 @@ export type CreateDeckCardFormState = CreateCardSchema & {
   currentRequestId?: string;
 };
 
-export type CreateDeckFormState = Omit<CreateDeckSchema, "cards"> & {
-  cards: CreateDeckCardFormState[];
+export type CreateCardState = CreateCardBody & CardImageState;
+
+export type CreateDeckState = Omit<CreateDeckBody, "cards"> & {
+  cards: CreateCardState[];
 };
