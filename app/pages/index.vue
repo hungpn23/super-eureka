@@ -122,7 +122,7 @@ const stats = [
 				<span>Master any subject,</span>
 				<br>
 				<span
-					class="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent"
+					class="bg-linear-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent"
 				>
 					one success at a time.
 				</span>
@@ -404,12 +404,8 @@ const stats = [
 							<UIcon name="i-lucide-lock-keyhole" class="size-5 text-primary" />
 						</div>
 						<div>
-							<p class="font-semibold text-highlighted">
-								Welcome back
-							</p>
-							<p class="text-xs text-muted">
-								Sign in to continue learning
-							</p>
+							<p class="font-semibold text-highlighted">Welcome back</p>
+							<p class="text-xs text-muted">Sign in to continue learning</p>
 						</div>
 					</div>
 

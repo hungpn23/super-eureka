@@ -231,7 +231,7 @@ function removeCard(index: number) {
 		</TransitionGroup>
 
 		<UCard
-			class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed ring-0 transition-all select-none active:scale-95"
+			class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed ring-0 transition-all select-none active:scale-95 mb-4"
 			@click="addCard"
 		>
 			<div class="flex place-content-center place-items-center gap-2">
