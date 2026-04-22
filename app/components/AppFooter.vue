@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-	<USeparator class="mt-4 h-px" />
+	<USeparator class="h-px" />
 
 	<UFooter :ui="{container: 'py-4 p-0'}">
 		<template #default>

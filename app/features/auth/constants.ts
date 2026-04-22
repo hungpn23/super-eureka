@@ -53,6 +53,6 @@ export const AUTH_PROVIDERS: (ButtonProps & { id: ProviderId })[] = [
 	{
 		id: "magic-link" satisfies ProviderId,
 		label: "Continue with Email",
-		icon: "i-simple-icons-simplelogin",
+		icon: "i-lucide-wand-sparkles",
 	},
 ] as const;

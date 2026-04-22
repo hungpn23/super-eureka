@@ -17,7 +17,7 @@ defineProps<{ status: CardStatus }>();
 		:icon="
       {
         known: 'i-lucide-graduation-cap',
-        learning: 'i-lucide-circle-dashed',
+        learning: 'i-lucide-alarm-clock',
         new: 'i-lucide-sparkles',
       }[status]
     "
