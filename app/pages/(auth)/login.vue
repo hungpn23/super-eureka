@@ -57,22 +57,52 @@ function handleSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
 </script>
 
 <template>
-	<UAuthForm
-		:fields="pickFields(['email', 'password'])"
-		:schema="schema"
-		:providers="providerWithHandlers"
-		title="Sign in to Vocabify"
-		@submit.prevent="handleSubmit"
-	>
-		<template #password-hint>
-			<ULink to="/" class="text-primary font-medium" tabindex="-1">
-				Forgot password?
-			</ULink>
-		</template>
+	<div class="flex flex-col items-center gap-6 p-6 sm:p-8">
+		<div
+			class="flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-primary-500/20 to-secondary-500/10 ring ring-primary/30"
+		>
+			<UIcon name="i-lucide-lock-keyhole" class="size-7 text-primary" />
+		</div>
 
-		<template #description>
-			Don't have an account?
-			<ULink to="/sign-up" class="text-primary font-medium">Sign up</ULink>
-		</template>
-	</UAuthForm>
+		<UAuthForm
+			:fields="pickFields(['email', 'password'])"
+			:schema="schema"
+			:providers="providerWithHandlers"
+			title="Welcome back"
+			separator="or continue with email"
+			:submit="{ label: 'Sign in', trailingIcon: 'i-lucide-arrow-right' }"
+			class="w-full"
+			:ui="{
+				title: 'text-center text-2xl font-bold',
+				description: 'text-center',
+				header: 'p-0',
+				root: 'gap-5',
+			}"
+			@submit.prevent="handleSubmit"
+		>
+			<template #description>
+				Sign in to continue learning with Vocabify.
+			</template>
+
+			<template #password-hint>
+				<ULink to="/" class="text-primary text-xs font-medium" tabindex="-1">
+					Forgot password?
+				</ULink>
+			</template>
+
+			<template #footer>
+				<p class="text-muted w-full text-center text-sm">
+					Don't have an account?
+					<ULink to="/sign-up" class="text-primary font-medium">
+						Sign up
+					</ULink>
+				</p>
+			</template>
+		</UAuthForm>
+
+		<div class="text-muted flex items-center gap-1.5 text-xs">
+			<UIcon name="i-lucide-shield-check" class="text-success size-3.5" />
+			<span>Secured with rotating JWTs</span>
+		</div>
+	</div>
 </template>

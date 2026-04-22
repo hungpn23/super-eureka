@@ -128,45 +128,140 @@ async function handleSignUpSubmit(
 </script>
 
 <template>
-	<UAuthForm
-		v-if="state.isRequested && state.isEmailVerified"
-		:fields="pickFields(['username', 'password', 'confirmPassword'])"
-		:schema="schema"
-		title="Sign up to Vocabify"
-		description="Let's create your account"
-		@submit="handleSignUpSubmit"
-	>
-		<template #footer>
-			Already have an account?
-			<ULink to="/login" class="text-primary font-medium">Login</ULink>
-		</template>
-	</UAuthForm>
+	<div class="flex flex-col items-center gap-6 p-6 sm:p-8">
+		<div
+			class="flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-primary-500/20 to-secondary-500/10 ring ring-primary/30"
+		>
+			<UIcon
+				:name="
+					state.isEmailVerified
+						? 'i-lucide-user-plus'
+						: state.isRequested
+							? 'i-lucide-mail-check'
+							: 'i-lucide-mail'
+				"
+				class="size-7 text-primary"
+			/>
+		</div>
 
-	<UAuthForm
-		v-else-if="state.isRequested"
-		:fields="pickFields(['otp'])"
-		:schema="otpSchema"
-		title="Sign up to Vocabify"
-		description="Let's verify your email"
-		@submit="handleOtpSubmit"
-	>
-		<template #footer>
-			Already have an account?
-			<ULink to="/login" class="text-primary font-medium">Login</ULink>
-		</template>
-	</UAuthForm>
+		<!-- Step indicator -->
+		<ol class="flex w-full items-center gap-2">
+			<li
+				v-for="(step, idx) in [
+					{ label: 'Email', done: state.isRequested },
+					{ label: 'Verify', done: state.isEmailVerified },
+					{ label: 'Account', done: false },
+				]"
+				:key="step.label"
+				class="flex flex-1 items-center gap-2"
+			>
+				<div
+					class="flex size-6 items-center justify-center rounded-full text-xs font-semibold ring"
+					:class="
+						step.done ||
+						(idx === 0 && !state.isRequested) ||
+						(idx === 1 && state.isRequested && !state.isEmailVerified) ||
+						(idx === 2 && state.isEmailVerified)
+							? 'bg-primary text-inverted ring-primary'
+							: 'bg-elevated text-muted ring-default'
+					"
+				>
+					<UIcon v-if="step.done" name="i-lucide-check" class="size-3.5" />
+					<span v-else>{{ idx + 1 }}</span>
+				</div>
+				<span
+					class="text-xs font-medium"
+					:class="step.done ? 'text-default' : 'text-muted'"
+				>
+					{{ step.label }}
+				</span>
+				<USeparator
+					v-if="idx < 2"
+					class="flex-1"
+					:ui="{ border: step.done ? 'border-primary/40' : 'border-default' }"
+				/>
+			</li>
+		</ol>
 
-	<UAuthForm
-		v-else
-		:fields="pickFields(['email'])"
-		:schema="emailSchema"
-		title="Sign up to Vocabify"
-		description="Let's verify your email"
-		@submit="handleEmailSubmit"
-	>
-		<template #footer>
-			Already have an account?
-			<ULink to="/login" class="text-primary font-medium">Login</ULink>
-		</template>
-	</UAuthForm>
+		<UAuthForm
+			v-if="state.isRequested && state.isEmailVerified"
+			:fields="pickFields(['username', 'password', 'confirmPassword'])"
+			:schema="schema"
+			title="Create your account"
+			description="Pick a username and a strong password."
+			:submit="{ label: 'Create account', trailingIcon: 'i-lucide-arrow-right' }"
+			class="w-full"
+			:ui="{
+				title: 'text-center text-2xl font-bold',
+				description: 'text-center',
+				header: 'p-0',
+				root: 'gap-5',
+			}"
+			@submit="handleSignUpSubmit"
+		>
+			<template #footer>
+				<p class="text-muted w-full text-center text-sm">
+					Already have an account?
+					<ULink to="/login" class="text-primary font-medium">Login</ULink>
+				</p>
+			</template>
+		</UAuthForm>
+
+		<UAuthForm
+			v-else-if="state.isRequested"
+			:fields="pickFields(['otp'])"
+			:schema="otpSchema"
+			title="Check your inbox"
+			:submit="{ label: 'Verify email', trailingIcon: 'i-lucide-arrow-right' }"
+			class="w-full"
+			:ui="{
+				title: 'text-center text-2xl font-bold',
+				description: 'text-center',
+				header: 'p-0',
+				root: 'gap-5',
+			}"
+			@submit="handleOtpSubmit"
+		>
+			<template #description>
+				We've sent a 6-digit code to
+				<span class="text-default font-medium">{{ state.email }}</span>
+			</template>
+
+			<template #footer>
+				<p class="text-muted w-full text-center text-sm">
+					Already have an account?
+					<ULink to="/login" class="text-primary font-medium">Login</ULink>
+				</p>
+			</template>
+		</UAuthForm>
+
+		<UAuthForm
+			v-else
+			:fields="pickFields(['email'])"
+			:schema="emailSchema"
+			title="Sign up to Vocabify"
+			description="Enter your email — we'll send you a verification code."
+			:submit="{ label: 'Send code', trailingIcon: 'i-lucide-arrow-right' }"
+			class="w-full"
+			:ui="{
+				title: 'text-center text-2xl font-bold',
+				description: 'text-center',
+				header: 'p-0',
+				root: 'gap-5',
+			}"
+			@submit="handleEmailSubmit"
+		>
+			<template #footer>
+				<p class="text-muted w-full text-center text-sm">
+					Already have an account?
+					<ULink to="/login" class="text-primary font-medium">Login</ULink>
+				</p>
+			</template>
+		</UAuthForm>
+
+		<div class="text-muted flex items-center gap-1.5 text-xs">
+			<UIcon name="i-lucide-shield-check" class="text-success size-3.5" />
+			<span>Free forever · No credit card required</span>
+		</div>
+	</div>
 </template>
