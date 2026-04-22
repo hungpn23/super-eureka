@@ -861,17 +861,6 @@ defineShortcuts({
 						</div>
 					</template>
 				</UCollapsible>
-
-				<ClientOnly
-					v-if="store.deck && store.deck.visibility !== Visibility.PRIVATE"
-					class="pt-2"
-				>
-					<AppCusdis
-						:key="`library-deck:${store.deckId}`"
-						:page-id="`library-deck:${store.deckId}`"
-						:page-title="updateState.name"
-					/>
-				</ClientOnly>
 			</UPageBody>
 		</UForm>
 

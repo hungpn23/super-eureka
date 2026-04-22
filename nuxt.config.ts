@@ -3,8 +3,6 @@ export default defineNuxtConfig({
 	runtimeConfig: {
 		public: {
 			apiUrl: "",
-			cusdisAppId: "",
-			cusdisHost: "https://cusdis.com",
 			googleClientId: "",
 			googleRedirectUri: "",
 		},

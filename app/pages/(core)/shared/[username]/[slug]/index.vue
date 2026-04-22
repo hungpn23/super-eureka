@@ -190,14 +190,6 @@ defineShortcuts({
 					</div>
 				</template>
 			</UCollapsible>
-
-			<div v-if="deck.visibility !== Visibility.PRIVATE" class="pt-2">
-				<AppCusdis
-					:key="`shared-deck:${deck.id}`"
-					:page-id="`shared-deck:${deck.id}`"
-					:page-title="deck.name"
-				/>
-			</div>
 		</div>
 
 		<UModal
