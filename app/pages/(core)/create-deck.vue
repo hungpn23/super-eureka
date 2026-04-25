@@ -148,33 +148,43 @@ async function handleUpdateCardImage(payload: {
 </script>
 
 <template>
-	<UContainer class="space-y-2">
-		<UButton
-			to="/library"
-			class="px-0"
-			variant="link"
-			label="Library"
-			icon="i-lucide-move-left"
-			size="lg"
-		/>
+	<UContainer>
+		<UPageHeader
+			:ui="{
+				title: 'text-lg sm:text-xl font-medium',
+				container: 'space-y-3',
+			}"
+			class="my-4 border-0 py-0"
+		>
+			<template #headline>
+				<UButton
+					to="/library"
+					class="px-0"
+					variant="link"
+					label="Library"
+					icon="i-lucide-move-left"
+					size="lg"
+				/>
+			</template>
 
-		<div class="space-y-2">
-			<div class="flex place-content-between place-items-center gap-2">
-				<h1 class="text-lg font-semibold text-nowrap sm:text-xl">
-					Create a new deck
-				</h1>
+			<template #title>Create a new deck</template>
 
+			<template #links>
 				<UButton
 					:form="CreateDeckFormId.CREATE_DECK"
 					:disabled="isCreating || isUploadingCardImage"
-					class="cursor-pointer"
+					:loading="isCreating"
+					class="cursor-pointer transition-all hover:scale-102 active:scale-95"
 					icon="i-lucide-plus"
+					loading-icon="i-lucide-loader-circle"
 					label="Create"
 					color="primary"
 					type="submit"
 				/>
-			</div>
+			</template>
+		</UPageHeader>
 
+		<UPageBody class="mt-2 space-y-6 sm:mt-4">
 			<UAlert
 				v-if="formErrorMsg"
 				:description="formErrorMsg"
@@ -183,79 +193,97 @@ async function handleUpdateCardImage(payload: {
 				variant="soft"
 				title="Validation Error"
 			/>
-		</div>
 
-		<!-- Create Deck Form -->
-		<UForm
-			:key="createDeckFormKey"
-			:id="CreateDeckFormId.CREATE_DECK"
-			:schema="CREATE_DECK_SCHEMA"
-			:state="createState"
-			class="mt-4 flex flex-col gap-2"
-			autocomplete="off"
-			@submit="handleCreateDeck"
-			@error="onValidationError"
-		>
-			<UFormField label="Name" name="name" required>
-				<UInput
-					v-model="createState.name"
-					:ui="{ base: 'sm:text-base' }"
-					class="w-full"
-					placeholder="Enter a name, like “Biology - Chapter 22: Evolution”"
+			<UForm
+				:key="createDeckFormKey"
+				:id="CreateDeckFormId.CREATE_DECK"
+				:schema="CREATE_DECK_SCHEMA"
+				:state="createState"
+				class="flex flex-col gap-6"
+				autocomplete="off"
+				@submit="handleCreateDeck"
+				@error="onValidationError"
+			>
+				<UCard
+					:ui="{ body: 'space-y-4 p-4 sm:p-6' }"
+					variant="outline"
+					class="transition-all"
+				>
+					<UFormField label="Name" name="name" required>
+						<UInput
+							v-model="createState.name"
+							:ui="{ base: 'sm:text-base' }"
+							class="w-full"
+							placeholder='Enter a name, like "Biology - Chapter 22: Evolution"'
+						/>
+					</UFormField>
+
+					<UFormField label="Description" name="description">
+						<UTextarea
+							v-model="createState.description"
+							:rows="1"
+							:maxrows="5"
+							:ui="{ base: 'sm:text-base' }"
+							class="w-full"
+							placeholder="Describe your deck (optional)"
+							autoresize
+						/>
+					</UFormField>
+
+					<USeparator />
+
+					<div class="flex place-items-center gap-2">
+						<UIcon name="i-lucide-eye" class="text-muted size-4" />
+						<span class="text-muted text-sm">Visible to:</span>
+						<UButton
+							:label="getVisibilityLabel(createState.visibility)"
+							:icon="getVisibilityIcon(createState.visibility)"
+							class="cursor-pointer transition-all hover:scale-102 active:scale-95"
+							variant="soft"
+							color="neutral"
+							size="sm"
+							@click="isVisibilityModalOpen = true"
+						/>
+					</div>
+				</UCard>
+
+				<div class="flex place-content-between place-items-center gap-4">
+					<div class="flex place-items-center gap-2">
+						<h2 class="text-lg font-medium sm:text-xl">Cards</h2>
+						<UBadge
+							:label="createState.cards.length"
+							variant="subtle"
+							color="neutral"
+							class="rounded-full px-2"
+						/>
+					</div>
+
+					<UButton
+						class="cursor-pointer transition-all hover:scale-102 active:scale-95"
+						label="Import cards"
+						icon="i-lucide-download"
+						variant="soft"
+						color="secondary"
+						@click="isImportModalOpen = true"
+					/>
+				</div>
+
+				<CardsEditor
+					v-model:cards="createState.cards"
+					@update:card-image="handleUpdateCardImage"
 				/>
-			</UFormField>
 
-			<UFormField label="Description" name="description">
-				<UTextarea
-					v-model="createState.description"
-					:rows="1"
-					:maxrows="5"
-					:ui="{ base: 'sm:text-base' }"
-					class="w-full"
-					placeholder="Describe your deck (optional)"
-					autoresize
+				<VisibilityModal
+					v-model:open="isVisibilityModalOpen"
+					v-model:visibility="createState.visibility"
+					v-model:passcode="createState.passcode"
 				/>
-			</UFormField>
+			</UForm>
 
-			<UButton
-				:label="getVisibilityLabel(createState.visibility)"
-				:icon="getVisibilityIcon(createState.visibility)"
-				class="cursor-pointe mt-1 w-fit"
-				variant="outline"
-				color="neutral"
-				@click="isVisibilityModalOpen = true"
+			<ImportCardsModal
+				v-model:open="isImportModalOpen"
+				@import="handleImportCards"
 			/>
-
-			<div class="mt-2 flex place-content-between place-items-center gap-4">
-				<h2 class="font-medium sm:text-base">
-					Cards ({{ createState.cards.length }})
-				</h2>
-
-				<UButton
-					class="cursor-pointer"
-					label="Import cards"
-					icon="i-lucide-download"
-					variant="soft"
-					color="secondary"
-					@click="isImportModalOpen = true"
-				/>
-			</div>
-
-			<CardsEditor
-				v-model:cards="createState.cards"
-				@update:card-image="handleUpdateCardImage"
-			/>
-
-			<VisibilityModal
-				v-model:open="isVisibilityModalOpen"
-				v-model:visibility="createState.visibility"
-				v-model:passcode="createState.passcode"
-			/>
-		</UForm>
-
-		<ImportCardsModal
-			v-model:open="isImportModalOpen"
-			@import="handleImportCards"
-		/>
+		</UPageBody>
 	</UContainer>
 </template>
