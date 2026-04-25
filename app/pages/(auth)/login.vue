@@ -93,9 +93,7 @@ function handleSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
 			<template #footer>
 				<p class="text-muted w-full text-center text-sm">
 					Don't have an account?
-					<ULink to="/sign-up" class="text-primary font-medium">
-						Sign up
-					</ULink>
+					<ULink to="/sign-up" class="text-primary font-medium">Sign up</ULink>
 				</p>
 			</template>
 		</UAuthForm>

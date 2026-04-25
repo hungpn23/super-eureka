@@ -2,21 +2,21 @@ import type { MediaInfo, UUID } from "~/shared/types";
 import type { UserRole } from "./enums";
 
 export type User = {
-  id: UUID;
-  username: string;
-  email?: string | null;
-  emailVerified: boolean;
-  avatar: MediaInfo | null;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt?: Date | null;
+	id: UUID;
+	username: string;
+	email?: string | null;
+	emailVerified: boolean;
+	avatar: MediaInfo | null;
+	role: UserRole;
+	createdAt: Date;
+	updatedAt?: Date | null;
 };
 
 export type Owner = Pick<User, "id" | "username" | "avatar">;
 
 export type UserStats = {
-  currentStreak: number;
-  longestStreak: number;
-  totalCardsLearned: number;
-  masteryRate: number;
+	currentStreak: number;
+	longestStreak: number;
+	totalCardsLearned: number;
+	masteryRate: number;
 };
