@@ -115,31 +115,25 @@ defineShortcuts({
 							<div
 								class="flex flex-wrap place-items-center gap-x-2 gap-y-1 text-sm text-muted sm:place-content-end"
 							>
-								<div class="flex place-items-center gap-1.5">
-									<UIcon
-										class="shrink-0"
-										name="i-lucide-gallery-horizontal-end"
-									/>
+								<div class="flex place-items-center gap-1">
 									<span class="font-medium text-default">
 										{{ d.totalCards }}
 									</span>
 									<span>{{ d.totalCards === 1 ? "card" : "cards" }}</span>
 								</div>
 
-								<span class="hidden sm:inline text-muted/60">·</span>
+								<span class="hidden sm:inline text-muted">·</span>
 
-								<div class="flex place-items-center gap-1.5">
-									<UIcon class="shrink-0" name="i-lucide-eye" />
+								<div class="flex place-items-center gap-1">
 									<span class="font-medium text-default">
 										{{ d.viewCount }}
 									</span>
 									<span>{{ d.viewCount === 1 ? "view" : "views" }}</span>
 								</div>
 
-								<span class="hidden sm:inline text-muted/60">·</span>
+								<span class="hidden sm:inline text-muted">·</span>
 
-								<div class="flex place-items-center gap-1.5">
-									<UIcon class="shrink-0" name="i-lucide-users" />
+								<div class="flex place-items-center gap-1">
 									<span class="font-medium text-default">
 										{{ d.learnerCount }}
 									</span>

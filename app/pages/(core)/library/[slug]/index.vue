@@ -91,7 +91,7 @@ const settings = computed<DropdownMenuItem[][]>(() => [
 			onSelect: handleStartEditing,
 		},
 		{
-			label: "Change passcode",
+			label: "Manage deck visibility",
 			icon: "i-lucide-book-key",
 			disabled: isChanging.value,
 			onSelect: () => {
