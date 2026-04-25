@@ -417,8 +417,9 @@ defineShortcuts({
 
 											<NuxtImg
 												v-if="flashcardSession.currentCard.image"
-												alt="User avatar"
+												alt="Card image"
 												:src="flashcardSession.currentCard.image.url"
+												class="max-h-60 w-full rounded-lg object-contain sm:max-h-72 sm:w-1/2"
 											/>
 										</div>
 
