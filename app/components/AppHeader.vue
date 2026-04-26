@@ -20,8 +20,8 @@ const items = computed<NavigationMenuItem[]>(() => [
 		to: "/shared",
 	},
 	{
-		label: "About me",
-		to: "#",
+		label: "Study Group",
+		to: "/study-group",
 	},
 ]);
 

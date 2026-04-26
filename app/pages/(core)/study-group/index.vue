@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { RoomListItem } from "~/features/study-group";
-import { useStudyGroup } from "~/features/study-group/composables/useStudyGroup";
+import { useStudyGroup } from '~/features/study-group';
 
 const router = useRouter();
 const {

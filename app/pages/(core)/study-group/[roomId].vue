@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useStudyGroup } from "~/features/study-group/composables/useStudyGroup";
+import { useStudyGroup } from '~/features/study-group';
+
 
 const route = useRoute();
 const roomId = computed(() => route.params.roomId as string);

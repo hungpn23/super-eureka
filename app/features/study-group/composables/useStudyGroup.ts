@@ -49,15 +49,10 @@ export function useStudyGroup() {
 		socket.on("roomCreated" as any, (payload: RoomInfo) => {
 			roomInfo.value = payload;
 			roomStatus.value = payload.status;
-			players.value = [
-				{
-					userId: payload.hostId,
-					username: user.value?.username ?? "You",
-					avatar: user.value?.avatar ?? null,
-					joinedAt: payload.createdAt,
-					connected: true,
-				},
-			];
+		});
+
+		socket.on("playerList" as any, (payload: PlayerInfo[]) => {
+			players.value = payload;
 		});
 
 		socket.on("playerJoined" as any, (payload: PlayerInfo) => {
@@ -136,6 +131,7 @@ export function useStudyGroup() {
 		socket.off("connect");
 		socket.off("disconnect");
 		socket.off("roomCreated");
+		socket.off("playerList");
 		socket.off("playerJoined");
 		socket.off("playerLeft");
 		socket.off("countdownStarted");
